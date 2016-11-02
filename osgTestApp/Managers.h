@@ -42,6 +42,9 @@ public:
 	// сгенерировать тестовый объект из набора уже созданных мешей, фейссетов, материалов, текстур и т.п.
 	C3DObject*	generateTestObject(const osg::Vec3& pos);
 
+	// считать ресурсы из загруженного дерева
+	void generateObjectsFromOsgNode(osg::Node*);
+
 	// в этой функции обрабатывается начало кадра для отладочных целей
 	void onBeginFrame();
 

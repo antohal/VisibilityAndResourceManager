@@ -84,6 +84,12 @@ C3DObject* ObjectManager::generateTestObject(const osg::Vec3& pos)
 	return newObject;
 }
 
+
+void ObjectManager::generateObjectsFromOsgNode(osg::Node* node)
+{
+	_ptrRootNode->asGroup()->addChild(node);
+}
+
 void ObjectManager::onBeginFrame()
 {
 	for (auto object : _objects)

@@ -9,8 +9,11 @@
 #include "ResourceManager.h"
 
 #include <random>
+#include <string>
 
 #include <osg/MatrixTransform>
+#include <osgDB/ReadFile>
+#include <osgDB/WriteFile>
 
 namespace
 {
@@ -40,7 +43,12 @@ public:
 		ObjectManager::Instance().onBeginFrame();
 
 		osg::Vec3 eye, center, up, dir;
-		getCamera()->getViewMatrixAsLookAt(eye, center, up);
+		//getCamera()->getViewMatrixAsLookAt(eye, center, up);
+
+		osg::Matrix mView = getCamera()->getViewMatrix();
+
+		mView.getLookAt(eye, center, up);
+
 		dir = center - eye;
 
 		Vector3 vCamPos(eye.x(), eye.y(), eye.z());
@@ -100,18 +108,27 @@ void generateTestScene()
 	}
 }
 
+void loadTestSceneFile()
+{
+	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
+	ObjectManager::Instance().generateObjectsFromOsgNode(sceneRoot);
+}
+
 int main(int, char**)
 {
 	// construct the viewer
 	SceneViewer viewer;
 
-	generateTestScene();
+	//generateTestScene();
+
+	loadTestSceneFile();
+
 	initVisibilityAndResourceManagers();
 
-	osg::Matrix coordinateSwitch;
-	coordinateSwitch(2, 2) = 1;
+	//osg::Matrix coordinateSwitch;
+	//coordinateSwitch(2, 2) = 1;
 
-	osg::ref_ptr<osg::MatrixTransform> rootTransform = new osg::MatrixTransform(coordinateSwitch);
+	osg::ref_ptr<osg::MatrixTransform> rootTransform = new osg::MatrixTransform();
 
 	rootTransform->addChild(ObjectManager::Instance().getOsgRoot());
 
@@ -123,8 +140,11 @@ int main(int, char**)
 	osgGA::TrackballManipulator* cameraManipulator = new osgGA::TrackballManipulator;
 	cameraManipulator->setAllowThrow(false);
 	cameraManipulator->setAutoComputeHomePosition(false);
-	cameraManipulator->setHomePosition(osg::Vec3d(7, 0, 0), osg::Vec3d(0, 0, 0), osg::Vec3d(0, 0, 1));
+	cameraManipulator->setHomePosition(osg::Vec3d(7, 50, 0), osg::Vec3d(0, 50, 0), osg::Vec3d(0, 0, 1));
 	cameraManipulator->setMinimumDistance(0.5, false);
+
+	/*osgGA::FlightManipulator* flightManipulator = new osgGA::FlightManipulator;
+	flightManipulator->setHomePosition(osg::Vec3d(7, 50, 0), osg::Vec3d(0, 50, 0), osg::Vec3d(0, 0, 1));*/
 
 	viewer.setCameraManipulator(cameraManipulator);
 	viewer.setUpViewInWindow(100, 100, 800, 600);
