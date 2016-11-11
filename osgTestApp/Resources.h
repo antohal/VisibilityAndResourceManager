@@ -26,6 +26,7 @@ class C3DObject : public C3DBaseObject
 public:
 
 	C3DObject(const osg::Vec3& pos);
+	C3DObject(osg::Geode* geode);
 	~C3DObject();
 
 	osg::Node*	getOsgNode() const { return _osgNode; }
@@ -77,6 +78,8 @@ private:
 	D3DXVECTOR3					_d3dBboxMin;
 	D3DXVECTOR3					_d3dBboxMax;
 	D3DXMATRIX					_d3dTransformMatrix;
+
+	bool						_createdExternal = false;
 };
 
 //
@@ -130,6 +133,7 @@ public:
 	enum FaceSetType{ CYLYNDER, BOX, SPHERE };
 
 	C3DFaceSet(FaceSetType);
+	C3DFaceSet(osg::Geode*);
 
 	osg::Node*	getOsgNode() const { return _osgNode; }
 

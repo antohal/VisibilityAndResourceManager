@@ -56,12 +56,35 @@ C3DObject* ObjectManager::generateTestObject(const osg::Vec3& pos)
 
 	// create debug bounding box
 	//@{
+	createDebugBoundBox(newObject);
+	//@}
+	
+	_objects.push_back(newObject);
+
+	return newObject;
+}
+
+void ObjectManager::createDebugBoundBox(C3DObject* newObject)
+{
 	osg::Box* debugBox = new osg::Box;
 
-	osg::BoundingSphere bound = newObject->getOsgNode()->getBound();
+	//osg::BoundingSphere bound = newObject->getOsgNode()->getBound();
 
-	debugBox->setCenter(bound.center());
-	debugBox->setHalfLengths(osg::Vec3(bound.radius(), bound.radius(), bound.radius()));
+	if (newObject->getOsgNode()->asGeode())
+	{
+		osg::Vec3 vMin, vMax;
+		vMin = newObject->getOsgNode()->asGeode()->getBoundingBox()._min;
+		vMax = newObject->getOsgNode()->asGeode()->getBoundingBox()._max;
+
+		debugBox->setCenter(newObject->getOsgNode()->asGeode()->getBoundingBox().center());
+		debugBox->setHalfLengths((vMax - vMin)*0.5);
+	}
+	else
+	{
+		osg::BoundingSphere bound = newObject->getOsgNode()->getBound();
+		debugBox->setCenter(bound.center());
+		debugBox->setHalfLengths(osg::Vec3(bound.radius(), bound.radius(), bound.radius()));
+	}
 
 	osg::Geode* debugGeode = new osg::Geode();
 	osg::ShapeDrawable* shape = new osg::ShapeDrawable(debugBox);
@@ -77,17 +100,50 @@ C3DObject* ObjectManager::generateTestObject(const osg::Vec3& pos)
 	_ptrRootNode->asGroup()->addChild(debugGeode);
 
 	newObject->setupDebugBoundBox(debugGeode);
-	//@}
-	
-	_objects.push_back(newObject);
-
-	return newObject;
 }
 
+
+void ObjectManager::addObjectsRecursiveFromOsgNode(osg::Node* node)
+{
+	if (osg::Geode* geode = node->asGeode())
+	{
+		if (geode->getNumDrawables() > 0)
+		{
+			C3DObject* newObject = new C3DObject(geode);
+
+			C3DFaceSet* faceset = new C3DFaceSet(geode);
+			std::vector<C3DFaceSet*> facesets;
+			facesets.push_back(faceset);
+
+			C3DMesh* mesh = new C3DMesh();
+			mesh->setFaceSets(facesets);
+
+			std::vector<C3DMesh*> vecMeshes;
+			vecMeshes.push_back(mesh);
+
+			newObject->setMeshes(vecMeshes);
+
+			createDebugBoundBox(newObject);
+
+			_objects.push_back(newObject);
+		}
+	}
+
+
+	if (osg::Group* group = node->asGroup())
+	{
+		for (unsigned int i = 0; i < group->getNumChildren(); i++)
+		{
+			addObjectsRecursiveFromOsgNode(group->getChild(i));
+		}
+	}
+}
 
 void ObjectManager::generateObjectsFromOsgNode(osg::Node* node)
 {
 	_ptrRootNode->asGroup()->addChild(node);
+
+	addObjectsRecursiveFromOsgNode(node);
 }
 
 void ObjectManager::onBeginFrame()

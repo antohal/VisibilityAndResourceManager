@@ -50,6 +50,9 @@ public:
 
 private:
 
+	void addObjectsRecursiveFromOsgNode(osg::Node* node);
+	void createDebugBoundBox(C3DObject* newObject);
+
 	osg::ref_ptr<osg::Node>		_ptrRootNode;
 	std::vector<C3DObject*>		_objects;
 };

@@ -27,9 +27,22 @@ C3DObject::C3DObject(const osg::Vec3& pos)
 			_d3dTransformMatrix.m[i][j] = m(i, j);
 }
 
+C3DObject::C3DObject(osg::Geode* geode)
+{
+	_createdExternal = true;
+	_osgNode = geode;
+
+	osg::Matrix m = osg::Matrix::identity();
+
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+			_d3dTransformMatrix.m[i][j] = m(i, j);
+}
+
 C3DObject::~C3DObject()
 {
-	_osgNode->asGroup()->removeChildren(0, _osgNode->asGroup()->getNumChildren());
+	if (!_createdExternal)
+		_osgNode->asGroup()->removeChildren(0, _osgNode->asGroup()->getNumChildren());
 }
 
 // получить указатель на менеджер, управляющий данным ресурсом
@@ -52,12 +65,24 @@ void C3DObject::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildRes
 // пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
 void C3DObject::GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax)
 {
-	osg::BoundingSphere bound = _osgNode->getBound();
-	osg::Vec3 minBound = bound.center() - osg::Vec3(bound.radius(), bound.radius(), bound.radius());
-	osg::Vec3 maxBound = bound.center() + osg::Vec3(bound.radius(), bound.radius(), bound.radius());
+	if (_createdExternal && getOsgNode()->asGeode())
+	{
+		osg::Vec3 vMin, vMax;
+		vMin = getOsgNode()->asGeode()->getBoundingBox()._min;
+		vMax = getOsgNode()->asGeode()->getBoundingBox()._max;
 
-	_d3dBboxMin.x = minBound.x(); _d3dBboxMin.y = minBound.y(); _d3dBboxMin.z = minBound.z();
-	_d3dBboxMax.x = maxBound.x(); _d3dBboxMax.y = maxBound.y(); _d3dBboxMax.z = maxBound.z();
+		_d3dBboxMin.x = vMin.x(); _d3dBboxMin.y = vMin.y(); _d3dBboxMin.z = vMin.z();
+		_d3dBboxMax.x = vMax.x(); _d3dBboxMax.y = vMax.y(); _d3dBboxMax.z = vMax.z();
+	}
+	else
+	{
+		osg::BoundingSphere bound = _osgNode->getBound();
+		osg::Vec3 minBound = bound.center() - osg::Vec3(bound.radius(), bound.radius(), bound.radius());
+		osg::Vec3 maxBound = bound.center() + osg::Vec3(bound.radius(), bound.radius(), bound.radius());
+
+		_d3dBboxMin.x = minBound.x(); _d3dBboxMin.y = minBound.y(); _d3dBboxMin.z = minBound.z();
+		_d3dBboxMax.x = maxBound.x(); _d3dBboxMax.y = maxBound.y(); _d3dBboxMax.z = maxBound.z();
+	}
 
 	*ppBBMin = &_d3dBboxMin;
 	*ppBBMax = &_d3dBboxMax;
@@ -87,8 +112,11 @@ void C3DObject::setMeshes(const std::vector<C3DMesh*>& meshes)
 {
 	_meshes = meshes;
 
-	for (C3DMesh* mesh : meshes)
-		_osgNode->asGroup()->addChild(mesh->getOsgNode());
+	if (!_createdExternal)
+	{
+		for (C3DMesh* mesh : meshes)
+			_osgNode->asGroup()->addChild(mesh->getOsgNode());
+	}
 }
 
 void C3DObject::SetVisible()
@@ -168,6 +196,11 @@ C3DFaceSet::C3DFaceSet(FaceSetType type)
 	if (shape)
 		geode->addDrawable(new osg::ShapeDrawable(shape));
 
+	_osgNode = geode;
+}
+
+C3DFaceSet::C3DFaceSet(osg::Geode* geode)
+{
 	_osgNode = geode;
 }
 

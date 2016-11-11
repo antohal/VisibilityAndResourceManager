@@ -897,7 +897,8 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		for (C3DBaseFaceSet* pFaceSet : pInternalObject->_vecFaceSets)
 		{
-			pFaceSet->GetMaterialRef()->AddVisibleFaceSet(pFaceSet);
+			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
+				material->AddVisibleFaceSet(pFaceSet);
 		}
 	}
 
@@ -936,7 +937,8 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		for (C3DBaseFaceSet* pFaceSet : internalObject._vecFaceSets)
 		{
-			pFaceSet->GetMaterialRef()->AddVisibleFaceSet(pFaceSet);
+			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
+				material->AddVisibleFaceSet(pFaceSet);
 		}
 	}
 
@@ -947,7 +949,8 @@ void CVisibilityManager::VisibilityManagerPrivate::SetObjectVisibleOnThisFrame(C
 {
 	for (C3DBaseFaceSet* pFaceSet : obj._vecFaceSets)
 	{
-		pFaceSet->GetMaterialRef()->AddVisibleFaceSet(pFaceSet);
+		if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
+			material->AddVisibleFaceSet(pFaceSet);
 	}
 }
 

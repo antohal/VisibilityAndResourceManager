@@ -110,7 +110,8 @@ void generateTestScene()
 
 void loadTestSceneFile()
 {
-	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
+//	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
+	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/spheres.3ds"));
 	ObjectManager::Instance().generateObjectsFromOsgNode(sceneRoot);
 }
 

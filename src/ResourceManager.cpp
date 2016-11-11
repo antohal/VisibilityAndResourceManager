@@ -32,6 +32,9 @@ struct CResourceManager::SResourceManagerPrivate
 
 	void incrementVisibilityRefCountRecursive(C3DBaseResource* resource)
 	{
+		if (!resource)
+			return;
+
 		if (resource->_visibleRefCount == 0)
 			if (resource->GetManager())
 				resource->GetManager()->RequestLoadResource(resource);
@@ -49,6 +52,9 @@ struct CResourceManager::SResourceManagerPrivate
 
 	void decrementVisibilityRefCountRecursive(C3DBaseResource* resource)
 	{
+		if (!resource)
+			return;
+
 		// TODO: insert assert here
 		if (resource->_visibleRefCount > 0)
 		{
