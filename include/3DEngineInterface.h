@@ -166,6 +166,7 @@ public:
 
 };
 
+// Тип текстуры
 enum ETextureType
 {
 	TEXTURE_2D = 0,
@@ -176,7 +177,7 @@ enum ETextureType
 	TEXTURE_TYPE_COUNT
 };
 
-
+// базовый класс текстуры
 class C3DBaseTexture : public C3DBaseResource
 {
 public:

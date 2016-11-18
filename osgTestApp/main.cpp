@@ -4,6 +4,7 @@
 
 #include <osgViewer/Viewer>
 #include <osgGA/TrackballManipulator>
+#include <osgGA/FlightManipulator>
 
 #include "VisibilityManager.h"
 #include "ResourceManager.h"
@@ -14,6 +15,10 @@
 #include <osg/MatrixTransform>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
+
+#include <osgViewer/CompositeViewer>
+
+#include <osgGA/GUIEventHandler>
 
 namespace
 {
@@ -30,22 +35,25 @@ namespace
 
 	CVisibilityManager*	g_visibilityManager = nullptr;
 	CResourceManager*	g_resourceManager = nullptr;
-
+	osgViewer::Viewer*	g_mainViewer = nullptr;
 };
 
-class SceneViewer : public osgViewer::Viewer
+class MyCompositeViewer : public osgViewer::CompositeViewer
 {
 public:
 
 
-	virtual void frame(double simulationTime = USE_REFERENCE_TIME)
+	virtual void advance(double simulationTime = USE_REFERENCE_TIME)
 	{
+		if (!g_mainViewer)
+			return;
+
 		ObjectManager::Instance().onBeginFrame();
 
 		osg::Vec3 eye, center, up, dir;
 		//getCamera()->getViewMatrixAsLookAt(eye, center, up);
 
-		osg::Matrix mView = getCamera()->getViewMatrix();
+		osg::Matrix mView = g_mainViewer->getCamera()->getViewMatrix();
 
 		mView.getLookAt(eye, center, up);
 
@@ -63,7 +71,7 @@ public:
 		g_resourceManager->Update((float)(curTime - _prevTime));
 
 
-		osgViewer::ViewerBase::frame(simulationTime);
+		osgViewer::CompositeViewer::advance(simulationTime);
 
 		_prevTime = curTime;
 	}
@@ -72,6 +80,21 @@ public:
 private:
 
 	double				_prevTime = 0;
+};
+
+class DebugViewer : public osgViewer::Viewer
+{
+public:
+
+	virtual void frame(double simulationTime = USE_REFERENCE_TIME)
+	{
+
+
+
+	}
+
+private:
+
 };
 
 void initVisibilityAndResourceManagers()
@@ -110,15 +133,48 @@ void generateTestScene()
 
 void loadTestSceneFile()
 {
-//	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
-	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/spheres.3ds"));
+	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/DamagedDowntown/Downtown_Damage_0.obj"));
+	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
+	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/spheres.3ds "));
+	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/compas.obj"));
 	ObjectManager::Instance().generateObjectsFromOsgNode(sceneRoot);
+}
+
+class KeyboardEventHandler : public osgGA::GUIEventHandler
+{
+public:
+	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&);
+};
+
+bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
+{
+	switch (ea.getEventType())
+	{
+	case(osgGA::GUIEventAdapter::KEYDOWN):
+	{
+		switch (ea.getKey())
+		{
+		case 'w':
+			std::cout << " w key pressed" << std::endl;
+			return false;
+			break;
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
 }
 
 int main(int, char**)
 {
-	// construct the viewer
-	SceneViewer viewer;
+	MyCompositeViewer compositeViewer;
+
+	//-------------------
+	//@{ MainView
+	osgViewer::Viewer* mainView = new osgViewer::Viewer;
+	g_mainViewer = mainView;
 
 	//generateTestScene();
 
@@ -134,26 +190,51 @@ int main(int, char**)
 	rootTransform->addChild(ObjectManager::Instance().getOsgRoot());
 
 	// set the scene to render
-	viewer.setSceneData(rootTransform);
+	mainView->setSceneData(rootTransform);
+
+	mainView->addEventHandler(new KeyboardEventHandler);
 
 
 	// установить манипулятор камеры
 	osgGA::TrackballManipulator* cameraManipulator = new osgGA::TrackballManipulator;
 	cameraManipulator->setAllowThrow(false);
 	cameraManipulator->setAutoComputeHomePosition(false);
-	cameraManipulator->setHomePosition(osg::Vec3d(7, 50, 0), osg::Vec3d(0, 50, 0), osg::Vec3d(0, 0, 1));
+	cameraManipulator->setHomePosition(osg::Vec3d(7, 0, 100), osg::Vec3d(0, 0, 100), osg::Vec3d(0, 0, 1));
 	cameraManipulator->setMinimumDistance(0.5, false);
 
-	/*osgGA::FlightManipulator* flightManipulator = new osgGA::FlightManipulator;
-	flightManipulator->setHomePosition(osg::Vec3d(7, 50, 0), osg::Vec3d(0, 50, 0), osg::Vec3d(0, 0, 1));*/
+	//osgGA::FlightManipulator* flightManipulator = new osgGA::FlightManipulator;
+	//flightManipulator->setHomePosition(osg::Vec3d(7, 50, 0), osg::Vec3d(0, 50, 0), osg::Vec3d(0, 0, 1));
 
-	viewer.setCameraManipulator(cameraManipulator);
-	viewer.setUpViewInWindow(100, 100, 800, 600);
+	mainView->setCameraManipulator(cameraManipulator);
+	mainView->setUpViewInWindow(100, 100, 800, 600);
 
-	// run the viewers frame loop
-	int iResult = viewer.run();
+	compositeViewer.addView(mainView);
+	//@} MainView
+
+
+	//-------------------
+	//@{ DebugView
+	DebugViewer* debugView = new DebugViewer;
+
+	debugView->setSceneData(rootTransform);
+
+	osgGA::TrackballManipulator* debugCameraManipulator = new osgGA::TrackballManipulator;
+	debugCameraManipulator->setAllowThrow(false);
+	debugCameraManipulator->setAutoComputeHomePosition(false);
+	debugCameraManipulator->setHomePosition(osg::Vec3d(7, 0, 100), osg::Vec3d(0, 0, 100), osg::Vec3d(0, 0, 1));
+	debugCameraManipulator->setMinimumDistance(0.5, false);
+
+
+	debugView->setCameraManipulator(debugCameraManipulator);
+	debugView->setUpViewInWindow(900, 100, 800, 600);
+
+
+	compositeViewer.addView(debugView);
+	//@}
+
+	compositeViewer.run();
 
 	destroyVisibilityAndResourceManagers();
 
-	return iResult;
+	return 0;
 }

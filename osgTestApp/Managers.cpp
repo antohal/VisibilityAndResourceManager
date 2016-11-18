@@ -3,6 +3,8 @@
 
 #include <osg/Group>
 #include <osg/PolygonMode>
+#include <osg/MatrixTransform>
+#include <osg/Billboard>
 #include <osg/Geode>
 #include <random>
 #include <iostream>
@@ -81,7 +83,7 @@ void ObjectManager::createDebugBoundBox(C3DObject* newObject)
 	}
 	else
 	{
-		osg::BoundingSphere bound = newObject->getOsgNode()->getBound();
+		osg::BoundingSphere bound = newObject->getOsgNode()->computeBound();
 		debugBox->setCenter(bound.center());
 		debugBox->setHalfLengths(osg::Vec3(bound.radius(), bound.radius(), bound.radius()));
 	}
