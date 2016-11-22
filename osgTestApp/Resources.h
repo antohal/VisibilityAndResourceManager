@@ -167,14 +167,14 @@ class C3DMaterial : public C3DBaseMaterial
 public:
 
 	C3DMaterial(const osg::Vec4& diffuseColor);
+	C3DMaterial(osg::Material*);
 
 	//@{ C3DBaseResource
 
 	// дочерних ресурсов у техники нет.
 	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const;
 
-	// менеджер у материалов в данном примере отсутствует
-	virtual C3DBaseManager*	GetManager() const { return nullptr; };
+	virtual C3DBaseManager*	GetManager() const;
 
 	//@} C3DBaseResource
 
@@ -196,11 +196,23 @@ public:
 
 	const std::vector<C3DTexture*>& textures() const { return _textures; }
 
+	void makeBlack();
+	void restore();
+
+	bool external() const {
+		return _external;
+	}
+
 private:
 
 	osg::ref_ptr<osg::Material>	_osgMaterial;
 	std::vector<C3DTechnique*>	_techniques;
 	std::vector<C3DTexture*>	_textures;
+
+	osg::Vec4	_storedDiffuse;
+	osg::Vec4	_storedSpecular;
+
+	bool		_external = false;
 };
 
 class C3DTechnique : public C3DBaseTechnique
@@ -266,5 +278,4 @@ private:
 	std::string						_fileName;
 	osg::ref_ptr<osg::Texture2D>	_texture;
 	osg::ref_ptr<osg::Image>		_image;
-	osg::ref_ptr<osg::Node>			_applyToNode;
 };

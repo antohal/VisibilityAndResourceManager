@@ -99,6 +99,8 @@ void ObjectManager::createDebugBoundBox(C3DObject* newObject)
 	debugGeode->getOrCreateStateSet()->setAttributeAndModes(polygonMode,
 		osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON);
 
+	debugGeode->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
+
 	_ptrRootNode->asGroup()->addChild(debugGeode);
 
 	newObject->setupDebugBoundBox(debugGeode);
@@ -107,15 +109,35 @@ void ObjectManager::createDebugBoundBox(C3DObject* newObject)
 
 void ObjectManager::addObjectsRecursiveFromOsgNode(osg::Node* node)
 {
+	static std::map<osg::Material*, C3DMaterial*> mapMaterials;
+
 	if (osg::Geode* geode = node->asGeode())
 	{
 		if (geode->getNumDrawables() > 0)
 		{
 			C3DObject* newObject = new C3DObject(geode);
 
-			C3DFaceSet* faceset = new C3DFaceSet(geode);
 			std::vector<C3DFaceSet*> facesets;
-			facesets.push_back(faceset);
+
+			for (int i = 0; i < geode->getNumDrawables(); i++)
+			{
+				osg::Drawable* drawable = geode->getDrawable(i);
+				C3DFaceSet* faceset = new C3DFaceSet(geode);
+
+				osg::ref_ptr<osg::Material> mat = (osg::Material*)drawable->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL);
+				if (mat.valid())
+				{
+					C3DMaterial*& myMat = mapMaterials[mat];
+
+					if (!myMat)
+						myMat = new C3DMaterial(mat);
+
+					faceset->setMaterialRef(myMat);
+				}
+
+				facesets.push_back(faceset);
+			}
+			
 
 			C3DMesh* mesh = new C3DMesh();
 			mesh->setFaceSets(facesets);
@@ -314,6 +336,20 @@ C3DMaterial* MaterialManager::getRandomMaterial()
 	size_t diceRoll = distribution(generator);
 
 	return _materials[diceRoll];
+}
+
+// Запросить загрузку ресурса
+void MaterialManager::RequestLoadResource(C3DBaseResource* res)
+{
+	C3DMaterial* mat = static_cast<C3DMaterial*>(res);
+	mat->restore();
+}
+
+// запросить выгрузку ресурса
+void MaterialManager::RequestUnloadResource(C3DBaseResource* res)
+{
+	C3DMaterial* mat = static_cast<C3DMaterial*>(res);
+	mat->makeBlack();
 }
 
 //

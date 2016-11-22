@@ -208,13 +208,16 @@ void C3DFaceSet::setMaterialRef(C3DMaterial* materialRef)
 {
 	_materialRef = materialRef;
 
-	_osgNode->getOrCreateStateSet()->setAttribute(materialRef->getOsgMaterial(), osg::StateAttribute::ON);
-
-	int unit = 0;
-	for (C3DTexture* texture : materialRef->textures())
+	if (materialRef->external())
 	{
-		_osgNode->getOrCreateStateSet()->setTextureAttributeAndModes(unit, texture->getOsgTexture(), osg::StateAttribute::ON);
-		unit++;
+		_osgNode->getOrCreateStateSet()->setAttribute(materialRef->getOsgMaterial(), osg::StateAttribute::ON);
+
+		int unit = 0;
+		for (C3DTexture* texture : materialRef->textures())
+		{
+			_osgNode->getOrCreateStateSet()->setTextureAttributeAndModes(unit, texture->getOsgTexture(), osg::StateAttribute::ON);
+			unit++;
+		}
 	}
 }
 
@@ -242,6 +245,31 @@ C3DMaterial::C3DMaterial(const osg::Vec4& diffuseColor)
 {
 	_osgMaterial = new osg::Material;
 	_osgMaterial->setDiffuse(osg::Material::Face::FRONT_AND_BACK, diffuseColor);
+	_storedDiffuse = diffuseColor;
+	_storedSpecular = osg::Vec4(0, 0, 0, 0);
+}
+
+void C3DMaterial::makeBlack()
+{
+	_osgMaterial->setDiffuse(osg::Material::Face::FRONT_AND_BACK, osg::Vec4(0,0,0,0));
+	_osgMaterial->setSpecular(osg::Material::Face::FRONT_AND_BACK, osg::Vec4(0, 0, 0, 0));
+}
+
+void C3DMaterial::restore()
+{
+	_osgMaterial->setDiffuse(osg::Material::Face::FRONT_AND_BACK, _storedDiffuse);
+	_osgMaterial->setSpecular(osg::Material::Face::FRONT_AND_BACK, _storedSpecular);
+}
+
+
+C3DMaterial::C3DMaterial(osg::Material* material)
+{
+	_osgMaterial = material;
+	_storedSpecular = _osgMaterial->getSpecular(osg::Material::Face::FRONT_AND_BACK);
+	_storedDiffuse = _osgMaterial->getDiffuse(osg::Material::Face::FRONT_AND_BACK);
+	makeBlack();
+
+	_external = true;
 }
 
 void C3DMaterial::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const
@@ -254,6 +282,12 @@ void C3DMaterial::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildR
 	for (auto texture : _textures)
 		out_vecChildResources.push_back(texture);
 }
+
+C3DBaseManager*	C3DMaterial::GetManager() const
+{ 
+	return &MaterialManager::Instance(); 
+};
+
 
 void C3DMaterial::setTechniques(const std::vector<C3DTechnique*>& techniques)
 {

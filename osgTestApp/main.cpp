@@ -22,15 +22,18 @@
 
 namespace
 {
-	const float g_worldRadius = 300.f;
+	const float g_worldRadius = 1000000.f;
 
-	const float _minCellSize = 20.f;
+	const float g_minCellSize = 20.f;
 
-	const float _nearPlane = 1.f;
-	const float _farPlane = 100.f;
+	const float g_nearPlane = 1.f;
+	const float g_farPlane = 1000.f;
 
-	const float _horizontalFOV = 75.f;
-	const float _verticalFOV = 75.f;
+	const float g_horizontalFOV = 75.f;
+	const float g_verticalFOV = 75.f;
+
+	const float g_slowMoveSpeed = 100;
+	const float g_fastMoveSpeed = 1000;
 
 
 	CVisibilityManager*	g_visibilityManager = nullptr;
@@ -63,13 +66,26 @@ public:
 		Vector3 vCamDir(dir.x(), dir.y(), dir.z());
 		Vector3 vCamUp(up.x(), up.y(), up.z());
 
-		g_visibilityManager->SetCamera(vCamPos, vCamDir, vCamUp, _horizontalFOV, _verticalFOV, _nearPlane, _farPlane);
+		g_visibilityManager->SetCamera(vCamPos, vCamDir, vCamUp, g_horizontalFOV, g_verticalFOV, g_nearPlane, g_farPlane);
 		g_visibilityManager->UpdateVisibleObjectsSet();
 
 		double curTime = getFrameStamp()->getReferenceTime();
+		_deltaTime = (curTime - _prevTime);
 
-		g_resourceManager->Update((float)(curTime - _prevTime));
+		g_resourceManager->Update((float)_deltaTime);
 
+
+		//@{ move camera
+		osg::Vec3 manCenter = _cameraManipulator->getCenter();
+
+		if (_moveForward)
+			manCenter += dir*_deltaTime*(_fastMove ? g_fastMoveSpeed : g_slowMoveSpeed);
+
+		if (_moveBack)
+			manCenter -= dir*_deltaTime*(_fastMove ? g_fastMoveSpeed : g_slowMoveSpeed);
+
+		_cameraManipulator->setCenter(manCenter);
+		//@}
 
 		osgViewer::CompositeViewer::advance(simulationTime);
 
@@ -77,29 +93,52 @@ public:
 	}
 
 
-private:
+	void setControlledManipulator(osgGA::TrackballManipulator* cameraManipulator, osg::Camera* operatingCamera)
+	{
+		_cameraManipulator = cameraManipulator;
+		_operatingCamera = operatingCamera;
+	}
 
-	double				_prevTime = 0;
-};
+	void moveForward(bool move)
+	{
+		_moveForward = move;
+	}
 
-class DebugViewer : public osgViewer::Viewer
-{
-public:
+	void moveBackward(bool move)
+	{
+		_moveBack = move;
+	}
 
-	virtual void frame(double simulationTime = USE_REFERENCE_TIME)
+	void moveLeft(bool move)
 	{
 
+	}
 
+	void moveRight(bool Move)
+	{
 
+	}
+
+	void fastMove(bool fast)
+	{
+		_fastMove = fast;
 	}
 
 private:
 
+	double				_prevTime = 0;
+	osgGA::TrackballManipulator* _cameraManipulator = nullptr;
+	osg::Camera*		_operatingCamera = nullptr;
+
+	double				_deltaTime = 0;
+
+	bool				_moveForward = false, _moveBack = false, _moveLeft = false, _moveRight = false, _fastMove = false;
 };
+
 
 void initVisibilityAndResourceManagers()
 {
-	g_visibilityManager = new CVisibilityManager(&ObjectManager::Instance(), g_worldRadius*100, _minCellSize);
+	g_visibilityManager = new CVisibilityManager(&ObjectManager::Instance(), g_worldRadius, g_minCellSize);
 	g_resourceManager = new CResourceManager();
 
 	g_resourceManager->AddVisibilityManager(g_visibilityManager);
@@ -143,28 +182,36 @@ void loadTestSceneFile()
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
 public:
+
+	KeyboardEventHandler(MyCompositeViewer* owner) : _owner(owner) {}
+
 	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&);
+
+private:
+	MyCompositeViewer*	_owner = nullptr;
 };
 
 bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
 {
-	switch (ea.getEventType())
+
+	switch (ea.getKey())
 	{
-	case(osgGA::GUIEventAdapter::KEYDOWN):
-	{
-		switch (ea.getKey())
-		{
-		case 'w':
-			std::cout << " w key pressed" << std::endl;
-			return false;
-			break;
-		default:
-			return false;
-		}
+
+	case 'w':
+		_owner->moveForward(ea.getEventType() == osgGA::GUIEventAdapter::KEYDOWN);
+		return true;
+	
+	case 's':
+		_owner->moveBackward(ea.getEventType() == osgGA::GUIEventAdapter::KEYDOWN);
+		return true;
+
+	case osgGA::GUIEventAdapter::KEY_Shift_L:
+		_owner->fastMove(ea.getEventType() == osgGA::GUIEventAdapter::KEYDOWN);
+		return true;
+
 	}
-	default:
-		return false;
-	}
+
+	return false;
 }
 
 int main(int, char**)
@@ -192,7 +239,7 @@ int main(int, char**)
 	// set the scene to render
 	mainView->setSceneData(rootTransform);
 
-	mainView->addEventHandler(new KeyboardEventHandler);
+	mainView->addEventHandler(new KeyboardEventHandler(&compositeViewer));
 
 
 	// установить манипулятор камеры
@@ -209,12 +256,13 @@ int main(int, char**)
 	mainView->setUpViewInWindow(100, 100, 800, 600);
 
 	compositeViewer.addView(mainView);
+	compositeViewer.setControlledManipulator(cameraManipulator, mainView->getCamera());
 	//@} MainView
 
 
 	//-------------------
 	//@{ DebugView
-	DebugViewer* debugView = new DebugViewer;
+	osgViewer::Viewer* debugView = new osgViewer::Viewer;
 
 	debugView->setSceneData(rootTransform);
 

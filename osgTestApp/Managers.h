@@ -116,7 +116,7 @@ private:
 // не наследуетс€ от C3DBaseManager, поскольку в данном примере пока нет необходимости.
 //
 
-class MaterialManager
+class MaterialManager : public C3DBaseManager
 {
 public:
 
@@ -126,6 +126,12 @@ public:
 	static MaterialManager&		Instance();
 
 	C3DMaterial*	getRandomMaterial();
+
+	// «апросить загрузку ресурса
+	virtual void RequestLoadResource(C3DBaseResource*);
+
+	// запросить выгрузку ресурса
+	virtual void RequestUnloadResource(C3DBaseResource*);
 
 private:
 
