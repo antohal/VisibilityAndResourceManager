@@ -1,6 +1,7 @@
 #include "3DEngineInterface.h"
 
 #include "Managers.h"
+#include "DebugDraw.h"
 
 #include <osgViewer/Viewer>
 #include <osgGA/TrackballManipulator>
@@ -39,6 +40,8 @@ namespace
 	CVisibilityManager*	g_visibilityManager = nullptr;
 	CResourceManager*	g_resourceManager = nullptr;
 	osgViewer::Viewer*	g_mainViewer = nullptr;
+
+	DebugViewComponent*	g_debugView = nullptr;
 };
 
 class MyCompositeViewer : public osgViewer::CompositeViewer
@@ -214,6 +217,12 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAc
 	return false;
 }
 
+void createCameraDebugLines()
+{
+	g_debugView->DrawRelPoint(osg::Vec3(0, 0, 0), osg::Vec4(1, 0, 0, 1));
+	g_debugView->DrawRelLine(osg::Vec3(0, 0, 0), osg::Vec3(10, 0, 0));
+}
+
 int main(int, char**)
 {
 	MyCompositeViewer compositeViewer;
@@ -235,6 +244,14 @@ int main(int, char**)
 	osg::ref_ptr<osg::MatrixTransform> rootTransform = new osg::MatrixTransform();
 
 	rootTransform->addChild(ObjectManager::Instance().getOsgRoot());
+
+	g_debugView = new DebugViewComponent();
+
+	rootTransform->addChild(g_debugView->GetGlobalGeode());
+
+	mainView->getCamera()->addChild(g_debugView->GetLocalGeode());
+
+	createCameraDebugLines();
 
 	// set the scene to render
 	mainView->setSceneData(rootTransform);
@@ -283,6 +300,8 @@ int main(int, char**)
 	compositeViewer.run();
 
 	destroyVisibilityAndResourceManagers();
+
+	delete g_debugView;
 
 	return 0;
 }
