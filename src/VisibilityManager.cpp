@@ -50,6 +50,11 @@ Vector3f ToVec3(const Vector3& v)
 	return Vector3f(v.x, v.y, v.z);
 }
 
+Vector3 FromVec3(const Vector3f& v)
+{
+	return Vector3(v.x, v.y, v.z);
+}
+
 CBoundBox<float> ToBoundBox (const BoundBox& bbox)
 {
 	return CBoundBox<float>(ToVec3(bbox.vMin), ToVec3(bbox.vMax));
@@ -893,7 +898,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		_private->_vecVisibleObjects.push_back(pInternalObject->_pObject);
 
-		pInternalObject->_pObject->SetVisible();
+		pInternalObject->_pObject->SetPotentiallyVisible();
 
 		for (C3DBaseFaceSet* pFaceSet : pInternalObject->_vecFaceSets)
 		{
@@ -933,7 +938,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		_private->_vecVisibleObjects.push_back(*itVisObj);
 
-		internalObject._pObject->SetVisible();
+		internalObject._pObject->SetPotentiallyVisible();
 
 		for (C3DBaseFaceSet* pFaceSet : internalObject._vecFaceSets)
 		{
@@ -980,6 +985,25 @@ float CVisibilityManager::GetTexturePriority(C3DBaseTexture* texture) const
 
 	return _private->_amapTexturePriority[texture->GetTextureType()][texture];
 }
+
+// Получить текущие параметры камеры
+void CVisibilityManager::GetCameraParameters(CameraDesc& out_parameters) const
+{
+	out_parameters.vPos = FromVec3(_private->_Camera.GetPos());
+	out_parameters.vDir = FromVec3(_private->_Camera.GetDir());
+	out_parameters.vUp = FromVec3(_private->_Camera.GetUp());
+
+	out_parameters.horizontalFovTan = _private->_Camera.GetHorizontalHalfFovTan();
+	out_parameters.verticalFovTan = _private->_Camera.GetVerticalHalfFovTan();
+}
+
+// Получить набор объектов из ориентированного бокса
+void CVisibilityManager::GetObjectsFromOrientedBox(const OrientedBox& box, std::vector<C3DBaseObject*>& out_objects) const
+{
+
+
+}
+
 
 float CVisibilityManager::GetNearClipPlane () const
 {

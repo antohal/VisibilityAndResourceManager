@@ -26,6 +26,7 @@ struct CResourceManager::SResourceManagerPrivate
 	C3DBaseObjectManager*		_objectManager = nullptr;
 
 	float						_invisibleUnloadTime = 10.f;
+	float						_boundBoxExtensionSpeedMultiplier = 10.f;
 
 	vector<CVisibilityManager*>		_visibilityManagers;
 	map<C3DBaseObject*, float>		_objectVisibilityTimers;
@@ -77,7 +78,7 @@ struct CResourceManager::SResourceManagerPrivate
 	}
 };
 
-void C3DBaseObject::SetVisible()
+void C3DBaseObject::SetPotentiallyVisible()
 {
 	if (!GetResourceManager())
 		return;
@@ -114,6 +115,11 @@ void CResourceManager::Init(C3DBaseObjectManager* objectManager)
 void CResourceManager::SetInvisibleUnloadTime(float time)
 {
 	_private->_invisibleUnloadTime = time;
+}
+
+void CResourceManager::SetSpeedPotentialVisibilityMultiplier(float speedMultiplier)
+{
+	_private->_boundBoxExtensionSpeedMultiplier = speedMultiplier;
 }
 
 void CResourceManager::AddVisibilityManager(CVisibilityManager* visibilityManager)

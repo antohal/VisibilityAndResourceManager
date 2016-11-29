@@ -40,8 +40,67 @@ namespace
 	CVisibilityManager*	g_visibilityManager = nullptr;
 	CResourceManager*	g_resourceManager = nullptr;
 	osgViewer::Viewer*	g_mainViewer = nullptr;
+};
 
-	DebugViewComponent*	g_debugView = nullptr;
+
+class CameraDebugDraw
+{
+public:
+
+	CameraDebugDraw()
+	{
+		createReferenceNode();
+		buildGeometry();
+	}
+
+	osg::Node*	getRefNode() 
+	{
+		return _referenceNode;
+	}
+
+	void setPosition(const osg::Vec3& pos) 
+	{
+		_cameraPos = pos;
+		rebuildVertexArrays();
+		_geo->dirtyDisplayList();
+	}
+
+private:
+
+	void createReferenceNode() 
+	{
+		_referenceNode = new osg::Geode;
+	}
+
+	void rebuildVertexArrays() 
+	{
+		if (!_points.get()) 
+		{
+			_points = new osg::Vec3Array;
+			_points->resize(2);
+		}
+	}
+
+	void buildGeometry()
+	{
+		_geo = new osg::Geometry;
+
+		osg::ref_ptr<osg::Vec4Array> color = new osg::Vec4Array;
+		color->push_back(osg::Vec4(0.0, 0.0, 1.0, 1.0));
+
+		_geo->setVertexArray(_points.get());
+		_geo->setColorArray(color.get());
+		_geo->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
+		_geo->addPrimitiveSet(new osg::DrawArrays(GL_LINES, 0, 2));
+
+		_referenceNode->addDrawable(_geo);
+	}
+
+	osg::ref_ptr<osg::Geode>		_referenceNode;
+	osg::ref_ptr<osg::Vec3Array>	_points;
+	osg::ref_ptr<osg::Geometry>		_geo;
+
+	osg::Vec3						_cameraPos;
 };
 
 class MyCompositeViewer : public osgViewer::CompositeViewer
@@ -219,8 +278,8 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAc
 
 void createCameraDebugLines()
 {
-	g_debugView->DrawRelPoint(osg::Vec3(0, 0, 0), osg::Vec4(1, 0, 0, 1));
-	g_debugView->DrawRelLine(osg::Vec3(0, 0, 0), osg::Vec3(10, 0, 0));
+	g_debugView->DrawAbsPoint(osg::Vec3(0, 0, 0), osg::Vec4(1, 0, 0, 1));
+	g_debugView->DrawAbsLine(osg::Vec3(0, 0, 0), osg::Vec3(100, 0, 0));
 }
 
 int main(int, char**)

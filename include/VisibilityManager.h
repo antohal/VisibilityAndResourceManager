@@ -41,6 +41,25 @@ struct VISIBILITYMANAGER_API BoundBox
 	BoundBox (const D3DXVECTOR3& in_vMin, const D3DXVECTOR3& in_vMax);
 };
 
+struct CameraDesc
+{
+	Vector3 vPos;
+	Vector3 vDir;
+	Vector3 vUp;
+
+	float	verticalFovTan;
+	float	horizontalFovTan;
+};
+
+struct OrientedBox
+{
+	Vector3 vPos;
+	Vector3 vX;
+	Vector3 vY;
+
+	BoundBox boundBox;
+};
+
 class VISIBILITYMANAGER_API CVisibilityManager
 {
 public:
@@ -53,6 +72,7 @@ public:
 
 	float GetNearClipPlane () const;
 	float GetFarClipPlane () const;
+
 
 	void SetViewProjection(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection);
 
@@ -85,6 +105,12 @@ public:
 	// При этом учитывается соотношение сторон экрана.
 	// Если функция возвращает - 2, то текстура невидима.
 	float GetTexturePriority(C3DBaseTexture*) const;
+
+	// Получить текущие параметры камеры
+	void GetCameraParameters(CameraDesc& out_parameters) const;
+
+	// Получить набор объектов из ориентированного бокса
+	void GetObjectsFromOrientedBox(const OrientedBox&, std::vector<C3DBaseObject*>& out_objects) const;
 
 private:
 	struct VisibilityManagerPrivate;

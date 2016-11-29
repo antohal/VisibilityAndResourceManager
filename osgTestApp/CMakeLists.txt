@@ -8,8 +8,6 @@ add_executable(osgTestApp
 	Managers.cpp
 	Resources.h
 	Resources.cpp
-	DebugDraw.h
-	DebugDraw.cpp
 	main.cpp
 )
 

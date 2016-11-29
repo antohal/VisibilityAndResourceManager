@@ -27,6 +27,12 @@ public:
 	// [настроечный параметр, по умолчанию = 25с]
 	void SetInvisibleUnloadTime(float time);
 
+	// Установить множитель скорости перемещения камеры, с учетом которого
+	// баундбокс выборки загружаемых объектов расширяется в сторону движения камеры
+	// (например, при скорости движения 10 м/с, баундбокс расширяется на 100 м)
+	// [настроечный параметр, по умолчанию = 10]
+	void SetSpeedPotentialVisibilityMultiplier(float speedMultiplier);
+
 	// добавить VisibilityManager в обработку 
 	// [вызывается во время инициализации]
 	void AddVisibilityManager(CVisibilityManager*);

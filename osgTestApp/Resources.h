@@ -59,7 +59,7 @@ public:
 	virtual void	GetMeshes(std::vector<C3DBaseMesh*>& out_vecMeshes) const;
 
 	// функция вызывается, когда объект становится видимым
-	virtual void	SetVisible();
+	virtual void	SetPotentiallyVisible();
 
 	//@} C3DBaseObject
 

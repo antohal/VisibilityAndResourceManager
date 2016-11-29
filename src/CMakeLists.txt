@@ -23,6 +23,17 @@ set(STLStringSrc
 set(InterfaceHeaders
 	${PROJECT_SOURCE_DIR}/include/3DEngineInterface.h
 	${PROJECT_SOURCE_DIR}/include/ResourceManager.h
+
+	${PROJECT_SOURCE_DIR}/include/C3DBaseFaceSet.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseManager.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseMaterial.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseMesh.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseObject.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseObjectManager.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseResource.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseTechnique.h
+	${PROJECT_SOURCE_DIR}/include/C3DBaseTexture.h
+
 	${PROJECT_SOURCE_DIR}/include/VisibilityManager.h)
 	
 source_group(Containers FILES ${ContainersSrc})
@@ -63,6 +74,7 @@ install(TARGETS VisibilityManager RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin
 
 add_library(ResourceManager SHARED
 	${InterfaceHeaders}
+	${GeometrySrc}
 	ResourceManager.cpp)
 	
 target_link_libraries(ResourceManager 

@@ -119,7 +119,7 @@ void C3DObject::setMeshes(const std::vector<C3DMesh*>& meshes)
 	}
 }
 
-void C3DObject::SetVisible()
+void C3DObject::SetPotentiallyVisible()
 {
 	if (_debugBoundBox)
 	{
@@ -128,7 +128,7 @@ void C3DObject::SetVisible()
 	}
 
 	// этот обработчик нужно вызвать обязательно.
-	C3DBaseObject::SetVisible();
+	C3DBaseObject::SetPotentiallyVisible();
 }
 
 //
