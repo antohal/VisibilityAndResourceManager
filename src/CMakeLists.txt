@@ -69,7 +69,7 @@ add_library(VisibilityManager SHARED
 target_link_libraries(VisibilityManager
 	${DirectX_D3DX10_LIBRARY})
 
-install(TARGETS VisibilityManager RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin
+install(TARGETS VisibilityManager RUNTIME DESTINATION bin
 	ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(ResourceManager SHARED
@@ -80,5 +80,5 @@ add_library(ResourceManager SHARED
 target_link_libraries(ResourceManager 
 	VisibilityManager)
 
-install(TARGETS ResourceManager RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin
+install(TARGETS ResourceManager RUNTIME DESTINATION bin
 	ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)

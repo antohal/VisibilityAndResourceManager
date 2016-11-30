@@ -1,7 +1,6 @@
 #include "3DEngineInterface.h"
 
 #include "Managers.h"
-#include "DebugDraw.h"
 
 #include <osgViewer/Viewer>
 #include <osgGA/TrackballManipulator>
@@ -83,6 +82,8 @@ private:
 
 	void buildGeometry()
 	{
+		rebuildVertexArrays();
+
 		_geo = new osg::Geometry;
 
 		osg::ref_ptr<osg::Vec4Array> color = new osg::Vec4Array;
@@ -276,12 +277,6 @@ bool KeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAc
 	return false;
 }
 
-void createCameraDebugLines()
-{
-	g_debugView->DrawAbsPoint(osg::Vec3(0, 0, 0), osg::Vec4(1, 0, 0, 1));
-	g_debugView->DrawAbsLine(osg::Vec3(0, 0, 0), osg::Vec3(100, 0, 0));
-}
-
 int main(int, char**)
 {
 	MyCompositeViewer compositeViewer;
@@ -304,13 +299,6 @@ int main(int, char**)
 
 	rootTransform->addChild(ObjectManager::Instance().getOsgRoot());
 
-	g_debugView = new DebugViewComponent();
-
-	rootTransform->addChild(g_debugView->GetGlobalGeode());
-
-	mainView->getCamera()->addChild(g_debugView->GetLocalGeode());
-
-	createCameraDebugLines();
 
 	// set the scene to render
 	mainView->setSceneData(rootTransform);
@@ -359,8 +347,6 @@ int main(int, char**)
 	compositeViewer.run();
 
 	destroyVisibilityAndResourceManagers();
-
-	delete g_debugView;
 
 	return 0;
 }
