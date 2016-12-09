@@ -122,6 +122,11 @@ void CResourceManager::SetSpeedPotentialVisibilityMultiplier(float speedMultipli
 	_private->_boundBoxExtensionSpeedMultiplier = speedMultiplier;
 }
 
+void CResourceManager::SetRotationRatePotentialVisibilityMultiplier(float rateMultiplier)
+{
+
+}
+
 void CResourceManager::AddVisibilityManager(CVisibilityManager* visibilityManager)
 {
 	_private->_visibilityManagers.push_back(visibilityManager);
