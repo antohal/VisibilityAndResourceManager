@@ -43,9 +43,6 @@ public:
 		Create(nullptr, bounds, _T("D3DSample Window"), WS_OVERLAPPEDWINDOW);
 
 		ShowWindow(SW_SHOW);
-
-		// A traditional text. For a traditional time.
-		//m_text = _T("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 	}
 
 	~MainWindow()
@@ -53,7 +50,8 @@ public:
 		delete m_pTextRenderer;
 	}
 
-	bool ProcessMessages() {
+	bool ProcessMessages() 
+	{
 		MSG msg;
 
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) != 0) {
@@ -67,7 +65,8 @@ public:
 		return true;
 	}
 
-	void Present() {
+	void Present() 
+	{
 		static float clearColor[] = { 0, 0, 0, 1 };
 
 		{
@@ -86,10 +85,12 @@ public:
 			// Draw our triangle first
 			m_deviceContext->Draw(3, 0);
 
-			// Then render our text over it.
-			/*m_d2dRenderTarget->BeginDraw();
-			m_d2dRenderTarget->DrawText(m_text.c_str(), m_text.length(), m_dwFormat, D2D1::RectF(0, 0, 512, 512), m_d2dSolidBrush);
-			m_d2dRenderTarget->EndDraw();*/
+			static int frameCounter = 0;
+			frameCounter++;
+
+			m_pParamsTextBlock->SetParameterValue(m_uiFrameCounterParam, frameCounter);
+
+			m_pParamsTextBlock->SetParameterValue(m_uiFrameCounterParam2, frameCounter % 10 + 0.456f);
 
 			m_pTextRenderer->Render();
 
@@ -250,17 +251,12 @@ private:
 			return result;
 		}
 
-		/*result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&m_dwFactory));
-		if (FAILED(result)) {
-			std::cout << "Failed to create DirectWrite Factory." << std::endl;
-			std::cout << "Error was: " << std::hex << result << std::endl;
-			return result;
-		}*/
 
 		return S_OK;
 	}
 
-	HRESULT CreateBackBufferTarget() {
+	HRESULT CreateBackBufferTarget() 
+	{
 		CComPtr<ID3D11Texture2D> backBuffer;
 
 		// Get a pointer to our back buffer texture.
@@ -282,64 +278,13 @@ private:
 		return S_OK;
 	}
 
-	//HRESULT CreateD2DResources() {
-	//	CComPtr<IDXGISurface> backBufferSurface;
-
-	//	// Get a DXGI surface for D2D use.
-	//	auto result = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
-	//	if (FAILED(result)) {
-	//		std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
-	//		std::cout << "Error was: " << std::hex << result << std::endl;
-	//		return result;
-	//	}
-
-	//	// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
-	//	// can't use proper DPI on most monitors in Windows yet.
-	//	float dpiX;
-	//	float dpiY;
-	//	m_d2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-	//	// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
-	//	auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
-
-	//	// Wraps up our DXGI surface in a D2D render target.
-	//	result = m_d2dFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &m_d2dRenderTarget);
-	//	if (FAILED(result)) {
-	//		std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
-	//		std::cout << "Error was: " << std::hex << result << std::endl;
-	//		return result;
-	//	}
-
-	//	// This is the brush we will be using to render our text, it does not need to be a solid color,
-	//	// we could use any brush we wanted. In this case we chose a nice solid red brush.
-	//	result = m_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LimeGreen), &m_d2dSolidBrush);
-	//	if (FAILED(result)) {
-	//		std::cout << "Failed to create solid color brush." << std::endl;
-	//		std::cout << "Error was: " << std::hex << result << std::endl;
-	//		return result;
-	//	}
-
-	//	return S_OK;
-	//}
-
-	/*HRESULT CreateDWriteResources() {
-		auto result = m_dwFactory->CreateTextFormat(L"Consolas", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.0f, L"", &m_dwFormat);
-		if (FAILED(result)) {
-			std::cout << "Failed to create DirectWrite text format." << std::endl;
-			std::cout << "Error was: " << std::hex << result << std::endl;
-			return result;
-		}
-
-		return S_OK;
-	}*/
-
 private:
-	LRESULT OnSize(unsigned msg, WPARAM wParam, LPARAM lParam, BOOL & bHandled) {
+
+	LRESULT OnSize(unsigned msg, WPARAM wParam, LPARAM lParam, BOOL & bHandled) 
+	{
 		// We need to release everything that may be holding a reference to the back buffer.
 		// This includes D2D interfaces as well, as they hold a reference to the DXGI surface.
 		m_backBufferRTV.Release();
-		//m_d2dRenderTarget.Release();
-		//m_d2dSolidBrush.Release();
 
 		m_pTextRenderer->ReleaseResources();
 
@@ -361,10 +306,6 @@ private:
 		if (FAILED(CreateBackBufferTarget()))
 			return -1;
 
-		/*if (FAILED(CreateD2DResources())) {
-			return -1;
-		}*/
-
 		m_pTextRenderer->CreateResources();
 
 		D3D11_VIEWPORT viewport = {
@@ -376,7 +317,8 @@ private:
 		return 0;
 	}
 
-	LRESULT OnCreate(unsigned msg, WPARAM wParam, LPARAM lParam, BOOL & bHandled) {
+	LRESULT OnCreate(unsigned msg, WPARAM wParam, LPARAM lParam, BOOL & bHandled) 
+	{
 		if (FAILED(CreateD3DResources()))
 			return -1;
 
@@ -386,26 +328,38 @@ private:
 		if (FAILED(CreateD3DVertexAndShaders()))
 			return -1;
 
-		/*if (FAILED(CreateD2DResources()))
-			return -1;
-
-		if (FAILED(CreateDWriteResources()))
-			return -1;*/
-
 
 		m_pTextRenderer->Init(m_d2dFactory, m_swapChain);
 
 
 		CDirect2DTextBlock* pTextBlock = m_pTextRenderer->CreateTextBlock();
 
-		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(0, 0, 512, 512), L"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
+		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(0, 0, 512, 512), "Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
+		pTextBlock->AddTextLine("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
-		pTextBlock->AddTextLine(L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+		pTextBlock->AddTextLine(L"Длинный текст автоматически форматируется под заданные размеры прямоугольника, с автоматическим переносом слов");
+		pTextBlock->AddTextLine(L"Поддерживаются разные шрифты, цвета, размеры с плавающей точкой, а также полужирный шрифт");
+
+
+		m_pParamsTextBlock = m_pTextRenderer->CreateTextBlock();
+
+		m_pParamsTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(412, 412, 1024, 1024), "Arial", DWRITE_FONT_WEIGHT_BOLD, 12.f);
+
+		m_pParamsTextBlock->AddTextLine(L"Пример использования параметров");
+		m_uiFrameCounterParam = m_pParamsTextBlock->AddParameter(L"Параметр 1");
+		m_pParamsTextBlock->AddTextLine(L"Их можно добавлять вперемежку с текстом");
+		m_uiFrameCounterParam2 = m_pParamsTextBlock->AddParameter(L"Параметр 2");
+		m_pParamsTextBlock->AddTextLine(L"Поддерживается как Unicode, так и Ansi");
 
 		return 0;
 	}
 
 private:
+
+	CDirect2DTextBlock*				m_pParamsTextBlock = nullptr;
+	UINT							m_uiFrameCounterParam = -1;
+	UINT							m_uiFrameCounterParam2 = -1;
+
 	CComPtr<IDXGISwapChain>         m_swapChain;
 
 	CComPtr<ID3D11Device>           m_device;
@@ -420,15 +374,6 @@ private:
 	CComPtr<ID2D1Factory>           m_d2dFactory;
 
 	CDirect2DTextRenderer*			m_pTextRenderer = nullptr;
-
-	//CComPtr<ID2D1RenderTarget>      m_d2dRenderTarget;
-	//CComPtr<ID2D1SolidColorBrush>   m_d2dSolidBrush;
-
-	//CComPtr<IDWriteFactory>         m_dwFactory;
-	//CComPtr<IDWriteTextLayout>      m_dwLayout;
-	//CComPtr<IDWriteTextFormat>      m_dwFormat;
-
-	//tstring                         m_text;
 };
 
 int CALLBACK WinMain(
