@@ -8,24 +8,38 @@
 
 #include <atlbase.h>
 
+
+#ifdef D2DTEXTRENDER_EXPORTS
+#define D2DTEXTRENDER_INTERFACE __declspec(dllexport)
+#else
+#define D2DTEXTRENDER_INTERFACE __declspec(dllimport)
+#endif
+
 class CDirect2DTextBlock;
 
-class CDirect2DTextRenderer
+class D2DTEXTRENDER_INTERFACE CDirect2DTextRenderer
 {
 public:
 
 	CDirect2DTextRenderer();
 	~CDirect2DTextRenderer();
 
+	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами
 	void Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain);
-	
-	void Render();
 
+	// Освободить ресурсы - вызывается в случае освобождения SwapChain (например при изменении размоеров окна)
 	void ReleaseResources();
+
+	// Создать ресурсы - нужно обязательно вызвать после создания SwapChain
 	void CreateResources();
 
+	// Функция отрисовки - необходимо вызывать перед SwapChain->Present
+	void Render();
 
+	// Создать новый текстовый блок - возвращает указатель на новый текстовый блок, с которым можно производить операции, описанные в классе ниже
 	CDirect2DTextBlock*	CreateTextBlock();
+
+	// Удалить текстовый блок
 	void DeleteTextBlock(CDirect2DTextBlock* in_pTextBlock);
 
 protected:
@@ -47,24 +61,32 @@ private:
 };
 
 
-class CDirect2DTextBlock
+class D2DTEXTRENDER_INTERFACE CDirect2DTextBlock
 {
 public:
 
+	// Инициализировать текстовый блок. Эту функцию нужно вызывать обязательно, после создания текстового блока
 	void Init(const D2D1_COLOR_F& in_Color, const D2D1_RECT_F& in_rcPlacement, const std::wstring& in_wsFontName, DWRITE_FONT_WEIGHT in_FontWeight, float in_fFontSize);
 
+	// Изменить положение текстового блока
 	void ChangePlacement(const D2D1_RECT_F& in_rcPlacement);
 
+	// Добавить простую текстовую строку
 	void AddTextLine(const std::wstring& in_wsTextLine);
 
+	// Добавить параметр (возвращает хэндл параметра, по которому можно изменять значение)
 	UINT AddParameter(const std::wstring& in_wsParamName);
 
+	// Установить значение параметра
 	void SetParameterValue(UINT in_paramHandle, float in_fParameterValue);
 
+	// Очистить текст - удалить все добавленные строки и параметры
 	void ClearText();
 
 protected:
 	
+	// Создавать и удалять текстовые блоки может только рендерер
+
 	CDirect2DTextBlock(CDirect2DTextRenderer* in_pOwner);
 	~CDirect2DTextBlock();
 

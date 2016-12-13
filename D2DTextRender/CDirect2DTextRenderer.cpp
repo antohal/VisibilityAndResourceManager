@@ -217,7 +217,7 @@ void CDirect2DTextBlock::Render()
 		return;
 	}
 
-	m_pOwner->GetRenderTarget()->DrawText(m_RenderedText.c_str(), m_RenderedText.length(), m_ptrTextFormat, m_Rect, m_ptrSolidBrush);
+	m_pOwner->GetRenderTarget()->DrawText(m_RenderedText.c_str(), static_cast<UINT32>(m_RenderedText.length()), m_ptrTextFormat, m_Rect, m_ptrSolidBrush);
 }
 
 void CDirect2DTextBlock::CreateResources()
