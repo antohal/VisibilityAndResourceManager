@@ -42,6 +42,9 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 
 	void Render()
 	{
+		if (!_ptrRenderTarget)
+			return;
+
 		_ptrRenderTarget->BeginDraw();
 
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
@@ -71,33 +74,72 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 			return;
 		}
 
-		CComPtr<IDXGISurface> backBufferSurface;
+		HRESULT result = E_FAIL;
 
 		// Get a DXGI surface for D2D use.
-		auto result = _ptrD2DSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
-		if (FAILED(result))
+		if (_ptrD2DSwapChain)
 		{
-			//std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
-			//std::cout << "Error was: " << std::hex << result << std::endl;
-			return;
+			CComPtr<IDXGISurface> backBufferSurface;
+
+			result = _ptrD2DSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
+
+
+			if (FAILED(result))
+			{
+				//std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
+				//std::cout << "Error was: " << std::hex << result << std::endl;
+				return;
+			}
+
+			// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
+			// can't use proper DPI on most monitors in Windows yet.
+			float dpiX;
+			float dpiY;
+			_ptrD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+			// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
+			auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
+
+			// Wraps up our DXGI surface in a D2D render target.
+			result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
+			if (FAILED(result))
+			{
+				std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
+				std::cout << "Error was: " << std::hex << result << std::endl;
+				return;
+			}
 		}
-
-		// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
-		// can't use proper DPI on most monitors in Windows yet.
-		float dpiX;
-		float dpiY;
-		_ptrD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-		// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
-		auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
-
-		// Wraps up our DXGI surface in a D2D render target.
-		result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
-		if (FAILED(result))
+		else
 		{
-			std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
-			std::cout << "Error was: " << std::hex << result << std::endl;
-			return;
+			CComPtr<IDXGISurface1> backBufferSurface;
+
+			result = _ptrD2DSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
+
+
+			if (FAILED(result))
+			{
+				//std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
+				//std::cout << "Error was: " << std::hex << result << std::endl;
+				return;
+			}
+
+			// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
+			// can't use proper DPI on most monitors in Windows yet.
+			float dpiX;
+			float dpiY;
+			_ptrD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+
+			// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
+			auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
+
+			// Wraps up our DXGI surface in a D2D render target.
+			result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
+			if (FAILED(result))
+			{
+				std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
+				std::cout << "Error was: " << std::hex << result << std::endl;
+				return;
+			}
 		}
 
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
@@ -111,6 +153,7 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 	CComPtr<ID2D1Factory>			_ptrD2DFactory;
 	CComPtr<IDWriteFactory>			_ptrDwriteFactory;
 	CComPtr<IDXGISwapChain>			_ptrD2DSwapChain;
+	CComPtr<IDXGISwapChain1>		_ptrD2DSwapChain1;
 
 	CComPtr<ID2D1RenderTarget>		_ptrRenderTarget;
 };
@@ -137,8 +180,20 @@ void CDirect2DTextRenderer::Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* i
 		//std::cout << "Error was: " << std::hex << result << std::endl;
 		return;
 	}
+}
 
-	CreateResources();
+void CDirect2DTextRenderer::Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain)
+{
+	_private->_ptrD2DFactory = in_pD2DFactory;
+	_private->_ptrD2DSwapChain1 = in_pDXGISwapChain;
+
+	auto result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&_private->_ptrDwriteFactory));
+	if (FAILED(result))
+	{
+		//std::cout << "Failed to create DirectWrite Factory." << std::endl;
+		//std::cout << "Error was: " << std::hex << result << std::endl;
+		return;
+	}
 }
 
 void CDirect2DTextRenderer::Render()
