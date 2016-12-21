@@ -25,7 +25,7 @@ public:
 	void Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain);
 
 	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами (версия для IDXGISwapChain1)
-	void Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain);
+	void InitStereo(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain);
 
 	// Создать ресурсы - нужно обязательно вызвать после создания SwapChain
 	void CreateResources();

@@ -42,9 +42,6 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 
 	void Render()
 	{
-		if (!_ptrRenderTarget)
-			return;
-
 		_ptrRenderTarget->BeginDraw();
 
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
@@ -113,7 +110,7 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 		{
 			CComPtr<IDXGISurface1> backBufferSurface;
 
-			result = _ptrD2DSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
+			result = _ptrD2DSwapChain1->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
 
 
 			if (FAILED(result))
@@ -136,8 +133,8 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 			result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
 			if (FAILED(result))
 			{
-				std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
-				std::cout << "Error was: " << std::hex << result << std::endl;
+				//std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
+				//std::cout << "Error was: " << std::hex << result << std::endl;
 				return;
 			}
 		}
@@ -148,14 +145,23 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 		}
 	}
 
+	bool							_stereo = false;
+
 	std::set<CDirect2DTextBlock*>	_setTextBlocks;
 
 	CComPtr<ID2D1Factory>			_ptrD2DFactory;
 	CComPtr<IDWriteFactory>			_ptrDwriteFactory;
 	CComPtr<IDXGISwapChain>			_ptrD2DSwapChain;
-	CComPtr<IDXGISwapChain1>		_ptrD2DSwapChain1;
 
 	CComPtr<ID2D1RenderTarget>		_ptrRenderTarget;
+
+
+	//@{ for stereo
+
+	CComPtr<IDXGISwapChain1>		_ptrD2DSwapChain1;
+	
+
+	//@}
 };
 
 CDirect2DTextRenderer::CDirect2DTextRenderer()
@@ -182,10 +188,12 @@ void CDirect2DTextRenderer::Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* i
 	}
 }
 
-void CDirect2DTextRenderer::Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain)
+void CDirect2DTextRenderer::InitStereo(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain)
 {
 	_private->_ptrD2DFactory = in_pD2DFactory;
+	
 	_private->_ptrD2DSwapChain1 = in_pDXGISwapChain;
+	_private->_stereo = true;
 
 	auto result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&_private->_ptrDwriteFactory));
 	if (FAILED(result))
@@ -415,8 +423,6 @@ void CDirect2DTextBlock::Init(const D2D1_COLOR_F& in_Color, const D2D1_RECT_F& i
 	_private->_fFontSize = in_fFontSize;
 
 	_private->_bInited = true;
-
-	_private->CreateResources();
 }
 
 void CDirect2DTextBlock::ChangePlacement(const D2D1_RECT_F& in_rcPlacement)
