@@ -3,6 +3,9 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
+#include <dxgi.h>
+#include <dxgi1_2.h>
+
 #ifdef D2DTEXTRENDER_EXPORTS
 #define D2DTEXTRENDER_INTERFACE __declspec(dllexport)
 #else
@@ -20,6 +23,9 @@ public:
 
 	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами
 	void Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain);
+
+	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами (версия для IDXGISwapChain1)
+	void InitStereo(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain);
 
 	// Создать ресурсы - нужно обязательно вызвать после создания SwapChain
 	void CreateResources();
