@@ -1,4 +1,8 @@
 #include "CDirect2DTextRenderer.h"
+#include "IAbstractTextRenderer.h"
+
+#include "MonoTextRenderer.h"
+#include "StereoTextRenderer.h"
 
 #include <iostream>
 
@@ -30,31 +34,30 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 		_setTextBlocks.clear();
 	}
 
-	ID2D1RenderTarget*	GetRenderTarget() const
-	{
-		return _ptrRenderTarget;
-	}
-
-	IDWriteFactory*		GetDWriteFactory() const
-	{
-		return _ptrDwriteFactory;
-	}
-
 	void Render()
 	{
-		_ptrRenderTarget->BeginDraw();
+		if (!_textRenderer)
+			return;
 
-		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
+		unsigned int targetsCount = _textRenderer->GetTargetsCount();
+
+		for (unsigned int iTarget = 0; iTarget < targetsCount; iTarget++)
 		{
-			pTextBlock->Render();
-		}
+			_textRenderer->BeginDraw(iTarget);
 
-		_ptrRenderTarget->EndDraw();
+			for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
+			{
+				pTextBlock->Render();
+			}
+
+			_textRenderer->EndDraw(iTarget);
+		}
 	}
 
 	void ReleaseResources()
 	{
-		_ptrRenderTarget.Release();
+		if (_textRenderer)
+			_textRenderer->ReleaseResources();
 		
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
 		{
@@ -64,80 +67,8 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 
 	void CreateResources()
 	{
-		if (!_ptrD2DFactory)
-		{
-			//TODO: log error
-
-			return;
-		}
-
-		HRESULT result = E_FAIL;
-
-		// Get a DXGI surface for D2D use.
-		if (_ptrD2DSwapChain)
-		{
-			CComPtr<IDXGISurface> backBufferSurface;
-
-			result = _ptrD2DSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
-
-
-			if (FAILED(result))
-			{
-				//std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
-				//std::cout << "Error was: " << std::hex << result << std::endl;
-				return;
-			}
-
-			// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
-			// can't use proper DPI on most monitors in Windows yet.
-			float dpiX;
-			float dpiY;
-			_ptrD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-			// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
-			auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
-
-			// Wraps up our DXGI surface in a D2D render target.
-			result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
-			if (FAILED(result))
-			{
-				std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
-				std::cout << "Error was: " << std::hex << result << std::endl;
-				return;
-			}
-		}
-		else
-		{
-			CComPtr<IDXGISurface1> backBufferSurface;
-
-			result = _ptrD2DSwapChain1->GetBuffer(0, IID_PPV_ARGS(&backBufferSurface));
-
-
-			if (FAILED(result))
-			{
-				//std::cout << "Failed to get DXGI surface for back buffer." << std::endl;
-				//std::cout << "Error was: " << std::hex << result << std::endl;
-				return;
-			}
-
-			// Proper DPI support is very important. Most applications do stupid things like hard coding this, which is why you,
-			// can't use proper DPI on most monitors in Windows yet.
-			float dpiX;
-			float dpiY;
-			_ptrD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
-
-			// DXGI_FORMAT_UNKNOWN will cause it to use the same format as the back buffer (R8G8B8A8_UNORM)
-			auto d2dRTProps = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
-
-			// Wraps up our DXGI surface in a D2D render target.
-			result = _ptrD2DFactory->CreateDxgiSurfaceRenderTarget(backBufferSurface, &d2dRTProps, &_ptrRenderTarget);
-			if (FAILED(result))
-			{
-				//std::cout << "Failed to create D2D DXGI Render Target." << std::endl;
-				//std::cout << "Error was: " << std::hex << result << std::endl;
-				return;
-			}
-		}
+		if (_textRenderer)
+			_textRenderer->CreateResources();
 
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
 		{
@@ -145,23 +76,14 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 		}
 	}
 
-	bool							_stereo = false;
+	IAbstractTextRenderer*			GetAbstractTextRenderer() const
+	{
+		return _textRenderer;
+	}
 
 	std::set<CDirect2DTextBlock*>	_setTextBlocks;
 
-	CComPtr<ID2D1Factory>			_ptrD2DFactory;
-	CComPtr<IDWriteFactory>			_ptrDwriteFactory;
-	CComPtr<IDXGISwapChain>			_ptrD2DSwapChain;
-
-	CComPtr<ID2D1RenderTarget>		_ptrRenderTarget;
-
-
-	//@{ for stereo
-
-	CComPtr<IDXGISwapChain1>		_ptrD2DSwapChain1;
-	
-
-	//@}
+	IAbstractTextRenderer*			_textRenderer = nullptr;
 };
 
 CDirect2DTextRenderer::CDirect2DTextRenderer()
@@ -171,37 +93,20 @@ CDirect2DTextRenderer::CDirect2DTextRenderer()
 
 CDirect2DTextRenderer::~CDirect2DTextRenderer()
 {
+	if (_private->_textRenderer)
+		delete _private->_textRenderer;
+
 	delete _private;
 }
 
-void CDirect2DTextRenderer::Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain)
+void CDirect2DTextRenderer::InitMono(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain)
 {
-	_private->_ptrD2DFactory = in_pD2DFactory;
-	_private->_ptrD2DSwapChain = in_pDXGISwapChain;
-
-	auto result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&_private->_ptrDwriteFactory));
-	if (FAILED(result)) 
-	{
-		//std::cout << "Failed to create DirectWrite Factory." << std::endl;
-		//std::cout << "Error was: " << std::hex << result << std::endl;
-		return;
-	}
+	_private->_textRenderer = new CMonoTextRenderer(in_pD2DFactory, in_pDXGISwapChain);
 }
 
-void CDirect2DTextRenderer::InitStereo(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain)
+void CDirect2DTextRenderer::InitStereo(ID2D1Factory2* in_d2dFactory, ID2D1Device1* in_d2dDevice, ID2D1DeviceContext1* in_d2dContext, IDXGISwapChain1* in_dxgiSwapChain)
 {
-	_private->_ptrD2DFactory = in_pD2DFactory;
-	
-	_private->_ptrD2DSwapChain1 = in_pDXGISwapChain;
-	_private->_stereo = true;
-
-	auto result = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&_private->_ptrDwriteFactory));
-	if (FAILED(result))
-	{
-		//std::cout << "Failed to create DirectWrite Factory." << std::endl;
-		//std::cout << "Error was: " << std::hex << result << std::endl;
-		return;
-	}
+	_private->_textRenderer = new CStereoTextRenderer(in_d2dFactory, in_d2dDevice, in_d2dContext, in_dxgiSwapChain);
 }
 
 void CDirect2DTextRenderer::Render()
@@ -249,9 +154,9 @@ struct CDirect2DTextBlock::TextBlockPrivate
 {
 	void Render()
 	{
-		if (!_pOwner->_private->GetRenderTarget() || !_pOwner->_private->GetDWriteFactory())
+		if (!_pOwner->_private->GetAbstractTextRenderer())
 		{
-			// TODO: log error here - not inited owner
+			// TODO: log
 			return;
 		}
 
@@ -266,7 +171,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 			return;
 		}
 
-		_pOwner->_private->GetRenderTarget()->DrawText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, _Rect, _ptrSolidBrush);
+		
+		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_Rect, _ptrSolidBrush);
 	}
 
 	void ReleaseResources()
@@ -277,7 +183,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	void CreateResources()
 	{
-		if (!_pOwner->_private->GetRenderTarget() || !_pOwner->_private->GetDWriteFactory())
+		if (!_pOwner->_private->GetAbstractTextRenderer())
 		{
 			// TODO: log error here - not inited owner
 			return;
@@ -288,24 +194,9 @@ struct CDirect2DTextBlock::TextBlockPrivate
 			return;
 		}
 
-		// This is the brush we will be using to render our text, it does not need to be a solid color,
-		// we could use any brush we wanted. In this case we chose a nice solid red brush.
-		auto result = _pOwner->_private->GetRenderTarget()->CreateSolidColorBrush(_Color, &_ptrSolidBrush);
-		if (FAILED(result))
-		{
-			//std::cout << "Failed to create solid color brush." << std::endl;
-			//std::cout << "Error was: " << std::hex << result << std::endl;
-			return;
-		}
-
-
-		result = _pOwner->_private->GetDWriteFactory()->CreateTextFormat(_FontName.c_str(), nullptr, _FontWeight, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, _fFontSize, L"", &_ptrTextFormat);
-		if (FAILED(result))
-		{
-			//std::cout << "Failed to create DirectWrite text format." << std::endl;
-			//std::cout << "Error was: " << std::hex << result << std::endl;
-			return;
-		}
+	
+		_ptrSolidBrush = _pOwner->_private->GetAbstractTextRenderer()->CreateSolidColorBrush(_Color);
+		_ptrTextFormat = _pOwner->_private->GetAbstractTextRenderer()->CreateTextFormat(_FontName.c_str(), nullptr, _FontWeight, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, _fFontSize, L"");
 	}
 
 

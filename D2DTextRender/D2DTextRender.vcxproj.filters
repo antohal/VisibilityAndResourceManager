@@ -18,12 +18,27 @@
     <ClCompile Include="CDirect2DTextRenderer.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="MonoTextRenderer.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoTextRenderer.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CDirect2DTextRenderer.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="string_cast.hpp">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="IAbstractTextRenderer.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="MonoTextRenderer.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="StereoTextRenderer.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

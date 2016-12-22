@@ -148,9 +148,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CDirect2DTextRenderer.cpp" />
+    <ClCompile Include="MonoTextRenderer.cpp" />
+    <ClCompile Include="StereoTextRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CDirect2DTextRenderer.h" />
+    <ClInclude Include="IAbstractTextRenderer.h" />
+    <ClInclude Include="MonoTextRenderer.h" />
+    <ClInclude Include="StereoTextRenderer.h" />
     <ClInclude Include="string_cast.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

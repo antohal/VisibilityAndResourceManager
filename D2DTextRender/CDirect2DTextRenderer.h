@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <d2d1.h>
+#include <d2d1_2.h>
+
 #include <dwrite.h>
 
 #include <dxgi.h>
@@ -22,10 +24,10 @@ public:
 	~CDirect2DTextRenderer();
 
 	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами
-	void Init(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain);
+	void InitMono(ID2D1Factory* in_pD2DFactory, IDXGISwapChain* in_pDXGISwapChain);
 
-	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами (версия для IDXGISwapChain1)
-	void InitStereo(ID2D1Factory* in_pD2DFactory, IDXGISwapChain1* in_pDXGISwapChain);
+	// Функция инициализации - вызывается один раз и перед всеми остальными вызовами (версия для стерео)
+	void InitStereo(ID2D1Factory2* in_d2dFactory, ID2D1Device1* in_d2dDevice, ID2D1DeviceContext1* in_d2dContext, IDXGISwapChain1* in_dxgiSwapChain);
 
 	// Создать ресурсы - нужно обязательно вызвать после создания SwapChain
 	void CreateResources();

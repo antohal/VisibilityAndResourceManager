@@ -329,7 +329,7 @@ private:
 			return -1;
 
 
-		m_pTextRenderer->Init(m_d2dFactory, m_swapChain);
+		m_pTextRenderer->InitMono(m_d2dFactory, m_swapChain);
 
 
 		CDirect2DTextBlock* pTextBlock = m_pTextRenderer->CreateTextBlock();
