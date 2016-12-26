@@ -236,6 +236,18 @@ struct CVisibilityManager::VisibilityManagerPrivate
 	void	SetObjectInternal(C3DBaseObject* in_Object, const BoundBox& in_BBox, float in_fMaxDistance);
 };
 
+// Включить лог в файл [параметр по умолчанию TRUE]
+void CVisibilityManager::EnableLog(bool enable/* = true*/)
+{
+	LogEnable(enable);
+}
+
+// Выключить лог в файл
+void CVisibilityManager::DisableLog()
+{
+	LogEnable(false);
+}
+
 bool CVisibilityManager::VisibilityManagerPrivate::GetTransformedBoundBox (C3DBaseObject* in_pObj, CBoundBox<float>& out_BBox)
 {
 	D3DXVECTOR3 *pvMin, *pvMax;

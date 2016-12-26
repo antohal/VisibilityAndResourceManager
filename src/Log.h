@@ -1,3 +1,6 @@
 #pragma once
 
-void LogMessage (const string&, ...);
+#include <string>
+
+void LogEnable(bool enable = true);
+void LogMessage (const char*, ...);

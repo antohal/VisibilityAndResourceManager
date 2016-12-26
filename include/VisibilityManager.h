@@ -112,6 +112,12 @@ public:
 	// Получить набор объектов из ориентированного бокса
 	void GetObjectsFromOrientedBox(const OrientedBox&, std::vector<C3DBaseObject*>& out_objects) const;
 
+	// Включить лог в файл [параметр по умолчанию TRUE]
+	void EnableLog(bool enable = true);
+
+	// Выключить лог в файл
+	void DisableLog();
+
 private:
 	struct VisibilityManagerPrivate;
 	VisibilityManagerPrivate* _private;

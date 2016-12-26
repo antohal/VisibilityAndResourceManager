@@ -4,17 +4,40 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+static bool g_enabled = true;
+static bool g_inited = false;
 
-void LogMessage (const string& strFmt, ...)
+void LogInit()
 {
+	FILE* fp = fopen("resman.log", "w");
+	fclose(fp);
+}
+
+void LogEnable(bool enable/* = true*/)
+{
+	g_enabled = enable;
+}
+
+void LogMessage (const char* strFmt, ...)
+{
+	if (!g_inited)
+	{
+		LogInit();
+		g_inited = true;
+	}
+
+	if (!g_enabled)
+		return;
+
     va_list ap;
 
-	FILE* fp = fopen("visman.log", "a+");
+	FILE* fp = fopen("resman.log", "a+");
 
-	const char* szFmt = strFmt.c_str();
-    va_start(ap, szFmt);
-	vfprintf(fp, szFmt, ap);
-	printf(szFmt, ap);
+    va_start(ap, strFmt);
+	vfprintf(fp, strFmt, ap);
+	fprintf(fp, "\n");
+	vprintf(strFmt, ap);
+	printf("\n");
     va_end(ap);
 
 	fclose(fp);

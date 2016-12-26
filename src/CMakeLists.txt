@@ -75,6 +75,8 @@ install(TARGETS VisibilityManager RUNTIME DESTINATION bin
 add_library(ResourceManager SHARED
 	${InterfaceHeaders}
 	${GeometrySrc}
+	Log.h
+	Log.cpp
 	ResourceManager.cpp)
 	
 target_link_libraries(ResourceManager 
