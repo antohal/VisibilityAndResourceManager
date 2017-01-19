@@ -321,8 +321,8 @@ void loadTestSceneFile()
 {
 	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/DamagedDowntown/Downtown_Damage_0.obj"));
 	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/medieval_city/Medieval_City.osgb"));
-	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/spheres.3ds"));
-	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/compas.obj"));
+	osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/spheres.3ds"));
+	//osg::Node* sceneRoot = osgDB::readNodeFile(std::string("../data/scenes/compas.obj"));
 	ObjectManager::Instance().generateObjectsFromOsgNode(sceneRoot);
 }
 

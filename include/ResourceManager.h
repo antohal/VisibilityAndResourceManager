@@ -51,8 +51,11 @@ public:
 	// Получить текущий приоритет текстуры при отрисовке
 	float GetTexturePriority(C3DBaseTexture*);
 
-	// Сбросить текущее состояние менеджера ресурсов в файл
-	void DumpToFile(const std::wstring& fileName);
+	// Включить лог в файл [параметр по умолчанию TRUE]
+	void EnableLeg(bool enable = true);
+
+	// Выключить лог в файл
+	void DisableLog();
 
 private:
 
