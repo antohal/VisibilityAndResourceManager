@@ -5,6 +5,7 @@ class C3DBaseObjectManager : public C3DBaseManager
 {
 public:
 
-	// получить список объектов по заданному баунд-боксу
-	virtual void GetObjectList(const D3DXVECTOR3& bboxMin, const D3DXVECTOR3& bboxMax, std::vector<C3DBaseObject*>& out_vecObjects) = 0;
+	// получить список объектов
+	virtual size_t GetObjectsCount() const = 0;
+	virtual C3DBaseObject*	GetObjectByIndex(size_t id) const = 0;
 };

@@ -22,8 +22,9 @@ public:
 
 	//@{ C3DBaseObjectManager
 	
-	virtual void GetObjectList(const D3DXVECTOR3& bboxMin, const D3DXVECTOR3& bboxMax, std::vector<C3DBaseObject*>& out_vecObjects);
-	
+	virtual size_t GetObjectsCount() const ;
+	virtual C3DBaseObject*	GetObjectByIndex(size_t id) const ;
+
 	//@}
 
 	//@{ C3DBaseManager

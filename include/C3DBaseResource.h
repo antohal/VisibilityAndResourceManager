@@ -33,8 +33,9 @@ public:
 	// получить количество ссылок видимых рсурсов на данный ресурс
 	virtual int GetVisibleRefCount() const { return _visibleRefCount; }
 
-	// получить дочерние ресурсы
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const = 0;
+	// получить дочерние ресурсы (Если ресурс известного типа, то переопределять необязательно)
+	virtual size_t GetChildResourceCount() const = 0;
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const = 0;
 
 	// получить указатель на менеджер, управляющий данным ресурсом
 	// может быть NULL. В таком случае, ресурс не является выгружаемым

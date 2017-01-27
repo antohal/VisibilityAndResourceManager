@@ -47,11 +47,13 @@ struct CResourceManager::SResourceManagerPrivate
 		resource->_visibleRefCount++;
 		LogMessage("CResourceManager: resource with type %d incremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
 
-		vector<C3DBaseResource*> vecChildResources;
-		resource->GetChildResources(vecChildResources);
+		//vector<C3DBaseResource*> vecChildResources;
+		//resource->GetChildResources(vecChildResources);
 
-		for (C3DBaseResource* childResource : vecChildResources)
+		//for (C3DBaseResource* childResource : vecChildResources)
+		for (size_t iChildResource = 0; iChildResource < resource->GetChildResourceCount(); iChildResource++)
 		{
+			C3DBaseResource* childResource = resource->GetChildResourceById(iChildResource);
 			incrementVisibilityRefCountRecursive(childResource);
 		}
 	}
@@ -77,11 +79,13 @@ struct CResourceManager::SResourceManagerPrivate
 			}
 		} 
 
-		vector<C3DBaseResource*> vecChildResources;
+		/*vector<C3DBaseResource*> vecChildResources;
 		resource->GetChildResources(vecChildResources);
 
-		for (C3DBaseResource* childResource : vecChildResources)
+		for (C3DBaseResource* childResource : vecChildResources)*/
+		for (size_t iChildResource = 0; iChildResource < resource->GetChildResourceCount(); iChildResource++)
 		{
+			C3DBaseResource* childResource = resource->GetChildResourceById(iChildResource);
 			decrementVisibilityRefCountRecursive(childResource);
 		}
 	}
@@ -102,7 +106,7 @@ void C3DBaseObject::SetPotentiallyVisible()
 
 	GetResourceManager()->_private->_objectVisibilityTimers[this] = GetResourceManager()->_private->_invisibleUnloadTime;
 
-	LogMessage("CResourceManager: object %d is potentially visible", reinterpret_cast<UINT_PTR>(this));
+	//LogMessage("CResourceManager: object %d is potentially visible", reinterpret_cast<UINT_PTR>(this));
 }
 
 

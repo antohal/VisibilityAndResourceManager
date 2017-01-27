@@ -1277,7 +1277,7 @@ bool COkTree::RegisterObject(UINT_PTR in_dwObject, const CBoundBox<float>& in_Bo
 	// set floating point precision
 
 #ifndef WIN64
-	_control87(_PC_53, MCW_PC);
+//	_control87(_PC_53, MCW_PC);
 #endif
 
 	//assert_debug( in_dwObject, L"" );
@@ -1327,7 +1327,7 @@ bool COkTree::UnregisterObject( UINT_PTR in_dwObject, const CBoundBox<float>& in
 {
 	// set floating point precision
 #ifndef WIN64
-	_control87(_PC_53, MCW_PC);
+	//_control87(_PC_53, MCW_PC);
 #endif
 
 	assert_debug( in_dwObject, L"" );
@@ -1416,7 +1416,7 @@ bool COkTree::MoveObject( UINT_PTR in_dwObject, const CBoundBox<float>& in_bbSou
 	// set floating point precision
 
 #ifndef WIN64
-	_control87(_PC_53, MCW_PC);
+	//_control87(_PC_53, MCW_PC);
 #endif
 
 //	assert_debug( in_dwObject, L"" );

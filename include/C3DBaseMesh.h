@@ -1,6 +1,6 @@
 #pragma once
 
-class C3DBaseFaceSet;
+#include "C3DBaseFaceSet.h"
 
 // базовый класс меша
 class C3DBaseMesh : public C3DBaseResource
@@ -11,5 +11,11 @@ public:
 	virtual E3DResourceType	GetType() const { return C3DRESOURCE_MESH; }
 
 	// Получить список Фейс-Сетов, используемых в меше
-	virtual void	GetFaceSets(std::vector<C3DBaseFaceSet*>& out_vecFaceSets) const = 0;
+	//virtual size_t	GetFaceSetsCount() const = 0;
+	//virtual C3DBaseFaceSet*	GetFaceSetById(size_t id) const = 0;
+
+	// Переопределения от C3DBaseResource (их переопределять у пользователя не обязательно)
+	virtual size_t GetChildResourceCount() const override final { return 0; }
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const override final { return nullptr; }
+
 };

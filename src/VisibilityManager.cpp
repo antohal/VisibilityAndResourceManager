@@ -101,17 +101,41 @@ struct CVisibilityManager::VisibilityManagerPrivate
 
 			_bMinimalSizeCheckEnabled = in_pObject->IsMinimalSizeCheckEnabled();
 
-			std::vector<C3DBaseMesh*> vecMeshes;
-			in_pObject->GetMeshes(vecMeshes);
 
-			for (C3DBaseMesh* mesh : vecMeshes)
+			_vecFaceSets.resize(in_pObject->GetFaceSetsCount());
+
+			for (size_t iFaceSet = 0; iFaceSet < in_pObject->GetFaceSetsCount(); iFaceSet++)
 			{
-				vector<C3DBaseFaceSet*> vecFaceSets;
-				mesh->GetFaceSets(vecFaceSets);
-
-				for (C3DBaseFaceSet* faceset : vecFaceSets)
-					_vecFaceSets.push_back(faceset);
+				_vecFaceSets[iFaceSet] = in_pObject->GetFaceSetById(iFaceSet);
 			}
+
+
+//			std::vector<C3DBaseMesh*> vecMeshes;
+//			vecMeshes.resize(in_pObject->GetMeshesCount());
+////			in_pObject->GetMeshes(vecMeshes);
+//
+//			for (size_t iMesh = 0; iMesh < in_pObject->GetMeshesCount(); iMesh++)
+//			{
+//				vecMeshes[iMesh] = in_pObject->GetMeshById(iMesh);
+//			}
+//
+//			for (C3DBaseMesh* mesh : vecMeshes)
+//			{
+//				
+//				_vecFaceSets.resize(mesh->GetFaceSetsCount());
+//
+//				for (size_t iFaceSet = 0; iFaceSet < mesh->GetFaceSetsCount(); iFaceSet++)
+//				{
+//
+//					_vecFaceSets[iFaceSet] = mesh->GetFaceSetById(iFaceSet);
+//
+//				}
+//
+//				//mesh->GetFaceSets(vecFaceSets);
+//
+//				//for (C3DBaseFaceSet* faceset : vecFaceSets)
+//					//_vecFaceSets.push_back(faceset);
+//			}
 
 			D3DXVECTOR3 *pvMin = nullptr, *pvMax = nullptr;
 			in_pObject->GetBoundBox(&pvMin, &pvMax);
@@ -157,11 +181,15 @@ struct CVisibilityManager::VisibilityManagerPrivate
 			{
 				if (C3DBaseMaterial* pMaterial = faceset->GetMaterialRef())
 				{
-					std::vector<C3DBaseTexture*> vecTextures;
-					pMaterial->GetTextures(vecTextures);
+					//std::vector<C3DBaseTexture*> vecTextures;
+					//vecTextures.resize(pMaterial->GetTexturesCount());
+					//pMaterial->GetTextures(vecTextures);
 
-					for (C3DBaseTexture* texture : vecTextures)
+					//for (C3DBaseTexture* texture : vecTextures)
+					for (size_t iTexture = 0; iTexture < pMaterial->GetTexturesCount(); iTexture++)
 					{
+						C3DBaseTexture* texture = pMaterial->GetTextureById(iTexture);
+
 						std::vector<C3DBaseTexture*>& vecTexturesByType = _vecTextures[texture->GetTextureType()];
 
 						if (std::find(vecTexturesByType.begin(), vecTexturesByType.end(), texture) == vecTexturesByType.end())
@@ -341,7 +369,11 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 	D3DXVECTOR3 vMaxWorld(in_fWorldRadius, in_fWorldRadius, in_fWorldRadius);
 
 	std::vector<C3DBaseObject*> vecObjects;
-	in_pMeshTree->GetObjectList(vMinWorld, vMaxWorld, vecObjects);
+//	in_pMeshTree->GetObjectList(vMinWorld, vMaxWorld, vecObjects);
+	vecObjects.resize(in_pMeshTree->GetObjectsCount());
+
+	for (size_t i = 0; i < vecObjects.size(); i++)
+		vecObjects[i] = in_pMeshTree->GetObjectByIndex(i);
 
 	//calculate world radius
 	for (C3DBaseObject* object : vecObjects)
@@ -948,9 +980,11 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 #endif
 
-		_private->_vecVisibleObjects.push_back(*itVisObj);
-
-		internalObject._pObject->SetPotentiallyVisible();
+		if (internalObject._pObject)
+		{
+			_private->_vecVisibleObjects.push_back(*itVisObj);
+			internalObject._pObject->SetPotentiallyVisible();
+		}
 
 		for (C3DBaseFaceSet* pFaceSet : internalObject._vecFaceSets)
 		{

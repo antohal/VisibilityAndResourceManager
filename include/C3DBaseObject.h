@@ -2,7 +2,7 @@
 
 #include "ResourceManagerLink.h"
 
-class C3DBaseMesh;
+#include "C3DBaseMesh.h"
 
 // базовый класс объекта в сцене
 class RESOURCEMANAGER_API C3DBaseObject : public C3DBaseResource
@@ -22,8 +22,28 @@ public:
 	// Функция должна возвращать: включена-ли проверка размера объекта на экране
 	virtual bool IsMinimalSizeCheckEnabled() const = 0;
 
-	// Функция возврящает набор мешей данного объекта
-	virtual void	GetMeshes(std::vector<C3DBaseMesh*>& out_vecMeshes) const = 0;
+	// Функция возврящает количество мешей данного объекта
+	virtual size_t	GetMeshesCount() const = 0;
+
+	// Функция возвращает конкретный меш объекта по его идентификатору
+	virtual C3DBaseMesh*	GetMeshById(size_t id) const = 0;
+
+	// получить список фейссетов
+	virtual size_t	GetFaceSetsCount() const = 0;
+	virtual C3DBaseFaceSet*	GetFaceSetById(size_t id) const = 0;
+
+	// Переопределения от C3DBaseResource (их переопределять у пользователя не обязательно)
+	virtual size_t GetChildResourceCount() const override final { return GetMeshesCount() + GetFaceSetsCount(); }
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const override final { 
+		if (id < GetMeshesCount()) 
+			return GetMeshById(id);
+
+		if (id < GetMeshesCount() + GetFaceSetsCount())
+			return GetFaceSetById(id - GetMeshesCount());
+
+		return nullptr;
+	}
+
 
 protected:
 

@@ -32,12 +32,24 @@ ObjectManager::~ObjectManager()
 	_ptrRootNode->asGroup()->removeChildren(0, _ptrRootNode->asGroup()->getNumChildren());
 }
 
-void ObjectManager::GetObjectList(const D3DXVECTOR3& bboxMin, const D3DXVECTOR3& bboxMax, std::vector<C3DBaseObject*>& out_vecObjects)
+//
+//void ObjectManager::GetObjectList(const D3DXVECTOR3& bboxMin, const D3DXVECTOR3& bboxMax, std::vector<C3DBaseObject*>& out_vecObjects)
+//{
+//	out_vecObjects.clear();
+//	for (C3DObject* object : _objects)
+//		out_vecObjects.push_back(object);
+//}
+
+size_t ObjectManager::GetObjectsCount() const
 {
-	out_vecObjects.clear();
-	for (C3DObject* object : _objects)
-		out_vecObjects.push_back(object);
+	return _objects.size();
 }
+
+C3DBaseObject*	ObjectManager::GetObjectByIndex(size_t id) const
+{
+	return _objects[id];
+}
+
 
 osg::Node* ObjectManager::getOsgRoot()
 {
