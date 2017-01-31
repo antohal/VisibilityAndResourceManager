@@ -190,6 +190,9 @@ struct CVisibilityManager::VisibilityManagerPrivate
 					{
 						C3DBaseTexture* texture = pMaterial->GetTextureById(iTexture);
 
+						if (!texture)
+							continue;
+
 						std::vector<C3DBaseTexture*>& vecTexturesByType = _vecTextures[texture->GetTextureType()];
 
 						if (std::find(vecTexturesByType.begin(), vecTexturesByType.end(), texture) == vecTexturesByType.end())
@@ -893,9 +896,6 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 		if (pInternalObject->_bAlwaysVisible)
 			continue;
 
-		if (!pInternalObject->_bTexturesInited)
-			pInternalObject->InitTextures();
-
 		const CBoundBox<float>& bbox = pInternalObject->_bbox;
 
 		if (! _private->_Camera.GetBoundBox().IsIntersectingAnotherBox(bbox))
@@ -918,6 +918,9 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		if (! bInFrustum)
 			continue;
+
+		if (!pInternalObject->_bTexturesInited)
+			pInternalObject->InitTextures();
 		
 #ifdef TEXTURE_VISIBILITY
 
@@ -958,6 +961,10 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 	for (auto itVisObj = _private->_setAlwaysVisibleObjects.begin(); itVisObj != _private->_setAlwaysVisibleObjects.end(); itVisObj++)
 	{
 		CVisibilityManager::VisibilityManagerPrivate::SObject& internalObject = _private->_mapObjects[(*itVisObj)];
+
+		if (!internalObject._bTexturesInited)
+			internalObject.InitTextures();
+
 #ifdef TEXTURE_VISIBILITY
 
 		if (_private->_bUpdateTextureVisibility)

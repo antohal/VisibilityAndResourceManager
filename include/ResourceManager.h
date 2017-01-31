@@ -7,6 +7,7 @@
 class CVisibilityManager;
 class C3DBaseObjectManager;
 class C3DBaseTexture;
+class CDirect2DTextBlock;
 
 // Класс менеджера ресурсов.
 // Объект данного типа должен присутствовать в единственнном экземпляре,
@@ -56,6 +57,7 @@ public:
 
 	// Выключить лог в файл
 	void DisableLog();
+
 
 private:
 

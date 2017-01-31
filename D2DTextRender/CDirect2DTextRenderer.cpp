@@ -171,6 +171,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 			return;
 		}
 
+		if (!_visible)
+			return;
 		
 		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_Rect, _ptrSolidBrush);
 	}
@@ -292,6 +294,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 	CComPtr<IDWriteTextFormat>		_ptrTextFormat;
 
 	CDirect2DTextRenderer*			_pOwner = nullptr;
+
+	bool							_visible = true;
 };
 
 CDirect2DTextBlock::CDirect2DTextBlock(CDirect2DTextRenderer* in_pOwner)
@@ -367,4 +371,16 @@ void CDirect2DTextBlock::ReleaseResources()
 void CDirect2DTextBlock::Render()
 {
 	_private->Render();
+}
+
+// Установить видимость текстового блока
+void CDirect2DTextBlock::SetVisible(bool visible)
+{
+	_private->_visible = visible;
+}
+
+// Функция возвращает признак видимости текстового блока
+bool CDirect2DTextBlock::IsVisible() const
+{
+	return _private->_visible;
 }
