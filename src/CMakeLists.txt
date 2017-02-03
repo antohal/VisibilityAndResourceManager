@@ -67,7 +67,7 @@ add_library(VisibilityManager SHARED
 	VisibilityManager.cpp)
 	
 target_link_libraries(VisibilityManager
-	${DirectX_D3DX10_LIBRARY}
+#	${DirectX_D3DX10_LIBRARY}
 	${TEXT_RENDERER_LIBRARY})
 
 install(TARGETS VisibilityManager RUNTIME DESTINATION ./

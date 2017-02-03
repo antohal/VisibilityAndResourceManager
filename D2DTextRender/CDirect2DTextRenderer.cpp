@@ -26,10 +26,15 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 {
 	~TextRendererPrivate()
 	{
+		// Release для всех ресурсов вызовется автоматически, поскольку они в смарт-поинтерах
 		for (CDirect2DTextBlock* pTextBlock : _setTextBlocks)
 		{
 			delete pTextBlock;
 		}
+
+
+		if (_textRenderer)
+			delete _textRenderer;
 
 		_setTextBlocks.clear();
 	}
@@ -93,9 +98,6 @@ CDirect2DTextRenderer::CDirect2DTextRenderer()
 
 CDirect2DTextRenderer::~CDirect2DTextRenderer()
 {
-	if (_private->_textRenderer)
-		delete _private->_textRenderer;
-
 	delete _private;
 }
 
@@ -165,7 +167,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 			return;
 		}
 
-		if (!_ptrTextFormat || !_ptrSolidBrush)
+		if (!_ptrTextFormat || !_ptrTextBrush)
 		{
 			// TODO: log error here - not inited owner
 			return;
@@ -173,14 +175,23 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 		if (!_visible)
 			return;
-		
-		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_Rect, _ptrSolidBrush);
+
+		if (_ptrRectangleFillBrush)
+			_pOwner->_private->GetAbstractTextRenderer()->FillRectangle(_Rect, _ptrRectangleFillBrush);
+
+		if (_ptrRectangleBorderBrush)
+			_pOwner->_private->GetAbstractTextRenderer()->DrawRectangle(_Rect, _ptrRectangleBorderBrush);
+
+		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_Rect, _ptrTextBrush);
+
 	}
 
 	void ReleaseResources()
 	{
-		_ptrSolidBrush.Release();
+		_ptrTextBrush.Release();
 		_ptrTextFormat.Release();
+		_ptrRectangleFillBrush.Release();
+		_ptrRectangleBorderBrush.Release();
 	}
 
 	void CreateResources()
@@ -197,8 +208,11 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		}
 
 	
-		_ptrSolidBrush = _pOwner->_private->GetAbstractTextRenderer()->CreateSolidColorBrush(_Color);
-		_ptrTextFormat = _pOwner->_private->GetAbstractTextRenderer()->CreateTextFormat(_FontName.c_str(), nullptr, _FontWeight, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, _fFontSize, L"");
+		_pOwner->_private->GetAbstractTextRenderer()->CreateSolidColorBrush(_textColor, _ptrTextBrush);
+		_pOwner->_private->GetAbstractTextRenderer()->CreateSolidColorBrush(_rectangleFillColor, _ptrRectangleFillBrush);
+		_pOwner->_private->GetAbstractTextRenderer()->CreateSolidColorBrush(_rectangleBorderColor, _ptrRectangleBorderBrush);
+
+		_pOwner->_private->GetAbstractTextRenderer()->CreateTextFormat(_FontName.c_str(), nullptr, _FontWeight, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, _fFontSize, L"", _ptrTextFormat);
 	}
 
 
@@ -279,7 +293,9 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	//@{ params
 
-	D2D1_COLOR_F					_Color;
+	D2D1_COLOR_F					_textColor;
+	D2D1_COLOR_F					_rectangleFillColor;
+	D2D1_COLOR_F					_rectangleBorderColor;
 	D2D1_RECT_F						_Rect;
 	std::wstring					_FontName;
 	DWRITE_FONT_WEIGHT				_FontWeight;
@@ -290,7 +306,10 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	std::wstring					_RenderedText;
 
-	CComPtr<ID2D1SolidColorBrush>   _ptrSolidBrush;
+	CComPtr<ID2D1SolidColorBrush>   _ptrTextBrush;
+	CComPtr<ID2D1SolidColorBrush>   _ptrRectangleFillBrush;
+	CComPtr<ID2D1SolidColorBrush>   _ptrRectangleBorderBrush;
+
 	CComPtr<IDWriteTextFormat>		_ptrTextFormat;
 
 	CDirect2DTextRenderer*			_pOwner = nullptr;
@@ -309,9 +328,20 @@ CDirect2DTextBlock::~CDirect2DTextBlock()
 	delete _private;
 }
 
-void CDirect2DTextBlock::Init(const D2D1_COLOR_F& in_Color, const D2D1_RECT_F& in_rcPlacement, const char* in_pcszFontName, DWRITE_FONT_WEIGHT in_FontWeight, float in_fFontSize)
+void CDirect2DTextBlock::Init(
+	const D2D1_COLOR_F& in_textColor,				// цвет текста
+	const D2D1_RECT_F& in_rcPlacement,				// прямоугольник, в котором выводится текст
+	const D2D1_COLOR_F& in_rectangleFillColor,		// цвет, которым заполняется прямоугольник
+	const D2D1_COLOR_F& in_rectangleBorderColor,	// цвет границы прямоугольника
+	const char* in_pcszFontName,					// имя шрифта (например Arial)
+	DWRITE_FONT_WEIGHT in_FontWeight,				// тип шрифта (например DWRITE_FONT_WEIGHT_NORMAL или DWRITE_FONT_WEIGHT_BOLD)
+	float in_fFontSize								// размер шрифта 
+)
 {
-	_private->_Color = in_Color;
+	_private->_textColor = in_textColor;
+	_private->_rectangleFillColor = in_rectangleFillColor;
+	_private->_rectangleBorderColor = in_rectangleBorderColor;
+
 	_private->_Rect = in_rcPlacement;
 	_private->_FontName = string_cast<std::wstring>(std::string(in_pcszFontName));
 	_private->_FontWeight = in_FontWeight;

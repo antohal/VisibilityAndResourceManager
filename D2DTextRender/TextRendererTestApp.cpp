@@ -47,6 +47,19 @@ public:
 
 	~MainWindow()
 	{
+		m_swapChain.Release();
+
+		m_device.Release();
+		m_deviceContext.Release();
+
+		m_backBufferRTV.Release();
+		m_vertexBuffer.Release();
+		m_inputLayout.Release();
+		m_vertexShader.Release();
+		m_pixelShader.Release();
+
+		m_d2dFactory.Release();
+
 		delete m_pTextRenderer;
 	}
 
@@ -251,7 +264,6 @@ private:
 			return result;
 		}
 
-
 		return S_OK;
 	}
 
@@ -334,7 +346,9 @@ private:
 
 		CDirect2DTextBlock* pTextBlock = m_pTextRenderer->CreateTextBlock();
 
-		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(0, 0, 512, 512), "Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
+		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 512, 512), D2D1::ColorF(0.1, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red),
+			"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
+
 		pTextBlock->AddTextLine("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
 		pTextBlock->AddTextLine(L"ƒлинный текст автоматически форматируетс€ под заданные размеры пр€моугольника, с автоматическим переносом слов");
@@ -343,7 +357,8 @@ private:
 
 		m_pParamsTextBlock = m_pTextRenderer->CreateTextBlock();
 
-		m_pParamsTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(412, 412, 1024, 1024), "Arial", DWRITE_FONT_WEIGHT_BOLD, 12.f);
+		m_pParamsTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(412, 412, 600, 800), D2D1::ColorF(0.7, 0.3f, 0.1f, 0.2f), D2D1::ColorF(D2D1::ColorF::LimeGreen),
+			"Arial", DWRITE_FONT_WEIGHT_BOLD, 12.f);
 
 		m_pParamsTextBlock->AddTextLine(L"ѕример использовани€ параметров");
 		m_uiFrameCounterParam = m_pParamsTextBlock->AddParameter(L"ѕараметр 1");

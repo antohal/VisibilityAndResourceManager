@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMakeModules")
 
 find_package(DirectX)
 
-include_directories(${DirectX_D3DX10_INCLUDE_DIR})
+#include_directories(${DirectX_D3DX10_INCLUDE_DIR})
 
 
 find_path(TEXT_RENDERER_INCLUDE_DIR NAMES CDirect2DTextRenderer.h)

@@ -7,6 +7,10 @@
 #include <vector>
 #include <map>
 
+#include "D2DBaseTypes.h"
+#include "CDirect2DTextRenderer.h"
+
+
 using namespace std;
 
 namespace {
@@ -32,17 +36,26 @@ struct CResourceManager::SResourceManagerPrivate
 	vector<CVisibilityManager*>		_visibilityManagers;
 	map<C3DBaseObject*, float>		_objectVisibilityTimers;
 
+	CDirect2DTextBlock*			_textBlock = nullptr;
+
+	UINT						_paramPotentiallyVisibleResources = -1;
+	unsigned int				_potentiallyVisibleResources = 0;
+
 	void incrementVisibilityRefCountRecursive(C3DBaseResource* resource)
 	{
 		if (!resource)
 			return;
 
 		if (resource->_visibleRefCount == 0)
+		{
+			_potentiallyVisibleResources++;
+
 			if (resource->GetManager())
 			{
 				resource->GetManager()->RequestLoadResource(resource);
 				LogMessage("CResourceManager: resource with type %d is became visible, requesting load", resource->GetType());
 			}
+		}
 
 		resource->_visibleRefCount++;
 		LogMessage("CResourceManager: resource with type %d incremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
@@ -71,6 +84,8 @@ struct CResourceManager::SResourceManagerPrivate
 
 			if (resource->_visibleRefCount == 0)
 			{
+				_potentiallyVisibleResources--;
+
 				if (resource->GetManager())
 				{
 					resource->GetManager()->RequestUnloadResource(resource);
@@ -180,6 +195,11 @@ void CResourceManager::Update(float deltaTime)
 		else
 			it++;
 	}
+
+	if (_private->_textBlock)
+	{
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleResources, (float) _private->_potentiallyVisibleResources);
+	}
 }
 
 float CResourceManager::GetTexturePriority(C3DBaseTexture* texture)
@@ -219,4 +239,24 @@ void CResourceManager::DisableLog()
 	{
 		visman->DisableLog();
 	}
+}
+
+// Включить рендеринг отладочной информации в текстовый блок
+void CResourceManager::EnableDebugTextRender(CDirect2DTextBlock* textBlock)
+{
+	if (_private->_textBlock)
+	{
+		LogMessage("CResourceManager::EnableDebugTextRender: text block already assigned, disable first!");
+		return;
+	}
+
+	_private->_textBlock = textBlock;
+
+	_private->_paramPotentiallyVisibleResources =  textBlock->AddParameter(L"Количество потенциально видимых ресурсов");
+}
+
+// Выключить рендеринг отладочной информации в текстовый блок
+void CResourceManager::DisableDebugTextRender()
+{
+	_private->_textBlock = nullptr;
 }

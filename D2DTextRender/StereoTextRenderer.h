@@ -25,17 +25,19 @@ public:
 	virtual void			CreateResources() override;
 	virtual void			ReleaseResources() override;
 
-	virtual IDWriteTextFormat*	CreateTextFormat(
+	virtual void	CreateTextFormat(
 		_In_z_ WCHAR const* fontFamilyName,
 		_In_opt_ IDWriteFontCollection* fontCollection,
 		DWRITE_FONT_WEIGHT fontWeight,
 		DWRITE_FONT_STYLE fontStyle,
 		DWRITE_FONT_STRETCH fontStretch,
 		FLOAT fontSize,
-		_In_z_ WCHAR const* localeName
+		_In_z_ WCHAR const* localeName,
+
+		CComPtr<IDWriteTextFormat>& out_ptrTextFormat
 	) override;
 
-	virtual ID2D1SolidColorBrush*	CreateSolidColorBrush(CONST D2D1_COLOR_F &color) override;
+	virtual void	CreateSolidColorBrush(CONST D2D1_COLOR_F &color, CComPtr<ID2D1SolidColorBrush>& out_ptrSolidBrush) override;
 
 	virtual void 			RenderText(
 		_In_reads_(stringLength) CONST WCHAR *string,
@@ -46,6 +48,9 @@ public:
 		D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE,
 		DWRITE_MEASURING_MODE measuringMode = DWRITE_MEASURING_MODE_NATURAL
 	) override;
+
+	virtual void			FillRectangle(const D2D1_RECT_F &rect, ID2D1Brush  *brush) override;
+	virtual void			DrawRectangle(const D2D1_RECT_F &rect, ID2D1Brush  *brush) override;
 
 	virtual unsigned int	GetTargetsCount() const override;
 

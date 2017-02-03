@@ -58,7 +58,15 @@ class D2DTEXTRENDER_INTERFACE CDirect2DTextBlock
 public:
 
 	// Инициализировать текстовый блок. Эту функцию нужно вызывать обязательно, после создания текстового блока
-	void Init(const D2D1_COLOR_F& in_Color, const D2D1_RECT_F& in_rcPlacement, const char* in_pcszFontName, DWRITE_FONT_WEIGHT in_FontWeight, float in_fFontSize);
+	void Init(
+		const D2D1_COLOR_F& in_textColor,				// цвет текста
+		const D2D1_RECT_F& in_rcPlacement,				// прямоугольник, в котором выводится текст
+		const D2D1_COLOR_F& in_rectangleFillColor,		// цвет, которым заполняется прямоугольник
+		const D2D1_COLOR_F& in_rectangleBorderColor,	// цвет границы прямоугольника
+		const char* in_pcszFontName,					// имя шрифта (например Arial)
+		DWRITE_FONT_WEIGHT in_FontWeight,				// тип шрифта (например DWRITE_FONT_WEIGHT_NORMAL или DWRITE_FONT_WEIGHT_BOLD)
+		float in_fFontSize								// размер шрифта
+	);
 
 	// Изменить положение текстового блока
 	void ChangePlacement(const D2D1_RECT_F& in_rcPlacement);

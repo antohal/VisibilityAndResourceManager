@@ -58,6 +58,11 @@ public:
 	// Выключить лог в файл
 	void DisableLog();
 
+	// Включить рендеринг отладочной информации в текстовый блок
+	void EnableDebugTextRender(CDirect2DTextBlock*);
+
+	// Выключить рендеринг отладочной информации в текстовый блок
+	void DisableDebugTextRender();
 
 private:
 

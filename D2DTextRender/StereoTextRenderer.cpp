@@ -21,6 +21,11 @@ CStereoTextRenderer::~CStereoTextRenderer()
 {
 	if (_resourceCreated)
 		ReleaseResources();
+
+	_d2dFactory.Release();
+	_d2dDevice.Release();
+	_d2dContext.Release();
+	_swapChain.Release();
 }
 
 void CStereoTextRenderer::CreateResources()
@@ -114,44 +119,37 @@ void CStereoTextRenderer::ReleaseResources()
 	_resourceCreated = false;
 }
 
-IDWriteTextFormat* CStereoTextRenderer::CreateTextFormat(
+void CStereoTextRenderer::CreateTextFormat(
 	_In_z_ WCHAR const* fontFamilyName,
 	_In_opt_ IDWriteFontCollection* fontCollection,
 	DWRITE_FONT_WEIGHT fontWeight,
 	DWRITE_FONT_STYLE fontStyle,
 	DWRITE_FONT_STRETCH fontStretch,
 	FLOAT fontSize,
-	_In_z_ WCHAR const* localeName)
+	_In_z_ WCHAR const* localeName,
+	CComPtr<IDWriteTextFormat>& out_ptrTextFormat)
 {
 	if (!_ptrDwriteFactory)
-		return nullptr;
+		return;
 
-	IDWriteTextFormat* textFormat = nullptr;
-
-	_ptrDwriteFactory->CreateTextFormat(fontFamilyName, fontCollection, fontWeight, fontStyle, fontStretch, fontSize, localeName, &textFormat);
-
-	return textFormat;
+	_ptrDwriteFactory->CreateTextFormat(fontFamilyName, fontCollection, fontWeight, fontStyle, fontStretch, fontSize, localeName, &out_ptrTextFormat);
 }
 
-ID2D1SolidColorBrush* CStereoTextRenderer::CreateSolidColorBrush(CONST D2D1_COLOR_F &color)
+void CStereoTextRenderer::CreateSolidColorBrush(CONST D2D1_COLOR_F &color, CComPtr<ID2D1SolidColorBrush>& out_ptrSolidBrush)
 {
 	if (!_d2dContext)
 	{
 		// TODO: log
-		return nullptr;
+		return;
 	}
 
-	ID2D1SolidColorBrush* solidBrush = nullptr;
-
-	auto result = _d2dContext->CreateSolidColorBrush(color, &solidBrush);
+	auto result = _d2dContext->CreateSolidColorBrush(color, &out_ptrSolidBrush);
 	if (FAILED(result))
 	{
 		//std::cout << "Failed to create solid color brush." << std::endl;
 		//std::cout << "Error was: " << std::hex << result << std::endl;
-		return nullptr;
+		return;
 	}
-
-	return solidBrush;
 }
 
 void CStereoTextRenderer::RenderText(
@@ -164,6 +162,16 @@ void CStereoTextRenderer::RenderText(
 	DWRITE_MEASURING_MODE measuringMode/* = DWRITE_MEASURING_MODE_NATURAL*/)
 {
 	_d2dContext->DrawText(string, stringLength, textFormat, layoutRect, defaultForegroundBrush, options, measuringMode);
+}
+
+void CStereoTextRenderer::FillRectangle(const D2D1_RECT_F &rect, ID2D1Brush  *brush)
+{
+	_d2dContext->FillRectangle(rect, brush);
+}
+
+void CStereoTextRenderer::DrawRectangle(const D2D1_RECT_F &rect, ID2D1Brush  *brush)
+{
+	_d2dContext->DrawRectangle(rect, brush);
 }
 
 unsigned int CStereoTextRenderer::GetTargetsCount() const
