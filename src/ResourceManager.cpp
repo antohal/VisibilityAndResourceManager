@@ -58,7 +58,7 @@ struct CResourceManager::SResourceManagerPrivate
 		}
 
 		resource->_visibleRefCount++;
-		LogMessage("CResourceManager: resource with type %d incremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
+		//LogMessage("CResourceManager: resource with type %d incremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
 
 		//vector<C3DBaseResource*> vecChildResources;
 		//resource->GetChildResources(vecChildResources);
@@ -80,7 +80,7 @@ struct CResourceManager::SResourceManagerPrivate
 		if (resource->_visibleRefCount > 0)
 		{
 			resource->_visibleRefCount--;
-			LogMessage("CResourceManager: resource with type %d decremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
+			//LogMessage("CResourceManager: resource with type %d decremented refcounter %d", resource->GetType(), resource->_visibleRefCount);
 
 			if (resource->_visibleRefCount == 0)
 			{

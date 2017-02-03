@@ -10,6 +10,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+
+#include <D3DX10math.h>
+
 //#include <ddraw.h>
 //#include <dxgi.h>
 
