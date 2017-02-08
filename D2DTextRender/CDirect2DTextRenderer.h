@@ -63,6 +63,8 @@ public:
 		const D2D1_RECT_F& in_rcPlacement,				// прямоугольник, в котором выводится текст
 		const D2D1_COLOR_F& in_rectangleFillColor,		// цвет, которым заполняется прямоугольник
 		const D2D1_COLOR_F& in_rectangleBorderColor,	// цвет границы прямоугольника
+		float in_fHorizontalTextOffset,					// отступ текста от границ прямоугольника по горизонтали
+		float in_fVerticalTextOffset,					// отступ текста от границ прямоугольника по вертикали
 		const char* in_pcszFontName,					// имя шрифта (например Arial)
 		DWRITE_FONT_WEIGHT in_FontWeight,				// тип шрифта (например DWRITE_FONT_WEIGHT_NORMAL или DWRITE_FONT_WEIGHT_BOLD)
 		float in_fFontSize								// размер шрифта
@@ -76,6 +78,9 @@ public:
 
 	// Добавить простую текстовую строку (версия UNICODE)
 	void AddTextLine(const wchar_t* in_pcwszTextLine);
+
+	// Задать максимальное количество текстовых строк (при привышении этого количества будут удаляться строки из начала)
+	void SetMaximumTextLines(unsigned int in_nMaxLinesCount);
 
 	// Добавить параметр (возвращает хэндл параметра, по которому можно изменять значение) (версия ANSI)
 	UINT AddParameter(const char* in_pcszParamName);

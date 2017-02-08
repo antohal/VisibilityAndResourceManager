@@ -10,6 +10,8 @@
 #include "D2DBaseTypes.h"
 #include "CDirect2DTextRenderer.h"
 
+#define USE_DEBUG_INFO
+
 
 using namespace std;
 
@@ -39,7 +41,17 @@ struct CResourceManager::SResourceManagerPrivate
 	CDirect2DTextBlock*			_textBlock = nullptr;
 
 	UINT						_paramPotentiallyVisibleResources = -1;
+	UINT						_paramPotentiallyVisibleObjects = -1;
+	UINT						_paramPotentiallyVisibleMeshes = -1;
+	UINT						_paramPotentiallyVisibleFacesets = -1;
+	UINT						_paramPotentiallyVisibleMaterials = -1;
+	UINT						_paramPotentiallyVisibleTextures = -1;
+
 	unsigned int				_potentiallyVisibleResources = 0;
+
+#ifdef USE_DEBUG_INFO
+	std::map<E3DResourceType, int>	_mapPotentiallyVisibleByType;
+#endif
 
 	void incrementVisibilityRefCountRecursive(C3DBaseResource* resource)
 	{
@@ -49,6 +61,10 @@ struct CResourceManager::SResourceManagerPrivate
 		if (resource->_visibleRefCount == 0)
 		{
 			_potentiallyVisibleResources++;
+
+#ifdef USE_DEBUG_INFO
+			_mapPotentiallyVisibleByType[resource->GetType()] ++;
+#endif
 
 			if (resource->GetManager())
 			{
@@ -85,6 +101,10 @@ struct CResourceManager::SResourceManagerPrivate
 			if (resource->_visibleRefCount == 0)
 			{
 				_potentiallyVisibleResources--;
+
+#ifdef USE_DEBUG_INFO
+				_mapPotentiallyVisibleByType[resource->GetType()] --;
+#endif
 
 				if (resource->GetManager())
 				{
@@ -199,6 +219,16 @@ void CResourceManager::Update(float deltaTime)
 	if (_private->_textBlock)
 	{
 		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleResources, (float) _private->_potentiallyVisibleResources);
+
+#ifdef USE_DEBUG_INFO
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleObjects, (float)_private->_mapPotentiallyVisibleByType[C3DRESOURCE_OBJECT]);
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleMeshes, (float)_private->_mapPotentiallyVisibleByType[C3DRESOURCE_MESH]);
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleFacesets, (float)_private->_mapPotentiallyVisibleByType[C3DRESOURCE_FACESET]);
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleMaterials, (float)_private->_mapPotentiallyVisibleByType[C3DRESOURCE_MATERIAL]);
+		_private->_textBlock->SetParameterValue(_private->_paramPotentiallyVisibleTextures, (float)_private->_mapPotentiallyVisibleByType[C3DRESOURCE_TEXTURE]);
+
+#endif
+
 	}
 }
 
@@ -253,6 +283,12 @@ void CResourceManager::EnableDebugTextRender(CDirect2DTextBlock* textBlock)
 	_private->_textBlock = textBlock;
 
 	_private->_paramPotentiallyVisibleResources =  textBlock->AddParameter(L"Количество потенциально видимых ресурсов");
+
+	_private->_paramPotentiallyVisibleObjects = textBlock->AddParameter(L"Объектов");
+	_private->_paramPotentiallyVisibleMeshes = textBlock->AddParameter(L"Мешей");
+	_private->_paramPotentiallyVisibleFacesets = textBlock->AddParameter(L"Фейссетов");
+	_private->_paramPotentiallyVisibleMaterials = textBlock->AddParameter(L"Материалов");
+	_private->_paramPotentiallyVisibleTextures = textBlock->AddParameter(L"Текстур");
 }
 
 // Выключить рендеринг отладочной информации в текстовый блок

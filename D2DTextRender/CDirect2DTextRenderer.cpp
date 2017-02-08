@@ -182,7 +182,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		if (_ptrRectangleBorderBrush)
 			_pOwner->_private->GetAbstractTextRenderer()->DrawRectangle(_Rect, _ptrRectangleBorderBrush);
 
-		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_Rect, _ptrTextBrush);
+		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_TextRect, _ptrTextBrush);
 
 	}
 
@@ -222,6 +222,13 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 		TextLine& line = _lstTextLines.back();
 		line._wsText = in_wsTextLine;
+
+
+		if (_maxTextLines != (unsigned int)(-1))
+		{
+			if (_lstTextLines.size() > _maxTextLines)
+				_lstTextLines.pop_front();
+		}
 
 		UpdateRenderedText();
 	}
@@ -281,6 +288,11 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		_mapParameters.clear();
 	}
 
+	void SetMaximumTextLines(unsigned int in_nMaxLinesCount)
+	{
+		_maxTextLines = in_nMaxLinesCount;
+	}
+
 	struct TextLine
 	{
 		std::wstring	_wsText;
@@ -297,10 +309,14 @@ struct CDirect2DTextBlock::TextBlockPrivate
 	D2D1_COLOR_F					_rectangleFillColor;
 	D2D1_COLOR_F					_rectangleBorderColor;
 	D2D1_RECT_F						_Rect;
+	D2D1_RECT_F						_TextRect;
 	std::wstring					_FontName;
 	DWRITE_FONT_WEIGHT				_FontWeight;
 	float							_fFontSize;
 	bool							_bInited = false;
+
+	float							_fHorizontalTextOffset = 0;
+	float							_fVerticalTextOffset = 0;
 
 	//@}
 
@@ -315,6 +331,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 	CDirect2DTextRenderer*			_pOwner = nullptr;
 
 	bool							_visible = true;
+
+	unsigned int					_maxTextLines = -1;
 };
 
 CDirect2DTextBlock::CDirect2DTextBlock(CDirect2DTextRenderer* in_pOwner)
@@ -333,6 +351,8 @@ void CDirect2DTextBlock::Init(
 	const D2D1_RECT_F& in_rcPlacement,				// прямоугольник, в котором выводится текст
 	const D2D1_COLOR_F& in_rectangleFillColor,		// цвет, которым заполняется прямоугольник
 	const D2D1_COLOR_F& in_rectangleBorderColor,	// цвет границы прямоугольника
+	float in_fHorizontalTextOffset,					// отступ текста от границ прямоугольника по горизонтали
+	float in_fVerticalTextOffset,					// отступ текста от границ прямоугольника по вертикали
 	const char* in_pcszFontName,					// имя шрифта (например Arial)
 	DWRITE_FONT_WEIGHT in_FontWeight,				// тип шрифта (например DWRITE_FONT_WEIGHT_NORMAL или DWRITE_FONT_WEIGHT_BOLD)
 	float in_fFontSize								// размер шрифта 
@@ -343,6 +363,16 @@ void CDirect2DTextBlock::Init(
 	_private->_rectangleBorderColor = in_rectangleBorderColor;
 
 	_private->_Rect = in_rcPlacement;
+	_private->_TextRect = in_rcPlacement;
+
+	_private->_fHorizontalTextOffset = in_fHorizontalTextOffset;
+	_private->_fVerticalTextOffset	 = in_fVerticalTextOffset;
+
+	_private->_TextRect.left += in_fHorizontalTextOffset;
+	_private->_TextRect.right -= in_fHorizontalTextOffset;
+	_private->_TextRect.top += in_fVerticalTextOffset;
+	_private->_TextRect.bottom -= in_fVerticalTextOffset;
+
 	_private->_FontName = string_cast<std::wstring>(std::string(in_pcszFontName));
 	_private->_FontWeight = in_FontWeight;
 	_private->_fFontSize = in_fFontSize;
@@ -353,6 +383,12 @@ void CDirect2DTextBlock::Init(
 void CDirect2DTextBlock::ChangePlacement(const D2D1_RECT_F& in_rcPlacement)
 {
 	_private->_Rect = in_rcPlacement;
+	_private->_TextRect = in_rcPlacement;
+
+	_private->_TextRect.left += _private->_fHorizontalTextOffset;
+	_private->_TextRect.right -= _private->_fHorizontalTextOffset;
+	_private->_TextRect.top += _private->_fVerticalTextOffset;
+	_private->_TextRect.bottom -= _private->_fVerticalTextOffset;
 }
 // Добавить простую текстовую строку (версия ANSI)
 void CDirect2DTextBlock::AddTextLine(const char* in_pcszTextLine)
@@ -364,6 +400,11 @@ void CDirect2DTextBlock::AddTextLine(const char* in_pcszTextLine)
 void CDirect2DTextBlock::AddTextLine(const wchar_t* in_pcwszTextLine)
 {
 	_private->AddTextLine(std::wstring(in_pcwszTextLine));
+}
+
+void CDirect2DTextBlock::SetMaximumTextLines(unsigned int in_nMaxLinesCount)
+{
+	_private->SetMaximumTextLines(in_nMaxLinesCount);
 }
 
 // Добавить параметр (возвращает хэндл параметра, по которому можно изменять значение) (версия ANSI)

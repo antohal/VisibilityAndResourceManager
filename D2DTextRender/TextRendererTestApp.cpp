@@ -105,6 +105,11 @@ public:
 
 			m_pParamsTextBlock->SetParameterValue(m_uiFrameCounterParam2, frameCounter % 10 + 0.456f);
 
+			wchar_t wcszString[100];
+			wsprintf(wcszString, L"%d", frameCounter);
+
+			m_pMaxLinesTextBlock->AddTextLine(wcszString);
+
 			m_pTextRenderer->Render();
 
 			m_swapChain->Present(0, 0);
@@ -346,7 +351,7 @@ private:
 
 		CDirect2DTextBlock* pTextBlock = m_pTextRenderer->CreateTextBlock();
 
-		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 512, 512), D2D1::ColorF(0.1, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red),
+		pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 512, 512), D2D1::ColorF(0.1, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
 			"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
 
 		pTextBlock->AddTextLine("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
@@ -357,7 +362,7 @@ private:
 
 		m_pParamsTextBlock = m_pTextRenderer->CreateTextBlock();
 
-		m_pParamsTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(412, 412, 600, 800), D2D1::ColorF(0.7, 0.3f, 0.1f, 0.2f), D2D1::ColorF(D2D1::ColorF::LimeGreen),
+		m_pParamsTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(412, 412, 600, 800), D2D1::ColorF(0.7, 0.3f, 0.1f, 0.2f), D2D1::ColorF(D2D1::ColorF::LimeGreen), 10, 10,
 			"Arial", DWRITE_FONT_WEIGHT_BOLD, 12.f);
 
 		m_pParamsTextBlock->AddTextLine(L"Пример использования параметров");
@@ -365,6 +370,14 @@ private:
 		m_pParamsTextBlock->AddTextLine(L"Их можно добавлять вперемежку с текстом");
 		m_uiFrameCounterParam2 = m_pParamsTextBlock->AddParameter(L"Параметр 2");
 		m_pParamsTextBlock->AddTextLine(L"Поддерживается как Unicode, так и Ansi");
+
+
+		m_pMaxLinesTextBlock = m_pTextRenderer->CreateTextBlock();
+
+		m_pMaxLinesTextBlock->Init(D2D1::ColorF(D2D1::ColorF::Red), D2D1::RectF(500, 10, 600, 300), D2D1::ColorF(0.7, 0.3f, 0.1f, 0.2f), D2D1::ColorF(D2D1::ColorF::LimeGreen), 5, 5,
+			"Arial", DWRITE_FONT_WEIGHT_BOLD, 12.f);
+
+		m_pMaxLinesTextBlock->SetMaximumTextLines(10);
 
 		return 0;
 	}
@@ -374,6 +387,8 @@ private:
 	CDirect2DTextBlock*				m_pParamsTextBlock = nullptr;
 	UINT							m_uiFrameCounterParam = -1;
 	UINT							m_uiFrameCounterParam2 = -1;
+
+	CDirect2DTextBlock*				m_pMaxLinesTextBlock = nullptr;
 
 	CComPtr<IDXGISwapChain>         m_swapChain;
 
