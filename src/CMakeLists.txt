@@ -78,6 +78,10 @@ add_library(ResourceManager SHARED
 	${GeometrySrc}
 	Log.h
 	Log.cpp
+	vecmath.h
+	mathmisc.h
+	Debug.h
+	Debug.cpp
 	ResourceManager.cpp)
 	
 target_link_libraries(ResourceManager 

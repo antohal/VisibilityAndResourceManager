@@ -112,34 +112,7 @@ struct CVisibilityManager::VisibilityManagerPrivate
 				_vecFaceSets[iFaceSet] = in_pObject->GetFaceSetById(iFaceSet);
 			}
 
-
-//			std::vector<C3DBaseMesh*> vecMeshes;
-//			vecMeshes.resize(in_pObject->GetMeshesCount());
-////			in_pObject->GetMeshes(vecMeshes);
-//
-//			for (size_t iMesh = 0; iMesh < in_pObject->GetMeshesCount(); iMesh++)
-//			{
-//				vecMeshes[iMesh] = in_pObject->GetMeshById(iMesh);
-//			}
-//
-//			for (C3DBaseMesh* mesh : vecMeshes)
-//			{
-//				
-//				_vecFaceSets.resize(mesh->GetFaceSetsCount());
-//
-//				for (size_t iFaceSet = 0; iFaceSet < mesh->GetFaceSetsCount(); iFaceSet++)
-//				{
-//
-//					_vecFaceSets[iFaceSet] = mesh->GetFaceSetById(iFaceSet);
-//
-//				}
-//
-//				//mesh->GetFaceSets(vecFaceSets);
-//
-//				//for (C3DBaseFaceSet* faceset : vecFaceSets)
-//					//_vecFaceSets.push_back(faceset);
-//			}
-
+			
 			D3DXVECTOR3 *pvMin = nullptr, *pvMax = nullptr;
 			in_pObject->GetBoundBox(&pvMin, &pvMax);
 
@@ -184,11 +157,7 @@ struct CVisibilityManager::VisibilityManagerPrivate
 			{
 				if (C3DBaseMaterial* pMaterial = faceset->GetMaterialRef())
 				{
-					//std::vector<C3DBaseTexture*> vecTextures;
-					//vecTextures.resize(pMaterial->GetTexturesCount());
-					//pMaterial->GetTextures(vecTextures);
-
-					//for (C3DBaseTexture* texture : vecTextures)
+					
 					for (size_t iTexture = 0; iTexture < pMaterial->GetTexturesCount(); iTexture++)
 					{
 						C3DBaseTexture* texture = pMaterial->GetTextureById(iTexture);
@@ -251,13 +220,19 @@ struct CVisibilityManager::VisibilityManagerPrivate
 	float									_fNearClipPlane;
 	float									_fFarClipPlane;
 
+	D3DMATRIX								_mProjection;
+	bool									_bProjectionMatrixSetup = false;
+
 	bool									_bUpdateTextureVisibility;
 	
+	float									_fWorldRadius = 10000000;
+	float									_fMinCellSize = 100;
+
 	struct SObjectAddRequest
 	{
 		C3DBaseObject*	_Object;
-		BoundBox			_BBox; 
-		float				_fMaxDistance;
+		BoundBox		_BBox; 
+		float			_fMaxDistance;
 	};
 
 	std::vector<SObjectAddRequest>			_vecObjectAddRequests;
@@ -299,17 +274,6 @@ bool CVisibilityManager::VisibilityManagerPrivate::GetTransformedBoundBox (C3DBa
 
 	out_BBox.m_vMin = Vector3f(pvMin->x, pvMin->y, pvMin->z);
 	out_BBox.m_vMax = Vector3f(pvMax->x, pvMax->y, pvMax->z);
-
-
-	/*D3DXMATRIX mTest (1, 0, 0, 0,
-					  0, 1, 0, 0,
-					  0, 0, 1, 0,
-					  0, 0, 0, 1);
-
-	D3DXVECTOR3 vTest (0, 0, 1), vRes;
-
-	D3DXVec3TransformCoord(&vRes, &vTest, &mTest);*/
-
 
 
 	// TODO: Enable transform
@@ -365,6 +329,9 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 #endif
 
 	_private = new VisibilityManagerPrivate;
+
+	_private->_fWorldRadius = in_fWorldRadius;
+	_private->_fMinCellSize = in_fMinCellSize;
 
 	if (in_fMinCellSize < 10000)
 		in_fMinCellSize = 10000;
@@ -422,7 +389,20 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 
 	//UpdateVisibleObjectsSet();
 }
-float	CVisibilityManager::VisibilityManagerPrivate::SObject::GetCameraDirectionDotProduct(const CCamera& in_Camera, const Vector2f& in_vResolution) const
+
+// получить радиус мира
+float CVisibilityManager::GetWorldRadius() const
+{
+	return _private->_fWorldRadius;
+}
+
+// получить минимальный размер €чейки
+float CVisibilityManager::GetMinCellSize() const
+{
+	return _private->_fMinCellSize;
+}
+
+float CVisibilityManager::VisibilityManagerPrivate::SObject::GetCameraDirectionDotProduct(const CCamera& in_Camera, const Vector2f& in_vResolution) const
 {
 	Vector3f vCenter = _bbox.GetCenter();
 	Vector3f vCameraCenter = in_Camera.GetPos();
@@ -546,6 +526,12 @@ void CVisibilityManager::SetResolution (unsigned int in_uiWidth, unsigned int in
 	_private->_uiScreenHeight = in_uiHeight;
 }
 
+void CVisibilityManager::GetResolution(unsigned int& out_uiWidth, unsigned int& out_uiHeight)
+{
+	out_uiWidth = _private->_uiScreenWidth;
+	out_uiHeight = _private->_uiScreenHeight;
+}
+
 void CVisibilityManager::SetMinimalObjectSize (unsigned int in_uiPixels)
 {
 	_private->_uiMinimalObjectSize = in_uiPixels;
@@ -553,6 +539,10 @@ void CVisibilityManager::SetMinimalObjectSize (unsigned int in_uiPixels)
 	_private->_fMinimalObjectPixelSize = (float)in_uiPixels;
 }
 
+unsigned int CVisibilityManager::GetMinimalObjectSize() const
+{
+	return _private->_uiMinimalObjectSize;
+}
 
 CVisibilityManager::~ CVisibilityManager ()
 {
@@ -563,6 +553,9 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 {
 	if (this == NULL || in_pmProjection == NULL)
 		return;
+
+	_private->_bProjectionMatrixSetup = true;
+	_private->_mProjection = *in_pmProjection;
 
 	Matrix4x4<float> mView, mProj;
 
@@ -698,22 +691,13 @@ void CVisibilityManager::SetCamera (const Vector3& in_vPos, const Vector3& in_vD
 	if (this == NULL)
 		return;
 
+	_private->_bProjectionMatrixSetup = false;
+
 	Vector3f vPos = ToVec3(in_vPos);
 	Vector3f vDir = ToVec3(in_vDir);
 	Vector3f vUp = ToVec3(in_vUp);
 
-
-	//float fCtgX = cosf(in_fHorizontalFOV*D2R / 2) / sinf(in_fHorizontalFOV*D2R / 2);
-	//float fCtgY = cosf(in_fVerticalFOV*D2R / 2) / sinf(in_fVerticalFOV*D2R / 2);
-	//float fAspect = fCtgY / fCtgX;
-
-	//D3DXMATRIX mProj;
-	//D3DXMatrixPerspectiveFovLH(&mProj, in_fVerticalFOV*D2R, fAspect, in_fNearPlane, in_fFarPlane);
-
-	//SetViewProjection(in_vPos, in_vDir, in_vUp, &mProj);
-
 	_private->_Camera.SetPerspective(vPos, vDir, vUp, in_fHorizontalFOV, in_fVerticalFOV, in_fNearPlane, in_fFarPlane);
-
 
 	_private->_vecVisibleObjects.resize(0);
 	

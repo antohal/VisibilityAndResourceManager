@@ -47,8 +47,14 @@ struct CameraDesc
 	Vector3 vDir;
 	Vector3 vUp;
 
-	float	verticalFovTan;
-	float	horizontalFovTan;
+	float	verticalFovTan = 0;
+	float	horizontalFovTan = 0;
+
+	float	nearPlane = 0;
+	float	farPlane = 0;
+
+	bool	projectionSet = false;
+	D3DMATRIX projection;
 };
 
 struct OrientedBox
@@ -67,10 +73,28 @@ public:
 	CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, float in_fWorldRadius, float in_fMinCellSize);
 	~ CVisibilityManager ();
 
+	// получить радиус мира
+	float GetWorldRadius() const;
+
+	// получить минимальный размер ячейки
+	float GetMinCellSize() const;
+
+	// Установить разрешение экрана
 	void SetResolution (unsigned int in_uiWidth, unsigned int in_uiHeight);
+
+	// Получить разрешение экрана
+	void GetResolution(unsigned int& out_uiWidth, unsigned int& out_uiHeight);
+
+	// Установить минимальный размер объекта, видимый на экране
 	void SetMinimalObjectSize (unsigned int in_uiPixels);
 
+	// получить минимальный размер объекта
+	unsigned int GetMinimalObjectSize() const;
+
+	// получить ближнюю отсекающую плоскость
 	float GetNearClipPlane () const;
+
+	// получить дальнюю отсекающую плоскость
 	float GetFarClipPlane () const;
 
 

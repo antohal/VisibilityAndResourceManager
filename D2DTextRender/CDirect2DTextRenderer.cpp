@@ -13,6 +13,8 @@
 #include <map>
 #include <sstream>
 
+#include <stdarg.h>
+
 #include "string_cast.hpp"
 
 #pragma comment(lib, "d2d1.lib")
@@ -182,7 +184,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		if (_ptrRectangleBorderBrush)
 			_pOwner->_private->GetAbstractTextRenderer()->DrawRectangle(_Rect, _ptrRectangleBorderBrush);
 
-		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.length()), _ptrTextFormat, &_TextRect, _ptrTextBrush);
+		_pOwner->_private->GetAbstractTextRenderer()->RenderText(_RenderedText.c_str(), static_cast<UINT32>(_RenderedText.size()), _ptrTextFormat, &_TextRect, _ptrTextBrush);
 
 	}
 
@@ -270,7 +272,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		{
 			woss << line._wsText;
 
-			if (line._uiParamHandle != UINT(-1))
+			if (line._wsFormat.empty() && line._uiParamHandle != UINT(-1))
 			{
 				woss << line._fParamValue;
 			}
@@ -293,9 +295,51 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		_maxTextLines = in_nMaxLinesCount;
 	}
 
+	UINT AddFormattedTextLine(const wchar_t* in_pcwszFormat)
+	{
+		_lstTextLines.push_back(TextLine());
+
+		TextLine& line = _lstTextLines.back();
+		
+		line._wsFormat = in_pcwszFormat;
+		line._uiParamHandle = static_cast<UINT>(_mapParameters.size());
+
+		_mapParameters[line._uiParamHandle] = &line;
+
+		UpdateRenderedText();
+
+		return line._uiParamHandle;
+	}
+
+	// »зменить параметры форматированной строки
+	void UpdateFormattedTextLine(UINT in_uiFormattedLineId, va_list args)
+	{
+		auto it = _mapParameters.find(in_uiFormattedLineId);
+
+		if (it == _mapParameters.end())
+		{
+			// TODO: error here
+			return;
+		}
+
+		static wchar_t buf[100];
+		int size = vswprintf_s(buf, 100, it->second->_wsFormat.c_str(), args);
+
+		if (size > 0)
+		{
+			it->second->_wsText = std::wstring(buf, size);
+			if (it->second->_wsText.back() == L'\0')
+				it->second->_wsText.pop_back();
+		}
+
+		UpdateRenderedText();
+	}
+
+
 	struct TextLine
 	{
 		std::wstring	_wsText;
+		std::wstring	_wsFormat;
 		UINT			_uiParamHandle = -1;
 		float			_fParamValue = 0;
 	};
@@ -344,6 +388,21 @@ CDirect2DTextBlock::CDirect2DTextBlock(CDirect2DTextRenderer* in_pOwner)
 CDirect2DTextBlock::~CDirect2DTextBlock()
 {
 	delete _private;
+}
+
+// ƒобавить форматированную строку, по идентификатору которой можно измен€ть параметры, например "vector = [%f, %f, %f]"
+UINT CDirect2DTextBlock::AddFormattedTextLine(const wchar_t* in_pcwszFormat)
+{
+	return _private->AddFormattedTextLine(in_pcwszFormat);
+}
+
+// »зменить параметры форматированной строки
+void CDirect2DTextBlock::UpdateFormattedTextLine(UINT in_uiFormattedLineId, ...)
+{
+	va_list args;
+	va_start(args, in_uiFormattedLineId);
+	_private->UpdateFormattedTextLine(in_uiFormattedLineId, args);
+	va_end(args);
 }
 
 void CDirect2DTextBlock::Init(

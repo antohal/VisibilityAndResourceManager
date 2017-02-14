@@ -88,6 +88,12 @@ public:
 	// Добавить параметр (возвращает хэндл параметра, по которому можно изменять значение) (версия UNICODE)
 	UINT AddParameter(const wchar_t* in_pcwszParamName);
 
+	// Добавить форматированную строку, по идентификатору которой можно изменять параметры, например "vector = [%f, %f, %f]"
+	UINT AddFormattedTextLine(const wchar_t* in_pcwszFormat);
+
+	// Изменить параметры форматированной строки
+	void UpdateFormattedTextLine(UINT in_uiFormattedLineId, ...);
+
 	// Установить значение параметра
 	void SetParameterValue(UINT in_uiParamHandle, float in_fParameterValue);
 
