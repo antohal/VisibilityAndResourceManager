@@ -358,14 +358,14 @@ void CResourceManager::SetRotationRateAverageInterval(float intervalSec)
 	_private->_cameraRateInterval = intervalSec;
 }
 
-void CResourceManager::SetSpeedPotentialVisibilityMultiplier(float speedMultiplier)
+void CResourceManager::SetSpeedVisibilityPredictionTime(float speedMultiplier)
 {
 	LogMessage("CResourceManager: SpeedPotentialVisibilityMultiplier set to %f.", speedMultiplier);
 
 	_private->_boundBoxExtensionSpeedMultiplier = speedMultiplier;
 }
 
-void CResourceManager::SetRotationRatePotentialVisibilityMultiplier(float rateMultiplier)
+void CResourceManager::SetRotationRateVisibilityPredictionTime(float rateMultiplier)
 {
 	LogMessage("CResourceManager: RotationRatePotentialVisibilityMultiplier set to %f.", rateMultiplier);
 
