@@ -31,7 +31,7 @@ private:
 	float	m_fTanFOVAngle;
 };
 
-CCamera::CCamera () : _vPos(0), _bOrtho(false), _fNearPlane(1), _fHorizontalHalfFovTan(0), _fVerticalHalfFovTan(0)
+CCamera::CCamera () : _vPos(0), _bOrtho(false), _fNearPlane(1), _fFarPlane(100), _fHorizontalHalfFovTan(0), _fVerticalHalfFovTan(0)
 {
 }
 
@@ -65,11 +65,15 @@ void CCamera::CreateFromFrustumPoints(const Vector3f& in_vPos, const Vector3f& i
 	_vUp = in_vUp;
 
 	_fNearPlane = in_fNearPlane;
+	_fFarPlane = in_fFarPlane;
 
 	Matrix3x3f mOrientation = GetMatrixFromForwardDirection<float>(Normalize(in_vDir), Normalize(in_vUp));
 
 	SFOV_Tan HorizontalFOV(in_fHorizontalFOV);
 	SFOV_Tan VerticalFOV(in_fVerticalFOV);
+
+	_fHorizontalFov = in_fHorizontalFOV;
+	_fVerticalFov = in_fVerticalFOV;
 
 	_fHorizontalHalfFovTan = HorizontalFOV.GetTanFOVAngle();
 	_fVerticalHalfFovTan = VerticalFOV.GetTanFOVAngle();
@@ -87,6 +91,7 @@ void CCamera::SetPerspective (const Vector3f& in_vPos, const Vector3f& in_vDir, 
 	_vUp = in_vUp;
 
 	_fNearPlane = in_fNearPlane;
+	_fFarPlane = in_fFarPlane;
 
 	Matrix3x3f mOrientation = GetMatrixFromForwardDirection<float>(Normalize(in_vDir), Normalize(in_vUp));
 
@@ -95,6 +100,9 @@ void CCamera::SetPerspective (const Vector3f& in_vPos, const Vector3f& in_vDir, 
 
 	_fHorizontalHalfFovTan = HorizontalFOV.GetTanFOVAngle();
 	_fVerticalHalfFovTan = VerticalFOV.GetTanFOVAngle();
+
+	_fHorizontalFov = in_fHorizontalFOV;
+	_fVerticalFov = in_fVerticalFOV;
 
 	UpdateFrustumPlanes(mOrientation, GetPos(), in_fFarPlane, in_fNearPlane, 
 		HorizontalFOV.GetTanFOVAngle(), VerticalFOV.GetTanFOVAngle(), 
@@ -133,6 +141,11 @@ bool CCamera::IsOrtho () const
 float	CCamera::GetNearPlane () const
 {
 	return _fNearPlane;
+}
+
+float	CCamera::GetFarPlane() const
+{
+	return _fFarPlane;
 }
 
 const Vector3f& CCamera::GetPos () const 

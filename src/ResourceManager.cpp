@@ -38,7 +38,7 @@ struct CResourceManager::SResourceManagerPrivate
 
 	float						_invisibleUnloadTime = 10.f;
 	float						_boundBoxExtensionSpeedMultiplier = 10.f;
-	float						_rotationRatePredictorMultiplier = 5.f;
+	float						_rotationRatePredictorMultiplier = 10.f;
 
 
 	struct VisibilityPredictor
@@ -56,10 +56,12 @@ struct CResourceManager::SResourceManagerPrivate
 		bool			_initialized = false;
 
 		Vector3df		_cameraPos;
+		Vector3df		_cameraDir;
 		Quaterniondf	_cameraOrient;
 		
 		Quaterniondf	_predictedQuat;
 		Vector3df		_predictedPos;
+		Vector3df		_predictedDir;
 
 		Vector3df		_cameraVelocity;
 		Vector3df		_cameraAngularVelocity;
@@ -74,6 +76,8 @@ struct CResourceManager::SResourceManagerPrivate
 
 	CDirect2DTextBlock*			_textBlock = nullptr;
 
+	float						_cameraRateInterval = 0.25;
+
 	UINT						_paramPotentiallyVisibleResources = -1;
 	UINT						_paramPotentiallyVisibleObjects = -1;
 	UINT						_paramPotentiallyVisibleMeshes = -1;
@@ -83,11 +87,11 @@ struct CResourceManager::SResourceManagerPrivate
 
 	UINT						_paramCameraVelocity = -1;
 	UINT						_paramCameraAngularVelocity = -1;
-	UINT						_paramCameraOrientation = -1;
+	UINT						_paramCameraDirection = -1;
 
 	UINT						_paramCameraPos = -1;
 	UINT						_paramPredictedPos = -1;
-	UINT						_paramPredictedQuat = -1;
+	UINT						_paramPredictedDirection = -1;
 
 	unsigned int				_potentiallyVisibleResources = 0;
 
@@ -170,6 +174,7 @@ struct CResourceManager::SResourceManagerPrivate
 		}
 
 		visPredictor._predictionVisibilityManager = new CVisibilityManager(_objectManager, in_pVisibilityManager->GetWorldRadius(), in_pVisibilityManager->GetMinCellSize());
+		visPredictor._predictionVisibilityManager->SetPredictionModeEnabled(true);
 
 		unsigned int width, height;
 		in_pVisibilityManager->GetResolution(width, height);
@@ -212,9 +217,15 @@ struct CResourceManager::SResourceManagerPrivate
 
 			predictor._angularVelocityBuffer.push_back(angVel);
 
-			const size_t MAX_VEL_BUF = 5;
+			size_t MAX_VEL_BUF = 5;
+			
+			if (deltaTime > 0)
+				MAX_VEL_BUF = (size_t)(_cameraRateInterval / deltaTime);
 
-			if (predictor._angularVelocityBuffer.size() > MAX_VEL_BUF)
+			if (MAX_VEL_BUF > 100)
+				MAX_VEL_BUF = 100;
+
+			while (predictor._angularVelocityBuffer.size() > MAX_VEL_BUF)
 			{
 				predictor._angularVelocityBuffer.pop_front();
 			}
@@ -242,13 +253,31 @@ struct CResourceManager::SResourceManagerPrivate
 
 			//@{
 
-			
+			Matrix3x3df mCameraOrient = predictor._predictedQuat.ToSO3Operator();
+			predictor._predictedDir = mCameraOrient[0];
+
+			Vector3 vPredictedPos(predictor._predictedPos[0], predictor._predictedPos[1], predictor._predictedPos[2]);
+			Vector3 vPredictedDir(predictor._predictedDir[0], predictor._predictedDir[1], predictor._predictedDir[2]);
+			Vector3 vPredictedUp(mCameraOrient[2][0], mCameraOrient[2][1], mCameraOrient[2][2]);
+
+			if (predictor._cameraParams.projectionSet)
+				predictor._predictionVisibilityManager->SetViewProjection(vPredictedPos, vPredictedDir, vPredictedUp, &predictor._cameraParams.projection);
+			else
+			{
+
+				predictor._predictionVisibilityManager->SetCamera(vPredictedPos, vPredictedDir, vPredictedUp, predictor._cameraParams.horizontalFov, predictor._cameraParams.verticalFov, 
+					predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane);
+
+			}
+
+			predictor._predictionVisibilityManager->UpdateVisibleObjectsSet();
 
 			//@}
 		}
 
 
 		predictor._cameraPos = vCameraPos;
+		predictor._cameraDir = vCameraDir;
 		predictor._cameraOrient = qCameraOrientation;
 
 		predictor._initialized = true;
@@ -270,8 +299,8 @@ struct CResourceManager::SResourceManagerPrivate
 		_textBlock->UpdateFormattedTextLine(_paramCameraPos, firstPredictor._cameraPos[0], firstPredictor._cameraPos[1], firstPredictor._cameraPos[2]);
 		_textBlock->UpdateFormattedTextLine(_paramPredictedPos, firstPredictor._predictedPos[0], firstPredictor._predictedPos[1], firstPredictor._predictedPos[2]);
 
-		_textBlock->UpdateFormattedTextLine(_paramPredictedQuat, firstPredictor._predictedQuat[0], firstPredictor._predictedQuat[1], firstPredictor._predictedQuat[2], firstPredictor._predictedQuat[3]);
-		_textBlock->UpdateFormattedTextLine(_paramCameraOrientation, firstPredictor._cameraOrient[0], firstPredictor._cameraOrient[1], firstPredictor._cameraOrient[2], firstPredictor._cameraOrient[3]);
+		_textBlock->UpdateFormattedTextLine(_paramPredictedDirection, firstPredictor._predictedDir[0], firstPredictor._predictedDir[1], firstPredictor._predictedDir[2]);
+		_textBlock->UpdateFormattedTextLine(_paramCameraDirection, firstPredictor._cameraDir[0], firstPredictor._cameraDir[1], firstPredictor._cameraDir[2]);
 	}
 };
 
@@ -322,6 +351,11 @@ void CResourceManager::SetInvisibleUnloadTime(float time)
 	LogMessage("CResourceManager: InvisibleUnloadTime set to %f.", time);
 
 	_private->_invisibleUnloadTime = time;
+}
+
+void CResourceManager::SetRotationRateAverageInterval(float intervalSec)
+{
+	_private->_cameraRateInterval = intervalSec;
 }
 
 void CResourceManager::SetSpeedPotentialVisibilityMultiplier(float speedMultiplier)
@@ -470,8 +504,8 @@ void CResourceManager::EnableDebugTextRender(CDirect2DTextBlock* textBlock)
 	_private->_paramCameraPos = textBlock->AddFormattedTextLine(L"Позиция камеры:\n[%.3lf,\t%.3lf, \t%.3lf]");
 	_private->_paramPredictedPos = textBlock->AddFormattedTextLine(L"Предсказанная позиция камеры:\n[%.3lf,\t%.3lf, \t%.3lf]");
 
-	_private->_paramCameraOrientation = textBlock->AddFormattedTextLine(L"Кватернион ориентации камеры:\n[%.3lf,\t%.3lf, \t%.3lf, \t%.3lf]");
-	_private->_paramPredictedQuat = textBlock->AddFormattedTextLine(L"Предсказанный кватернион ориентации камеры:\n[%.3lf,\t%.3lf, \t%.3lf, \t%.3lf]");
+	_private->_paramCameraDirection = textBlock->AddFormattedTextLine(L"Направление камеры:\n[%.3lf,\t%.3lf, \t%.3lf]");
+	_private->_paramPredictedDirection = textBlock->AddFormattedTextLine(L"Предсказанное Направление камеры:\n[%.3lf,\t%.3lf, \t%.3lf]");
 
 }
 

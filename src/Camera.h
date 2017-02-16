@@ -32,9 +32,18 @@ public:
 
 	bool	IsOrtho () const;
 	float	GetNearPlane () const;
+	float	GetFarPlane() const;
 
 	float	GetHorizontalHalfFovTan () const;
 	float	GetVerticalHalfFovTan () const;
+
+	float GetHorizontalFov() const {
+		return _fHorizontalFov;
+	}
+
+	float GetVerticalFov() const {
+		return _fVerticalFov;
+	}
 
 private:
 
@@ -47,9 +56,13 @@ private:
 
 	bool									_bOrtho;
 	float									_fNearPlane;
+	float									_fFarPlane;
 
 	float									_fHorizontalHalfFovTan;
 	float									_fVerticalHalfFovTan;
+
+	float									_fHorizontalFov;
+	float									_fVerticalFov;
 };
 
 };

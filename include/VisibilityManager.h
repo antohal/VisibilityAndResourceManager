@@ -47,8 +47,8 @@ struct CameraDesc
 	Vector3 vDir;
 	Vector3 vUp;
 
-	float	verticalFovTan = 0;
-	float	horizontalFovTan = 0;
+	float	verticalFov = 0;
+	float	horizontalFov = 0;
 
 	float	nearPlane = 0;
 	float	farPlane = 0;
@@ -142,7 +142,13 @@ public:
 	// Выключить лог в файл
 	void DisableLog();
 
+protected:
+
+	void SetPredictionModeEnabled(bool enabled);
+
 private:
 	struct VisibilityManagerPrivate;
 	VisibilityManagerPrivate* _private;
+
+	friend class CResourceManager;
 };

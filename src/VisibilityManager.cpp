@@ -207,6 +207,7 @@ struct CVisibilityManager::VisibilityManagerPrivate
 	std::map<C3DBaseObject*, SObject>		_mapObjects;
 #endif
 
+	bool									_bPredictionMode = false;
 
 	C3DBaseObjectManager*					_pBase3DObjectTree;
 
@@ -934,11 +935,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		pInternalObject->_pObject->SetPotentiallyVisible();
 
-		for (C3DBaseFaceSet* pFaceSet : pInternalObject->_vecFaceSets)
-		{
-			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
-				material->AddVisibleFaceSet(pFaceSet);
-		}
+		_private->SetObjectVisibleOnThisFrame(*pInternalObject);
 	}
 
 
@@ -980,11 +977,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 			internalObject._pObject->SetPotentiallyVisible();
 		}
 
-		for (C3DBaseFaceSet* pFaceSet : internalObject._vecFaceSets)
-		{
-			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
-				material->AddVisibleFaceSet(pFaceSet);
-		}
+		_private->SetObjectVisibleOnThisFrame(internalObject);
 	}
 
 	_private->_bUpdateTextureVisibility = false;
@@ -992,10 +985,13 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 void CVisibilityManager::VisibilityManagerPrivate::SetObjectVisibleOnThisFrame(CVisibilityManager::VisibilityManagerPrivate::SObject& obj)
 {
-	for (C3DBaseFaceSet* pFaceSet : obj._vecFaceSets)
+	if (!_bPredictionMode)
 	{
-		if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
-			material->AddVisibleFaceSet(pFaceSet);
+		for (C3DBaseFaceSet* pFaceSet : obj._vecFaceSets)
+		{
+			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
+				material->AddVisibleFaceSet(pFaceSet);
+		}
 	}
 }
 
@@ -1018,6 +1014,11 @@ bool CVisibilityManager::IsTextureVisible(C3DBaseTexture* texture) const
 	return bRes;
 }
 
+void CVisibilityManager::SetPredictionModeEnabled(bool enabled)
+{
+	_private->_bPredictionMode = enabled;
+}
+
 float CVisibilityManager::GetTexturePriority(C3DBaseTexture* texture) const
 {
 	if (_private->_asetVisibleTextures[texture->GetTextureType()].find(texture) == _private->_asetVisibleTextures[texture->GetTextureType()].end())
@@ -1033,9 +1034,13 @@ void CVisibilityManager::GetCameraParameters(CameraDesc& out_parameters) const
 	out_parameters.vDir = FromVec3(_private->_Camera.GetDir());
 	out_parameters.vUp = FromVec3(_private->_Camera.GetUp());
 
-	out_parameters.horizontalFovTan = _private->_Camera.GetHorizontalHalfFovTan();
-	out_parameters.verticalFovTan = _private->_Camera.GetVerticalHalfFovTan();
+	out_parameters.horizontalFov = _private->_Camera.GetHorizontalFov();
+	out_parameters.verticalFov = _private->_Camera.GetVerticalFov();
+
+	out_parameters.nearPlane = _private->_Camera.GetNearPlane();
+	out_parameters.farPlane = _private->_Camera.GetFarPlane();
 }
+
 
 // Получить набор объектов из ориентированного бокса
 void CVisibilityManager::GetObjectsFromOrientedBox(const OrientedBox& box, std::vector<C3DBaseObject*>& out_objects) const
