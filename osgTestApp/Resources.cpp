@@ -45,6 +45,18 @@ C3DObject::~C3DObject()
 		_osgNode->asGroup()->removeChildren(0, _osgNode->asGroup()->getNumChildren());
 }
 
+// Функция возврящает количество мешей данного объекта
+size_t C3DObject::GetMeshesCount() const
+{
+	return _meshes.size();
+}
+
+// Функция возвращает конкретный меш объекта по его идентификатору
+C3DBaseMesh* C3DObject::GetMeshById(size_t id) const
+{
+	return _meshes[id];
+}
+
 // получить указатель на менеджер, управляющий данным ресурсом
 // может быть NULL. В таком случае, ресурс не является выгружаемым
 C3DBaseManager*	C3DObject::GetManager() const

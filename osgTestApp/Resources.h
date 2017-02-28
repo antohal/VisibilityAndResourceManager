@@ -45,6 +45,13 @@ public:
 
 	//@{ C3DBaseObject
 
+	// Функция возврящает количество мешей данного объекта
+	virtual size_t	GetMeshesCount() const;
+
+	// Функция возвращает конкретный меш объекта по его идентификатору
+	virtual C3DBaseMesh*	GetMeshById(size_t id) const;
+
+
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
 	// пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
 	virtual void GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax);
@@ -55,8 +62,7 @@ public:
 	// Функция должна возвращать: включена-ли проверка размера объекта на экране
 	virtual bool IsMinimalSizeCheckEnabled() const;
 
-	// Функция возврящает набор мешей данного объекта
-	virtual void	GetMeshes(std::vector<C3DBaseMesh*>& out_vecMeshes) const;
+
 
 	// функция вызывается, когда объект становится видимым
 	virtual void	SetPotentiallyVisible();
