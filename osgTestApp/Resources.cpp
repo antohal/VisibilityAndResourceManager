@@ -45,6 +45,18 @@ C3DObject::~C3DObject()
 		_osgNode->asGroup()->removeChildren(0, _osgNode->asGroup()->getNumChildren());
 }
 
+
+void C3DObject::setFaceSets(const std::vector<C3DFaceSet*>& facesets)
+{
+	_faceSets = facesets;
+	if (!_createdExternal)
+	{
+
+		for (C3DFaceSet* faceSet : _faceSets)
+			_osgNode->asGroup()->addChild(faceSet->getOsgNode());
+	}
+}
+
 // Функция возврящает количество мешей данного объекта
 size_t C3DObject::GetMeshesCount() const
 {
@@ -57,19 +69,22 @@ C3DBaseMesh* C3DObject::GetMeshById(size_t id) const
 	return _meshes[id];
 }
 
+// получить список фейссетов
+size_t	 C3DObject::GetFaceSetsCount() const
+{
+	return _faceSets.size();
+}
+
+C3DBaseFaceSet*	 C3DObject::GetFaceSetById(size_t id) const
+{
+	return _faceSets[id];
+}
+
 // получить указатель на менеджер, управляющий данным ресурсом
 // может быть NULL. В таком случае, ресурс не является выгружаемым
 C3DBaseManager*	C3DObject::GetManager() const
 {
 	return &ObjectManager::Instance();
-}
-
-// получить дочерние ресурсы
-void C3DObject::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const
-{
-	out_vecChildResources.clear();
-	for (C3DMesh* mesh : _meshes)
-		out_vecChildResources.push_back(mesh);
 }
 
 
@@ -112,14 +127,6 @@ bool C3DObject::IsMinimalSizeCheckEnabled() const
 	return false;
 }
 
-// Функция возврящает набор мешей данного объекта
-void C3DObject::GetMeshes(std::vector<C3DBaseMesh*>& out_vecMeshes) const
-{
-	out_vecMeshes.clear();
-	for (C3DMesh* mesh : _meshes)
-		out_vecMeshes.push_back(mesh);
-}
-
 void C3DObject::setMeshes(const std::vector<C3DMesh*>& meshes)
 {
 	_meshes = meshes;
@@ -158,27 +165,6 @@ C3DMesh::~C3DMesh()
 		_osgNode->asGroup()->removeChildren(0, _osgNode->asGroup()->getNumChildren());
 }
 
-void C3DMesh::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const
-{
-	out_vecChildResources.clear();
-	for (C3DFaceSet* faceSet : _faceSets)
-		out_vecChildResources.push_back(faceSet);
-}
-
-void C3DMesh::setFaceSets(const std::vector<C3DFaceSet*>& facesets)
-{
-	_faceSets = facesets;
-
-	for (C3DFaceSet* faceSet : _faceSets)
-		_osgNode->asGroup()->addChild(faceSet->getOsgNode());
-}
-
-void C3DMesh::GetFaceSets(std::vector<C3DBaseFaceSet*>& out_vecFaceSets) const
-{
-	out_vecFaceSets.clear();
-	for (C3DFaceSet* faceSet : _faceSets)
-		out_vecFaceSets.push_back(faceSet);
-}
 
 //
 //	C3DFaceSet
@@ -284,17 +270,6 @@ C3DMaterial::C3DMaterial(osg::Material* material)
 	_external = true;
 }
 
-void C3DMaterial::GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const
-{
-	out_vecChildResources.clear();
-	
-	for (auto technique : _techniques)
-		out_vecChildResources.push_back(technique);
-
-	for (auto texture : _textures)
-		out_vecChildResources.push_back(texture);
-}
-
 C3DBaseManager*	C3DMaterial::GetManager() const
 { 
 	return &MaterialManager::Instance(); 
@@ -311,23 +286,26 @@ void C3DMaterial::setTextures(const std::vector<C3DTexture*>& textures)
 	_textures = textures;
 }
 
-// Получить набор техник
-void C3DMaterial::GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const
+size_t	C3DMaterial::GetTechniquesCount() const
 {
-	out_vecTechniques.clear();
-
-	for (auto technique : _techniques)
-		out_vecTechniques.push_back(technique);
+	return _techniques.size();
 }
 
-// получить список текстур
-void C3DMaterial::GetTextures(std::vector<C3DBaseTexture*>& out_vecTextures) const
+C3DBaseTechnique*	C3DMaterial::GetTechniqueById(size_t id) const
 {
-	out_vecTextures.clear();
-
-	for (auto texture : _textures)
-		out_vecTextures.push_back(texture);
+	return _techniques[id];
 }
+
+size_t C3DMaterial::GetTexturesCount() const
+{
+	return _textures.size();
+}
+
+C3DBaseTexture* C3DMaterial::GetTextureById(size_t id) const
+{
+	return _textures[id];
+}
+
 
 
 //

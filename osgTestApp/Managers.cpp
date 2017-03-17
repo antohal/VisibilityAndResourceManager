@@ -60,6 +60,12 @@ C3DObject* ObjectManager::generateTestObject(const osg::Vec3& pos)
 {
 	C3DObject* newObject = new C3DObject(pos);
 
+	std::vector<C3DFaceSet*> vecFaceSets;
+	vecFaceSets.push_back(FaceSetManager::Instance().getRandomFaceSet());
+	vecFaceSets.push_back(FaceSetManager::Instance().getRandomFaceSet());
+
+	newObject->setFaceSets(vecFaceSets);
+
 	std::vector<C3DMesh*> vecMeshes;
 	vecMeshes.push_back(MeshManager::Instance().getRandomMesh());
 
@@ -131,7 +137,7 @@ void ObjectManager::addObjectsRecursiveFromOsgNode(osg::Node* node)
 
 			std::vector<C3DFaceSet*> facesets;
 
-			for (int i = 0; i < geode->getNumDrawables(); i++)
+			for (unsigned int i = 0; i < geode->getNumDrawables(); i++)
 			{
 				osg::Drawable* drawable = geode->getDrawable(i);
 				C3DFaceSet* faceset = new C3DFaceSet(geode);
@@ -152,12 +158,13 @@ void ObjectManager::addObjectsRecursiveFromOsgNode(osg::Node* node)
 			
 
 			C3DMesh* mesh = new C3DMesh();
-			mesh->setFaceSets(facesets);
 
 			std::vector<C3DMesh*> vecMeshes;
 			vecMeshes.push_back(mesh);
 
 			newObject->setMeshes(vecMeshes);
+
+			newObject->setFaceSets(facesets);
 
 			createDebugBoundBox(newObject);
 
@@ -229,12 +236,6 @@ void MeshManager::generateMeshes()
 	for (int i = 0; i < NumMeshes; i++)
 	{
 		C3DMesh* mesh = new C3DMesh();
-
-		std::vector<C3DFaceSet*> vecFaceSets;
-		vecFaceSets.push_back(FaceSetManager::Instance().getRandomFaceSet());
-		vecFaceSets.push_back(FaceSetManager::Instance().getRandomFaceSet());
-
-		mesh->setFaceSets(vecFaceSets);
 
 		_meshes.push_back(mesh);
 	}

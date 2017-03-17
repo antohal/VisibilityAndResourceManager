@@ -30,11 +30,10 @@ public:
 	~C3DObject();
 
 	osg::Node*	getOsgNode() const { return _osgNode; }
+	void setFaceSets(const std::vector<C3DFaceSet*>&);
+
 
 	//@{ C3DBaseResource
-
-	// получить дочерние ресурсы
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const;
 
 	// получить указатель на менеджер, управляющий данным ресурсом
 	// может быть NULL. В таком случае, ресурс не является выгружаемым
@@ -50,6 +49,10 @@ public:
 
 	// Функция возвращает конкретный меш объекта по его идентификатору
 	virtual C3DBaseMesh*	GetMeshById(size_t id) const;
+
+	// получить список фейссетов
+	virtual size_t	GetFaceSetsCount() const;
+	virtual C3DBaseFaceSet*	GetFaceSetById(size_t id) const;
 
 
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
@@ -86,6 +89,8 @@ private:
 	D3DXMATRIX					_d3dTransformMatrix;
 
 	bool						_createdExternal = false;
+
+	std::vector<C3DFaceSet*>	_faceSets;
 };
 
 //
@@ -101,13 +106,8 @@ public:
 
 	osg::Node*	getOsgNode() const { return _osgNode; }
 
-	void setFaceSets(const std::vector<C3DFaceSet*>&);
-
 	//@{ C3DBaseResource
 	
-	// получить дочерние ресурсы
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const;
-
 	// получить указатель на менеджер, управляющий данным ресурсом
 	// может быть NULL. В таком случае, ресурс не является выгружаемым
 	virtual C3DBaseManager*	GetManager() const { return nullptr; }
@@ -117,15 +117,13 @@ public:
 
 	//@{ C3DBaseMesh
 
-	// Получить список Фейс-Сетов, используемых в меше
-	virtual void	GetFaceSets(std::vector<C3DBaseFaceSet*>& out_vecFaceSets) const;
+
 
 	//@} C3DBaseMesh
 
 private:
 	
 	osg::ref_ptr<osg::Node>		_osgNode;
-	std::vector<C3DFaceSet*>	_faceSets;
 };
 
 //
@@ -177,9 +175,6 @@ public:
 
 	//@{ C3DBaseResource
 
-	// дочерних ресурсов у техники нет.
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const;
-
 	virtual C3DBaseManager*	GetManager() const;
 
 	//@} C3DBaseResource
@@ -188,11 +183,14 @@ public:
 
 	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*) {}
 
-	// Получить набор техник
-	virtual void	GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const;
+	//virtual void	GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const = 0;
+	virtual size_t	GetTechniquesCount() const;
+	virtual C3DBaseTechnique*	GetTechniqueById(size_t id) const ;
 
 	// получить список текстур
-	virtual void	GetTextures(std::vector<C3DBaseTexture*>& out_vecTextures) const;
+	//virtual void	GetTextures(std::vector<C3DBaseTexture*>& out_vecTextures) const = 0;
+	virtual size_t	GetTexturesCount() const;
+	virtual C3DBaseTexture*	GetTextureById(size_t id) const;
 
 	//@} C3DBaseMaterial
 
@@ -231,7 +229,11 @@ public:
 	//@{ C3DBaseResource
 
 	// дочерних ресурсов у техники нет.
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const {};
+	virtual size_t GetChildResourceCount() const {
+		return 0;
+	}
+
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const { return nullptr; }
 
 	// менеджер у техник отсутствует
 	virtual C3DBaseManager*	GetManager() const { return nullptr; };
@@ -260,8 +262,9 @@ public:
 
 	//@{ C3DBaseResource
 
-	// получить дочерние ресурсы. У текстур нет дочерних ресурсов.
-	virtual void GetChildResources(std::vector<C3DBaseResource*>& out_vecChildResources) const {};
+	virtual size_t GetChildResourceCount() const { return 0; }
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const { return nullptr; }
+
 
 	// получить указатель на менеджер, управляющий данным ресурсом
 	// может быть NULL. В таком случае, ресурс не является выгружаемым

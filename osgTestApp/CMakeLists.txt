@@ -18,4 +18,4 @@ target_link_libraries(osgTestApp
 )
 
 install(TARGETS osgTestApp
-        RUNTIME DESTINATION bin)
+        RUNTIME DESTINATION ./)
