@@ -8,8 +8,13 @@
 #define PI_BY_4 (0.785398163397f)
 #define TWO_PI	(6.283185307179586f)
 
+#ifndef D2R
 #define D2R 0.017453292519943295f //градусы в радианы
+#endif
+
+#ifndef R2D
 #define R2D 57.29577951308232087f //радианы в градусы
+#endif
 
 #define DEG2RAD D2R
 #define RAD2DEG R2D

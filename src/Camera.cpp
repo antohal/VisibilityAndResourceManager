@@ -4,33 +4,6 @@
 
 namespace VisibilityManager {
 
-struct SFOV_Tan
-{
-public:
-
-	SFOV_Tan() : m_fFOVAngle(0), m_fTanFOVAngle(0)
-	{}
-
-	SFOV_Tan (float in_fValueDegrees)
-	{
-		SetFOVAngle(in_fValueDegrees);
-	}
-
-	void SetFOVAngle( float in_fValueDergees )
-	{
-		assert_debug( in_fValueDergees < 180, L"illegal FOV angle" );
-		m_fFOVAngle = in_fValueDergees;
-		m_fTanFOVAngle = tanf( 0.5f * DEG2RAD * m_fFOVAngle );
-	}
-
-	__forceinline float GetFOVAngle() const {return m_fFOVAngle;}
-	__forceinline float GetTanFOVAngle() const {return m_fTanFOVAngle;}
-
-private:
-	float	m_fFOVAngle;
-	float	m_fTanFOVAngle;
-};
-
 CCamera::CCamera () : _vPos(0), _bOrtho(false), _fNearPlane(1), _fFarPlane(100), _fHorizontalHalfFovTan(0), _fVerticalHalfFovTan(0)
 {
 }

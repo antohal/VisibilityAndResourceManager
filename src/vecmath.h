@@ -22,8 +22,14 @@ using namespace std;
 #define RND_DELTA_PART(a, d) a + d*2*(FRAND - 0.5f)
 #define RND_A_B(a, b) a + FRAND*(b - a)
 
+#ifndef D2R
 #define D2R M_PI/180.0
+#endif
+
+
+#ifndef R2D
 #define R2D 180.0/M_PI
+#endif
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define ARRAY_END(array) ((array) + ARRAY_SIZE(array))
@@ -32,6 +38,8 @@ using namespace std;
     #define ZERO    1.e-48          
 #endif
 
+namespace vm 
+{
 
 //@{ Useful functions
 template <typename T>
@@ -516,6 +524,11 @@ inline Vector<Type, 3> cross(const Vector<Type, 3>& in_vA, const Vector<Type, 3>
                             in_vA[0]*in_vB[1] - in_vA[1]*in_vB[0]);
 }
 
+template <typename Type>
+inline Vector<Type, 3> CrossProduct(const Vector<Type, 3>& in_vA, const Vector<Type, 3>& in_vB)
+{
+	return cross(in_vA, in_vB);
+}
 
 template <typename T, int N>
 inline bool IsEqualVector(const Vector<T, N>& A, const Vector<T, N>& B, const T tEpsilon = T(0.0001))
@@ -1459,3 +1472,5 @@ private:
 	double								_dfHistoryUpdateInterval;
 	double								_dfLastHistoryUpdateTime;
 };
+
+}; // namespace vm

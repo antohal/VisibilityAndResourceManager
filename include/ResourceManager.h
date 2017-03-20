@@ -41,12 +41,16 @@ public:
 	// ”становить интервал усреднени€ угловой скорости камеры [по умолчанию 0.25 с]
 	void SetRotationRateAverageInterval(float intervalSec);
 
+	// ”становить область видимости дл€ предсказани€ видимости
+	// ѕо умолчанию берутс€ значени€ из св€занного VisibilityManager
+	void SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg);
+
 	// добавить VisibilityManager в обработку. Ќеобходимо чтобы в этот момент in_pVisibilityManager был полностью инициализирован
-	// [вызываетс€ во врем€ инициализации]
+	// [вызываетс€ один раз во врем€ инициализации]
 	void AddVisibilityManager(CVisibilityManager* in_pVisibilityManager);
 
 	// ќбновить состо€ние ресурсов 
-	// [можно вызывать в отдельном потоке, не прив€зыва€сь к циклу рендера]
+	// [можно вызывать в отдельном потоке, не прив€зыва€сь к циклу рендера, но в одном потоке с прив€занными VisibilityManager]
 	void Update(float deltaTime);
 
 	// ѕолучить текущий приоритет текстуры при отрисовке

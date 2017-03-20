@@ -247,8 +247,10 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 
 	void	SetObjectInternal(C3DBaseObject* in_Object, const BoundBox& in_BBox, float in_fMaxDistance);
 
+	bool	IsObjectInCamera(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject);
+
 	// IVisibilityManagerPrivateInterface
-	virtual void	SetPotentialVisibilityConvexCloud(const std::vector<Vector3f>& in_vecCloud) override;
+	virtual void	MarkPotentiallyVisibleObjects(const std::vector<CollectObjectsData>& in_vecCloud) override;
 };
 
 // ¬ключить лог в файл [параметр по умолчанию TRUE]
@@ -840,6 +842,32 @@ void CVisibilityManager::UpdateTextureVisibility()
 	UpdateVisibleObjectsSet();
 }
 
+bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInCamera(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject)
+{
+	const Vector2f vResolution((float)_uiScreenWidth, (float)_uiScreenHeight);
+	const CBoundBox<float>& bbox = in_pInternalObject->_bbox;
+
+	if (!_Camera.GetBoundBox().IsIntersectingAnotherBox(bbox))
+		return false;
+
+	bool bEnableMinimalSizeCheck = in_pInternalObject->_bMinimalSizeCheckEnabled;
+
+	if (bEnableMinimalSizeCheck)
+	{
+		float fSizePixels = in_pInternalObject->GetBoundBoxMidSizeInPixels(_Camera, vResolution);
+
+		if (fSizePixels < _fMinimalObjectPixelSize)
+			return false;
+	}
+
+	bool bInFrustum = true;
+
+	BYTE btCrossFrustumPlaneFlag = in_GI.GetFrustumFlag();
+	bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(bbox, _Camera.GetFrustum(), btCrossFrustumPlaneFlag);
+
+	return bInFrustum;
+}
+
 void CVisibilityManager::UpdateVisibleObjectsSet ()
 {
 	if (this == NULL)
@@ -874,7 +902,8 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 #else
 	
-	Vector2f vResolution((float)_private->_uiScreenWidth, (float)_private->_uiScreenHeight);
+	const Vector2f vResolution((float)_private->_uiScreenWidth, (float)_private->_uiScreenHeight);
+
 	const CCamera& camera = _private->_Camera;
 	IGridIterator& GI = _private->_ptrOkTree->GetIterator(camera.GetBoundBox(), &camera.GetFrustum());
 
@@ -889,27 +918,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 		if (pInternalObject->_bAlwaysVisible)
 			continue;
 
-		const CBoundBox<float>& bbox = pInternalObject->_bbox;
-
-		if (! _private->_Camera.GetBoundBox().IsIntersectingAnotherBox(bbox))
-			continue;
-
-		bool bEnableMinimalSizeCheck = pInternalObject->_bMinimalSizeCheckEnabled;
-
-		if (bEnableMinimalSizeCheck)
-		{
-			float fSizePixels = pInternalObject->GetBoundBoxMidSizeInPixels(camera, vResolution);
-
-			if (fSizePixels < _private->_fMinimalObjectPixelSize)
-				continue;
-		}
-
-		bool bInFrustum = true;
-
-		BYTE btCrossFrustumPlaneFlag = GI.GetFrustumFlag();
-		bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(bbox, _private->_Camera.GetFrustum(), btCrossFrustumPlaneFlag);
-
-		if (! bInFrustum)
+		if (!_private->IsObjectInCamera(GI, pInternalObject))
 			continue;
 
 		if (!pInternalObject->_bTexturesInited)
@@ -937,9 +946,6 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 #endif
 
 		_private->_vecVisibleObjects.push_back(pInternalObject->_pObject);
-
-		pInternalObject->_pObject->SetPotentiallyVisible();
-
 		_private->SetObjectVisibleOnThisFrame(*pInternalObject);
 	}
 
@@ -979,7 +985,6 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 		if (internalObject._pObject)
 		{
 			_private->_vecVisibleObjects.push_back(*itVisObj);
-			internalObject._pObject->SetPotentiallyVisible();
 		}
 
 		_private->SetObjectVisibleOnThisFrame(internalObject);
@@ -1074,7 +1079,42 @@ IVisibilityManagerPrivateInterface*	CVisibilityManager::GetPrivateInterface() co
 	return _private;
 }
 
-void CVisibilityManager::VisibilityManagerPrivate::SetPotentialVisibilityConvexCloud(const std::vector<Vector3f>& in_vecCloud)
+void	CVisibilityManager::VisibilityManagerPrivate::MarkPotentiallyVisibleObjects(const std::vector<CollectObjectsData>& in_vecCloud)
 {
+	for (const CollectObjectsData& collectData : in_vecCloud)
+	{
+		IGridIterator& GI = _ptrOkTree->GetIterator(collectData.GetBoundBox(), &collectData.GetFrustum());
 
+		for (; !GI.IsEnd(); GI.Next())
+		{
+			CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
+
+			if (pInternalObject->_bAlwaysVisible)
+				continue;
+
+			const CBoundBox<float>& objectBoundBox = pInternalObject->_bbox;
+
+			if (!collectData.GetBoundBox().IsIntersectingAnotherBox(objectBoundBox))
+				continue;
+
+			bool bInFrustum = true;
+
+			BYTE btCrossFrustumPlaneFlag = GI.GetFrustumFlag();
+			bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(objectBoundBox, collectData.GetFrustum(), btCrossFrustumPlaneFlag);
+
+			if (!bInFrustum)
+				continue;
+
+			if (pInternalObject->_pObject)
+				pInternalObject->_pObject->SetPotentiallyVisible();
+		}
+	}
+
+	for (auto itVisObj = _setAlwaysVisibleObjects.begin(); itVisObj != _setAlwaysVisibleObjects.end(); itVisObj++)
+	{
+		CVisibilityManager::VisibilityManagerPrivate::SObject& internalObject = _mapObjects[(*itVisObj)];
+
+		if (internalObject._pObject)
+			internalObject._pObject->SetPotentiallyVisible();
+	}
 }

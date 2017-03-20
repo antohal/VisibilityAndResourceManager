@@ -1,6 +1,8 @@
-// BoundBox.h
-
 #pragma once
+
+#include "Vector3D.h"
+#include "Matrix.h"
+#include <vector>
 
 template <typename Type> inline Type GetMaxValue() { return Type(DBL_MAX); }
 template<> inline float GetMaxValue<float>() { return FLT_MAX; }
@@ -326,7 +328,7 @@ public:
 		out_vVertex[7] = Vector3D<Type>(m_vMin.x, m_vMax.y, m_vMin.z);
 	}
 
-	void UpdateWithPoints(const vector< Vector3D<Type> >& in_vecPoints);
+	void UpdateWithPoints(const std::vector< Vector3D<Type> >& in_vecPoints);
 	
 	void Move(const Vector3D<Type>& in_vOffset);
 
