@@ -12,6 +12,9 @@ set(GeometrySrc
 	Geometry/Matrix.cpp
 	Geometry/Matrix.h
 	Geometry/Matrix.inl
+	Geometry/Face.h
+	Geometry/ConvexHull.h
+	Geometry/ConvexHull.cpp
 	Geometry/Plane.h
 	Geometry/Vector3D.h
 	Geometry/Vector3D.cpp)
@@ -34,7 +37,8 @@ set(InterfaceHeaders
 	${PROJECT_SOURCE_DIR}/include/C3DBaseTechnique.h
 	${PROJECT_SOURCE_DIR}/include/C3DBaseTexture.h
 
-	${PROJECT_SOURCE_DIR}/include/VisibilityManager.h)
+	${PROJECT_SOURCE_DIR}/include/VisibilityManager.h
+	PrivateInterface.h)
 	
 source_group(Containers FILES ${ContainersSrc})
 source_group(Geometry FILES ${GeometrySrc})

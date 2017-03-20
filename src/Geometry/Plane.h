@@ -65,6 +65,7 @@ struct CFrustum
 			Planes[i].D = 0;
 		}
 	}
+
 	CFrustum(float in_fNearPlane, float in_fFarPlane, float in_fTanW, float in_fTanH, const Matrix3x3<TYPE>& in_mOrientation,
 		const Vector3D<TYPE>& in_vPlace)
 	{
@@ -95,26 +96,31 @@ struct CFrustum
 		Planes[0].N.v[1] = comboMatrix._24 + comboMatrix._21;
 		Planes[0].N.v[2] = comboMatrix._34 + comboMatrix._31;
 		Planes[0].D = comboMatrix._44 + comboMatrix._41;
+
 		// Right clipping plane
 		Planes[1].N.v[0] = comboMatrix._14 - comboMatrix._11;
 		Planes[1].N.v[1] = comboMatrix._24 - comboMatrix._21;
 		Planes[1].N.v[2] = comboMatrix._34 - comboMatrix._31;
 		Planes[1].D = comboMatrix._44 - comboMatrix._41;
+
 		// Top clipping plane
 		Planes[2].N.v[0] = comboMatrix._14 - comboMatrix._12;
 		Planes[2].N.v[1] = comboMatrix._24 - comboMatrix._22;
 		Planes[2].N.v[2] = comboMatrix._34 - comboMatrix._32;
-		Planes[2].D		 = comboMatrix._44 - comboMatrix._42;
+		Planes[2].D = comboMatrix._44 - comboMatrix._42;
+
 		// Bottom clipping plane
 		Planes[3].N.v[0] = comboMatrix._14 + comboMatrix._12;
 		Planes[3].N.v[1] = comboMatrix._24 + comboMatrix._22;
 		Planes[3].N.v[2] = comboMatrix._34 + comboMatrix._32;
 		Planes[3].D = comboMatrix._44 + comboMatrix._42;
+
 		// Near clipping plane
 		Planes[4].N.v[0] = comboMatrix._13;
 		Planes[4].N.v[1] = comboMatrix._23;
 		Planes[4].N.v[2] = comboMatrix._33;
 		Planes[4].D = comboMatrix._43;
+
 		// Far clipping plane
 		Planes[5].N.v[0] = comboMatrix._14 - comboMatrix._13;
 		Planes[5].N.v[1] = comboMatrix._24 - comboMatrix._23;

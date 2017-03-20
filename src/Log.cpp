@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-static bool g_enabled = true;
+static bool g_enabled = false;
 static bool g_inited = false;
 
 void LogInit()

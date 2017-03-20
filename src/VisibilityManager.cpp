@@ -13,6 +13,8 @@
 
 #include <D3DX10math.h>
 
+#include "PrivateInterface.h"
+
 //#include <ddraw.h>
 //#include <dxgi.h>
 
@@ -63,7 +65,7 @@ CBoundBox<float> ToBoundBox (const BoundBox& bbox)
 	return CBoundBox<float>(ToVec3(bbox.vMin), ToVec3(bbox.vMax));
 }
 
-struct CVisibilityManager::VisibilityManagerPrivate
+struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerPrivateInterface
 {
 
 	CVisibilityManager::VisibilityManagerPrivate ()
@@ -244,6 +246,9 @@ struct CVisibilityManager::VisibilityManagerPrivate
 	bool	GetTransformedBoundBox (C3DBaseObject* in_pObj, CBoundBox<float>& out_BBox);
 
 	void	SetObjectInternal(C3DBaseObject* in_Object, const BoundBox& in_BBox, float in_fMaxDistance);
+
+	// IVisibilityManagerPrivateInterface
+	virtual void	SetPotentialVisibilityConvexCloud(const std::vector<Vector3f>& in_vecCloud) override;
 };
 
 // Включить лог в файл [параметр по умолчанию TRUE]
@@ -1042,14 +1047,6 @@ void CVisibilityManager::GetCameraParameters(CameraDesc& out_parameters) const
 }
 
 
-// Получить набор объектов из ориентированного бокса
-void CVisibilityManager::GetObjectsFromOrientedBox(const OrientedBox& box, std::vector<C3DBaseObject*>& out_objects) const
-{
-
-
-}
-
-
 float CVisibilityManager::GetNearClipPlane () const
 {
 	return _private->_fNearClipPlane;
@@ -1070,4 +1067,14 @@ bool CVisibilityManager::IsObjectVisible (C3DBaseObject* in_pObject) const
 #else
 	return std::find(_private->_vecVisibleObjects.begin(), _private->_vecVisibleObjects.end(), in_pObject) != _private->_vecVisibleObjects.end();
 #endif
+}
+
+IVisibilityManagerPrivateInterface*	CVisibilityManager::GetPrivateInterface() const
+{
+	return _private;
+}
+
+void CVisibilityManager::VisibilityManagerPrivate::SetPotentialVisibilityConvexCloud(const std::vector<Vector3f>& in_vecCloud)
+{
+
 }

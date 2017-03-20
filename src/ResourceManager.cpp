@@ -450,7 +450,7 @@ float CResourceManager::GetTexturePriority(C3DBaseTexture* texture)
 	return texturePriority;
 }
 
-void CResourceManager::EnableLeg(bool enable/* = true*/)
+void CResourceManager::EnableLog(bool enable/* = true*/)
 {
 	LogEnable(enable);
 
