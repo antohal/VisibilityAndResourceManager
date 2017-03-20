@@ -222,6 +222,9 @@ struct CResourceManager::SResourceManagerPrivate
 			if (deltaTime > 0)
 				MAX_VEL_BUF = (size_t)(_cameraRateInterval / deltaTime);
 
+			if (MAX_VEL_BUF < 5)
+				MAX_VEL_BUF = 5;
+
 			if (MAX_VEL_BUF > 100)
 				MAX_VEL_BUF = 100;
 
