@@ -66,6 +66,8 @@ struct OrientedBox
 	BoundBox boundBox;
 };
 
+class IVisibilityManagerPrivateInterface;
+
 class VISIBILITYMANAGER_API CVisibilityManager
 {
 public:
@@ -133,9 +135,6 @@ public:
 	// Получить текущие параметры камеры
 	void GetCameraParameters(CameraDesc& out_parameters) const;
 
-	// Получить набор объектов из ориентированного бокса
-	void GetObjectsFromOrientedBox(const OrientedBox&, std::vector<C3DBaseObject*>& out_objects) const;
-
 	// Включить лог в файл [параметр по умолчанию TRUE]
 	void EnableLog(bool enable = true);
 
@@ -145,6 +144,8 @@ public:
 protected:
 
 	void SetPredictionModeEnabled(bool enabled);
+
+	IVisibilityManagerPrivateInterface*	GetPrivateInterface() const;
 
 private:
 	struct VisibilityManagerPrivate;

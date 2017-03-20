@@ -53,7 +53,7 @@ public:
 	float GetTexturePriority(C3DBaseTexture*);
 
 	// Включить лог в файл [параметр по умолчанию TRUE]
-	void EnableLeg(bool enable = true);
+	void EnableLog(bool enable = true);
 
 	// Выключить лог в файл
 	void DisableLog();
