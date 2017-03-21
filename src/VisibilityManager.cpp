@@ -331,6 +331,9 @@ bool CVisibilityManager::VisibilityManagerPrivate::GetTransformedBoundBox (C3DBa
 
 CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, float in_fWorldRadius, float in_fMinCellSize)
 {
+	LogInit("visman.log");
+	LogEnable(true);
+
 #ifdef USE_OPENCL
 	if (! g_ptrTaskManager.get())
 		g_ptrTaskManager = auto_ptr<COpenCLTaskManager>(new COpenCLTaskManager());
@@ -394,6 +397,8 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 		if (_private->GetTransformedBoundBox(object, BBox))
 			SetObject(object, BoundBox(Vector3(BBox.m_vMin.x, BBox.m_vMin.y, BBox.m_vMin.z), Vector3(BBox.m_vMax.x, BBox.m_vMax.y, BBox.m_vMax.z)), 0);
 	}
+
+	LogMessage("CVisibilityManager: created. Objects count: %d", (int)vecObjects.size());
 
 	//UpdateVisibleObjectsSet();
 }
@@ -555,6 +560,8 @@ unsigned int CVisibilityManager::GetMinimalObjectSize() const
 CVisibilityManager::~ CVisibilityManager ()
 {
 	delete _private;
+
+	LogMessage("CVisibilityManager: destructed.");
 }
 
 void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
@@ -665,13 +672,10 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 
 		if (!bLog)
 		{
-			if (FILE * fpLog = fopen("visman.log", "w"))
-			{
-				for (int i = 0; i < 8; i++)
-					fprintf(fpLog, "%f, %f, %f\n", vViewSpaceFrustumPoints[i].x, vViewSpaceFrustumPoints[i].y, vViewSpaceFrustumPoints[i].z);
 
-				fclose(fpLog);
-			}
+			for (int i = 0; i < 8; i++)
+				LogMessage("CVisibilityManager: Frustm point[%d]: %f, %f, %f", i, vViewSpaceFrustumPoints[i].x, vViewSpaceFrustumPoints[i].y, vViewSpaceFrustumPoints[i].z);
+
 			bLog = true;
 		}
 

@@ -196,6 +196,10 @@ struct CResourceManager::SResourceManagerPrivate
 		if (_verticalFovDeg > 0)
 			verticalFovDeg = _verticalFovDeg;
 
+		Vector3D<float> vNormalPos(vCameraPos[0], vCameraPos[1], vCameraPos[2]);
+		Vector3D<float> vNormalDir(vCameraDir[0], vCameraDir[1], vCameraDir[2]);
+		Vector3D<float> vNormalUp(vCameraUp[0], vCameraUp[1], vCameraUp[2]);
+
 		if (predictor._initialized)
 		{
 			predictor._cameraVelocity = (vCameraPos - predictor._cameraPos) / deltaTime;
@@ -236,6 +240,11 @@ struct CResourceManager::SResourceManagerPrivate
 
 			//@{ predict
 
+			//@{ ограничить величину угловой скорости
+			if (vm::length(predictor._cameraAngularVelocity)*_rotationRatePredictorMultiplier > M_PI)
+				predictor._cameraAngularVelocity = vm::normalize(predictor._cameraAngularVelocity) * M_PI / _rotationRatePredictorMultiplier;
+			//@}
+
 			vm::Quaterniondf qRotation(0, predictor._cameraAngularVelocity[0], predictor._cameraAngularVelocity[1], predictor._cameraAngularVelocity[2]);
 			vm::Quaterniondf qDOrientation = (qRotation*qCameraOrientation)*0.5;
 
@@ -258,26 +267,25 @@ struct CResourceManager::SResourceManagerPrivate
 			out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vPredictedDir, vPredictedUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
 				horizontalFovDeg, verticalFovDeg));
 
-			/*if (predictor._cameraParams.projectionSet)
-				predictor._predictionVisibilityManager->SetViewProjection(vPredictedPos, vPredictedDir, vPredictedUp, &predictor._cameraParams.projection);
-			else
-			{
-
-				predictor._predictionVisibilityManager->SetCamera(vPredictedPos, vPredictedDir, vPredictedUp, predictor._cameraParams.horizontalFov, predictor._cameraParams.verticalFov, 
-					predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane);
-
-			}
-
-			predictor._predictionVisibilityManager->UpdateVisibleObjectsSet();*/
 
 			//@}
+
+			if (vm::length(predictor._predictedPos - vCameraPos) > 0.1f)
+			{
+				vm::Vector3df vVelocityDirection = vm::normalize(predictor._predictedPos - vCameraPos);
+
+				Vector3D<float> vMiddleDir = Vector3D<float>(vVelocityDirection[0], vVelocityDirection[1], vVelocityDirection[2]);
+				Matrix3x3<float> mCameraMiddle = GetMatrixFromForwardDirection(vMiddleDir, vNormalUp);
+
+				Vector3D<float> vMiddleUp = mCameraMiddle.line3;
+
+				out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vMiddleDir, vMiddleUp, predictor._cameraParams.nearPlane, length(predictor._predictedPos - vCameraPos),
+					horizontalFovDeg, verticalFovDeg));
+
+				out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vNormalDir, vNormalUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
+					horizontalFovDeg, verticalFovDeg));
+			}
 		}
-
-
-		Vector3D<float> vNormalPos(vCameraPos[0], vCameraPos[1], vCameraPos[2]);
-		Vector3D<float> vNormalDir(vCameraDir[0], vCameraDir[1], vCameraDir[2]);
-		Vector3D<float> vNormalUp(vCameraUp[0], vCameraUp[1], vCameraUp[2]);
-
 
 		out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vNormalDir, vNormalUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
 			horizontalFovDeg, verticalFovDeg));
@@ -334,7 +342,8 @@ CResourceManager::CResourceManager()
 	_private = new SResourceManagerPrivate(this);
 	g_ResourceManager = this;
 
-	EnableLog(true);
+	LogInit("resman.log");
+	LogEnable(true);
 
 	LogMessage("CResourceManager: created.");
 }
@@ -350,7 +359,15 @@ void CResourceManager::Init(C3DBaseObjectManager* objectManager)
 {
 	_private->_objectManager = objectManager;
 
+	SetupDebugParameters();
+
 	LogMessage("CResourceManager: inited OK.");
+}
+
+void CResourceManager::SetupDebugParameters()
+{
+	SetPredictionFOV(45, 45);
+	SetInvisibleUnloadTime(0.5);
 }
 
 void CResourceManager::SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg)
@@ -361,6 +378,9 @@ void CResourceManager::SetPredictionFOV(float horizontalFovDeg, float verticalFo
 void CResourceManager::SetInvisibleUnloadTime(float time)
 {
 	LogMessage("CResourceManager: InvisibleUnloadTime set to %f.", time);
+
+	if (time < 0.5)
+		time = 0.5;
 
 	_private->_invisibleUnloadTime = time;
 }
@@ -480,23 +500,17 @@ float CResourceManager::GetTexturePriority(C3DBaseTexture* texture)
 
 void CResourceManager::EnableLog(bool enable/* = true*/)
 {
-	LogEnable(enable);
+	LogMessage("CResourceManager: Log state is now %d.", (int) enable);
 
-	for (CVisibilityManager* visman : _private->_visibilityManagers)
-	{
-		visman->EnableLog(enable);
-	}
+	LogEnable(enable);
 }
 
 // Выключить лог в файл
 void CResourceManager::DisableLog()
 {
-	LogEnable(false);
+	LogMessage("CResourceManager: Log disabled.");
 
-	for (CVisibilityManager* visman : _private->_visibilityManagers)
-	{
-		visman->DisableLog();
-	}
+	LogEnable(false);
 }
 
 // Включить рендеринг отладочной информации в текстовый блок

@@ -23,6 +23,9 @@ public:
 	// инициализировать, указав MeshTree
 	void Init(C3DBaseObjectManager*);
 
+	// Установить отладочные параметры: SetPredictionFOV(45, 45), SetInvisibleUnloadTime(0)
+	void SetupDebugParameters();
+
 	// указать время, спустя которое, ресурс став невидимым (когда счетчик видимости станет равным нулю)
 	// для всех VisibilityManager выгрузится из памяти 
 	// [настроечный параметр, по умолчанию = 10с]
