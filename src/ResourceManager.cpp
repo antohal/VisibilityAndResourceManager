@@ -359,7 +359,7 @@ void CResourceManager::Init(C3DBaseObjectManager* objectManager)
 {
 	_private->_objectManager = objectManager;
 
-	SetupDebugParameters();
+	//SetupDebugParameters();
 
 	LogMessage("CResourceManager: inited OK.");
 }
