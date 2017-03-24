@@ -14,11 +14,13 @@ public:
 
 	const CBoundBox<float>& GetBoundBox() const { return _boundBox; }
 	const CFrustum<float>&	GetFrustum() const { return _frustum; }
+	const Vector3D<float>&	GetPos() const { return _pos; }
 
 private:
 
 	CBoundBox<float>	_boundBox;
 	CFrustum<float>		_frustum;
+	Vector3D<float>		_pos;
 };
 
 class IVisibilityManagerPrivateInterface

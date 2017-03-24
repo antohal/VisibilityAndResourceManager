@@ -414,6 +414,8 @@ void CResourceManager::AddVisibilityManager(CVisibilityManager* visibilityManage
 CollectObjectsData::CollectObjectsData(const Vector3D<float>& pos, const Vector3D<float>& dir, const Vector3D<float>& up,
 	float nearPlane, float farPlane, float horizontalFov, float verticalFov)
 {
+	_pos = pos;
+
 	Matrix3x3f mOrientation = GetMatrixFromForwardDirection<float>(Normalize(dir), Normalize(up));
 
 	SFOV_Tan HorizontalFOV(horizontalFov);

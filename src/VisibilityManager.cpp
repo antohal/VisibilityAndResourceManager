@@ -179,6 +179,7 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 
 		float	GetBoundBoxAreaInPixels(const CCamera& in_Camera, const Vector2f& in_vResolution) const;
 		float	GetBoundBoxMidSizeInPixels(const CCamera& in_Camera, const Vector2f& in_vResolution) const;
+		float	GetBoundBoxMidSizeInPixels(const Vector3f& cameraPos, const Vector2f& vFOVTangents, const Vector2f& in_vResolution) const;
 		float	GetCameraDirectionDotProduct(const CCamera& in_Camera, const Vector2f& in_vResolution) const;
 
 		C3DBaseObject*			_pObject = nullptr;
@@ -248,6 +249,8 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	void	SetObjectInternal(C3DBaseObject* in_Object, const BoundBox& in_BBox, float in_fMaxDistance);
 
 	bool	IsObjectInCamera(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject);
+	bool	IsObjectInFrustum(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject,
+		const CBoundBox<float>& in_BoundBox, const CFrustum<float>& frustum, const Vector3f& cameraPos);
 
 	// IVisibilityManagerPrivateInterface
 	virtual void	MarkPotentiallyVisibleObjects(const std::vector<CollectObjectsData>& in_vecCloud) override;
@@ -436,7 +439,31 @@ float CVisibilityManager::VisibilityManagerPrivate::SObject::GetCameraDirectionD
 	return fResult;
 }
 
-float	CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxMidSizeInPixels(const CCamera& in_Camera, const Vector2f& in_vResolution) const
+float CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxMidSizeInPixels(const Vector3f& cameraPos, const Vector2f& vFOVTangents, const Vector2f& in_vResolution) const
+{
+	Vector3f vSize = _bbox.GetSize();
+	double fBboxDiameter = (vSize.x + vSize.y + vSize.z) / 3;
+
+	Vector3f vObjCenter = _bbox.GetCenter();
+	double fDist = Length(vObjCenter - cameraPos);
+
+	if (IsEqualT<double>(fDist, 0))
+		return 10000;
+
+	double fMetersOnNearPlane = fBboxDiameter / fDist;
+	double fWidthMeters = 2 * vFOVTangents.x;
+	double fHeightMeters = 2 * vFOVTangents.y;
+
+	double fWidthPixelsPerMeter = in_vResolution.x / fWidthMeters;
+	double fHeightPixelsPerMeter = in_vResolution.y / fHeightMeters;
+
+	double fMaxAspect = max(fWidthPixelsPerMeter, fHeightPixelsPerMeter);
+	double fMaxObjectPixels = fMetersOnNearPlane * fMaxAspect;
+
+	return static_cast<float>(fMaxObjectPixels);
+}
+
+float CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxMidSizeInPixels(const CCamera& in_Camera, const Vector2f& in_vResolution) const
 {
 	//float fBboxDiameter = _bbox.GetMidSize();
 
@@ -846,19 +873,20 @@ void CVisibilityManager::UpdateTextureVisibility()
 	UpdateVisibleObjectsSet();
 }
 
-bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInCamera(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject)
+bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInFrustum(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject,
+	const CBoundBox<float>& in_BoundBox, const CFrustum<float>& frustum, const Vector3f& cameraPos)
 {
 	const Vector2f vResolution((float)_uiScreenWidth, (float)_uiScreenHeight);
 	const CBoundBox<float>& bbox = in_pInternalObject->_bbox;
 
-	if (!_Camera.GetBoundBox().IsIntersectingAnotherBox(bbox))
+	if (!in_BoundBox.IsIntersectingAnotherBox(bbox))
 		return false;
 
 	bool bEnableMinimalSizeCheck = in_pInternalObject->_bMinimalSizeCheckEnabled;
 
 	if (bEnableMinimalSizeCheck)
 	{
-		float fSizePixels = in_pInternalObject->GetBoundBoxMidSizeInPixels(_Camera, vResolution);
+		float fSizePixels = in_pInternalObject->GetBoundBoxMidSizeInPixels(cameraPos, Vector2f(_Camera.GetHorizontalHalfFovTan(), _Camera.GetVerticalHalfFovTan()), vResolution);
 
 		if (fSizePixels < _fMinimalObjectPixelSize)
 			return false;
@@ -867,9 +895,14 @@ bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInCamera(const IGridI
 	bool bInFrustum = true;
 
 	BYTE btCrossFrustumPlaneFlag = in_GI.GetFrustumFlag();
-	bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(bbox, _Camera.GetFrustum(), btCrossFrustumPlaneFlag);
+	bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(bbox, frustum, btCrossFrustumPlaneFlag);
 
 	return bInFrustum;
+}
+
+bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInCamera(const IGridIterator& in_GI, const CVisibilityManager::VisibilityManagerPrivate::SObject* in_pInternalObject)
+{
+	return IsObjectInFrustum(in_GI, in_pInternalObject, _Camera.GetBoundBox(), _Camera.GetFrustum(), _Camera.GetPos());
 }
 
 void CVisibilityManager::UpdateVisibleObjectsSet ()
@@ -1096,17 +1129,7 @@ void	CVisibilityManager::VisibilityManagerPrivate::MarkPotentiallyVisibleObjects
 			if (pInternalObject->_bAlwaysVisible)
 				continue;
 
-			const CBoundBox<float>& objectBoundBox = pInternalObject->_bbox;
-
-			if (!collectData.GetBoundBox().IsIntersectingAnotherBox(objectBoundBox))
-				continue;
-
-			bool bInFrustum = true;
-
-			BYTE btCrossFrustumPlaneFlag = GI.GetFrustumFlag();
-			bInFrustum = !btCrossFrustumPlaneFlag || IsAABBInFrustum(objectBoundBox, collectData.GetFrustum(), btCrossFrustumPlaneFlag);
-
-			if (!bInFrustum)
+			if (!IsObjectInFrustum(GI, pInternalObject, collectData.GetBoundBox(), collectData.GetFrustum(), collectData.GetPos()))
 				continue;
 
 			if (pInternalObject->_pObject)
