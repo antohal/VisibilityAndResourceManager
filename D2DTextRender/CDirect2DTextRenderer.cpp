@@ -322,8 +322,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 			return;
 		}
 
-		static wchar_t buf[100];
-		int size = vswprintf_s(buf, 100, it->second->_wsFormat.c_str(), args);
+		static wchar_t buf[2048];
+		int size = vswprintf_s(buf, 2048, it->second->_wsFormat.c_str(), args);
 
 		if (size > 0)
 		{
