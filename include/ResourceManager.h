@@ -4,10 +4,21 @@
 
 #include "ResourceManagerLink.h"
 
-class CVisibilityManager;
+#include <d3d9types.h>
+
+//@{ предопределения
+
 class C3DBaseObjectManager;
 class C3DBaseTexture;
+
+// Из VisibilityManager.h
+struct Vector3;
+class CVisibilityManager;
+
+// из D2DTextRenderer
 class CDirect2DTextBlock;
+
+//@}
 
 // Класс менеджера ресурсов.
 // Объект данного типа должен присутствовать в единственнном экземпляре,
@@ -47,6 +58,14 @@ public:
 	// Установить область видимости для предсказания видимости
 	// По умолчанию берутся значения из связанного VisibilityManager
 	void SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg);
+
+	// Установить параметры камеры на текущем кадре
+	// Если не вызывать эту функцию, то параметры камеры при прогнозировании видимости ресурсов будут браться из
+	// VisibilityManager-ов, привязанных к данному ResourceManager.
+	void SetViewProjection(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection);
+
+	// Установить параметры камеры на текущем кадре [функция альтернативная вышепредставленной]
+	void SetCamera(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, float in_fHorizontalFOV, float in_fVerticalFOV, float in_fNearPlane, float in_fFarPlane);
 
 	// добавить VisibilityManager в обработку. Необходимо чтобы в этот момент in_pVisibilityManager был полностью инициализирован
 	// [вызывается один раз во время инициализации]

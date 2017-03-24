@@ -21,6 +21,9 @@
 #include "D2DBaseTypes.h"
 #include "CDirect2DTextRenderer.h"
 
+#include <D3DX10math.h>
+#include <math.h>
+
 #define USE_DEBUG_INFO
 
 
@@ -40,6 +43,31 @@ struct CResourceManager::SResourceManagerPrivate
 	SResourceManagerPrivate(CResourceManager* owner) : _owner(owner)
 	{}
 
+	struct ViewProjection
+	{
+		Vector3D<float>			vPos, vDir, vUp;
+		D3DXMATRIX				mProjection;
+	};
+
+	struct VisibilityPredictor
+	{
+		CameraDesc					_cameraParams;
+
+		bool						_initialized = false;
+
+		vm::Vector3df				_cameraPos;
+		vm::Vector3df				_cameraDir;
+		vm::Quaterniondf			_cameraOrient;
+
+		vm::Quaterniondf			_predictedQuat;
+		vm::Vector3df				_predictedPos;
+		vm::Vector3df				_predictedDir;
+
+		vm::Vector3df				_cameraVelocity;
+		vm::Vector3df				_cameraAngularVelocity;
+
+		std::list<vm::Vector3df>	_angularVelocityBuffer;
+	};
 
 	CResourceManager*			_owner = nullptr;
 	C3DBaseObjectManager*		_objectManager = nullptr;
@@ -51,39 +79,19 @@ struct CResourceManager::SResourceManagerPrivate
 	float						_horizontalFovDeg = 0;
 	float						_verticalFovDeg = 0;
 
-	void	SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg)
-	{
-		_horizontalFovDeg = horizontalFovDeg;
-		_verticalFovDeg = verticalFovDeg;
-	}
+
+	ViewProjection				_viewProjection;
+	bool						_bViewProjectionInitialized = false;
 
 
-	struct VisibilityPredictor
-	{
-		CameraDesc				_cameraParams;
+	VisibilityPredictor			_predictor;
 
-		bool					_initialized = false;
+	vector<CVisibilityManager*>	_visibilityManagers;
 
-		vm::Vector3df			_cameraPos;
-		vm::Vector3df			_cameraDir;
-		vm::Quaterniondf		_cameraOrient;
-		
-		vm::Quaterniondf		_predictedQuat;
-		vm::Vector3df			_predictedPos;
-		vm::Vector3df			_predictedDir;
-
-		vm::Vector3df			_cameraVelocity;
-		vm::Vector3df			_cameraAngularVelocity;
-
-		std::list<vm::Vector3df>	_angularVelocityBuffer;
-	};
-
-	vector<CVisibilityManager*>		_visibilityManagers;
-	map<CVisibilityManager*, VisibilityPredictor>	_mapVisibilityPredictors;
-
-	map<C3DBaseObject*, float>		_objectVisibilityTimers;
+	map<C3DBaseObject*, float>	_objectVisibilityTimers;
 
 	CDirect2DTextBlock*			_textBlock = nullptr;
+
 
 	float						_cameraRateInterval = 0.25;
 
@@ -107,6 +115,12 @@ struct CResourceManager::SResourceManagerPrivate
 #ifdef USE_DEBUG_INFO
 	std::map<E3DResourceType, int>	_mapPotentiallyVisibleByType;
 #endif
+
+	void SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg)
+	{
+		_horizontalFovDeg = horizontalFovDeg;
+		_verticalFovDeg = verticalFovDeg;
+	}
 
 	void incrementVisibilityRefCountRecursive(C3DBaseResource* resource)
 	{
@@ -172,23 +186,67 @@ struct CResourceManager::SResourceManagerPrivate
 		}
 	}
 
-	void predictMovement(CVisibilityManager* in_pVisibilityManager, float deltaTime, std::vector<CollectObjectsData>& out_vecCollectObjectsData)
+	void UpdatePredictorCameraParameters()
 	{
-		VisibilityPredictor& predictor = _mapVisibilityPredictors[in_pVisibilityManager];
-		
-		in_pVisibilityManager->GetCameraParameters(predictor._cameraParams);
+		if (!_bViewProjectionInitialized)
+		{
+			LogMessage("CResourceManager::UpdatePredictorCameraParameters - cannot init camera params, SetViewProjection not called.");
+			return;
+		}
 
-		vm::Vector3df vCameraPos = vm::Vector3df(predictor._cameraParams.vPos.x, predictor._cameraParams.vPos.y, predictor._cameraParams.vPos.z);
-		vm::Vector3df vCameraDir = vm::Vector3df(predictor._cameraParams.vDir.x, predictor._cameraParams.vDir.y, predictor._cameraParams.vDir.z);
-		vm::Vector3df vCameraUp = vm::Vector3df(predictor._cameraParams.vUp.x, predictor._cameraParams.vUp.y, predictor._cameraParams.vUp.z);
+		_predictor._cameraParams.vPos = Vector3(_viewProjection.vPos.x, _viewProjection.vPos.y, _viewProjection.vPos.z);
+		_predictor._cameraParams.vDir = Vector3(_viewProjection.vDir.x, _viewProjection.vDir.y, _viewProjection.vDir.z);
+		_predictor._cameraParams.vUp = Vector3(_viewProjection.vUp.x, _viewProjection.vUp.y, _viewProjection.vUp.z);
+
+		const D3DXMATRIX& mProjection = _viewProjection.mProjection;
+
+		_predictor._cameraParams.verticalFov = static_cast<float>(D2R) * 2.f * atanf(1.f / mProjection(1, 1));
+
+		float coeff = mProjection(1, 1) * sinf(0.5f * static_cast<float>(D2R) * _predictor._cameraParams.verticalFov) / mProjection(0, 0);
+		_predictor._cameraParams.horizontalFov = static_cast<float>(D2R) * 2.f * asinf(coeff);
+
+		_predictor._cameraParams.farPlane = mProjection(3, 2) / (1 - mProjection(2, 2));
+		_predictor._cameraParams.nearPlane = _predictor._cameraParams.farPlane * (1 - 1 / mProjection(2, 2));
+	}
+
+	void predictMovement(float deltaTime, std::vector<CollectObjectsData>& out_vecCollectObjectsData)
+	{
+		bool cameraParametersInitialized = false;
+
+		if (_bViewProjectionInitialized)
+		{
+			UpdatePredictorCameraParameters();
+
+			cameraParametersInitialized = true;
+		}
+		else
+		{
+			if (!_visibilityManagers.empty())
+			{
+				_visibilityManagers[0]->GetCameraParameters(_predictor._cameraParams);
+
+				cameraParametersInitialized = true;
+			}
+		}
+
+		if (!cameraParametersInitialized)
+		{
+			LogMessage("CResourceManager::predictMovement - cannot predict movement, because of empty visibility managers and no SetViewProjection");
+			return;
+		}
+
+
+		vm::Vector3df vCameraPos = vm::Vector3df(_predictor._cameraParams.vPos.x, _predictor._cameraParams.vPos.y, _predictor._cameraParams.vPos.z);
+		vm::Vector3df vCameraDir = vm::Vector3df(_predictor._cameraParams.vDir.x, _predictor._cameraParams.vDir.y, _predictor._cameraParams.vDir.z);
+		vm::Vector3df vCameraUp = vm::Vector3df(_predictor._cameraParams.vUp.x, _predictor._cameraParams.vUp.y, _predictor._cameraParams.vUp.z);
 		vm::Vector3df vCameraLeft = vm::cross(vCameraUp, vCameraDir);
 
 		vm::Matrix3x3df mMatrixTransform = vm::Matrix3x3df(vCameraDir, vCameraLeft, vCameraUp);
 
 		vm::Quaterniondf qCameraOrientation(mMatrixTransform);
 
-		float horizontalFovDeg = predictor._cameraParams.horizontalFov;
-		float verticalFovDeg = predictor._cameraParams.verticalFov;
+		float horizontalFovDeg = _predictor._cameraParams.horizontalFov;
+		float verticalFovDeg = _predictor._cameraParams.verticalFov;
 
 		if (_horizontalFovDeg > 0)
 			horizontalFovDeg = _horizontalFovDeg;
@@ -196,22 +254,22 @@ struct CResourceManager::SResourceManagerPrivate
 		if (_verticalFovDeg > 0)
 			verticalFovDeg = _verticalFovDeg;
 
-		Vector3D<float> vNormalPos(vCameraPos[0], vCameraPos[1], vCameraPos[2]);
-		Vector3D<float> vNormalDir(vCameraDir[0], vCameraDir[1], vCameraDir[2]);
-		Vector3D<float> vNormalUp(vCameraUp[0], vCameraUp[1], vCameraUp[2]);
+		Vector3D<float> vNormalPos((float)vCameraPos[0], (float)vCameraPos[1], (float)vCameraPos[2]);
+		Vector3D<float> vNormalDir((float)vCameraDir[0], (float)vCameraDir[1], (float)vCameraDir[2]);
+		Vector3D<float> vNormalUp((float)vCameraUp[0], (float)vCameraUp[1], (float)vCameraUp[2]);
 
-		if (predictor._initialized)
+		if (_predictor._initialized)
 		{
-			predictor._cameraVelocity = (vCameraPos - predictor._cameraPos) / deltaTime;
+			_predictor._cameraVelocity = (vCameraPos - _predictor._cameraPos) / deltaTime;
 			
 			//@{ calculate angular velocity
-			vm::Quaterniondf cameraOrientDot = (1.0 / deltaTime) * (qCameraOrientation - predictor._cameraOrient);
+			vm::Quaterniondf cameraOrientDot = (1.0 / deltaTime) * (qCameraOrientation - _predictor._cameraOrient);
 
 			vm::Quaterniondf qW = 2.0 * (cameraOrientDot * qCameraOrientation.GetInverse());
 
 			vm::Vector3df angVel(qW[1], qW[2], qW[3]);
 
-			predictor._angularVelocityBuffer.push_back(angVel);
+			_predictor._angularVelocityBuffer.push_back(angVel);
 
 			size_t MAX_VEL_BUF = 5;
 			
@@ -224,97 +282,92 @@ struct CResourceManager::SResourceManagerPrivate
 			if (MAX_VEL_BUF > 100)
 				MAX_VEL_BUF = 100;
 
-			while (predictor._angularVelocityBuffer.size() > MAX_VEL_BUF)
+			while (_predictor._angularVelocityBuffer.size() > MAX_VEL_BUF)
 			{
-				predictor._angularVelocityBuffer.pop_front();
+				_predictor._angularVelocityBuffer.pop_front();
 			}
 
-			predictor._cameraAngularVelocity.Zero();
-			for (const vm::Vector3df& vBufferedAngVel : predictor._angularVelocityBuffer)
+			_predictor._cameraAngularVelocity.Zero();
+			for (const vm::Vector3df& vBufferedAngVel : _predictor._angularVelocityBuffer)
 			{
-				predictor._cameraAngularVelocity += vBufferedAngVel;
+				_predictor._cameraAngularVelocity += vBufferedAngVel;
 			}
 
-			predictor._cameraAngularVelocity *= 1.0 / MAX_VEL_BUF;
+			_predictor._cameraAngularVelocity *= 1.0 / MAX_VEL_BUF;
 			//@}
 
 			//@{ predict
 
 			//@{ ограничить величину угловой скорости
-			if (vm::length(predictor._cameraAngularVelocity)*_rotationRatePredictorMultiplier > M_PI)
-				predictor._cameraAngularVelocity = vm::normalize(predictor._cameraAngularVelocity) * M_PI / _rotationRatePredictorMultiplier;
+			if (vm::length(_predictor._cameraAngularVelocity)*_rotationRatePredictorMultiplier > M_PI * 0.5)
+				_predictor._cameraAngularVelocity = vm::normalize(_predictor._cameraAngularVelocity) * M_PI * 0.5 / _rotationRatePredictorMultiplier;
 			//@}
 
-			vm::Quaterniondf qRotation(0, predictor._cameraAngularVelocity[0], predictor._cameraAngularVelocity[1], predictor._cameraAngularVelocity[2]);
+			vm::Quaterniondf qRotation(0, _predictor._cameraAngularVelocity[0], _predictor._cameraAngularVelocity[1], _predictor._cameraAngularVelocity[2]);
 			vm::Quaterniondf qDOrientation = (qRotation*qCameraOrientation)*0.5;
 
-			predictor._predictedQuat = qCameraOrientation + ((double)_rotationRatePredictorMultiplier * deltaTime) * (qDOrientation);
-			predictor._predictedQuat.Normalize();
+			_predictor._predictedQuat = qCameraOrientation + ((double)_rotationRatePredictorMultiplier * deltaTime) * (qDOrientation);
+			_predictor._predictedQuat.Normalize();
 
-			predictor._predictedPos = vCameraPos + _boundBoxExtensionSpeedMultiplier * deltaTime * predictor._cameraVelocity;
+			_predictor._predictedPos = vCameraPos + _boundBoxExtensionSpeedMultiplier * deltaTime * _predictor._cameraVelocity;
 
 			//@}
 
 			//@{
 
-			vm::Matrix3x3df mCameraOrient = predictor._predictedQuat.ToSO3Operator();
-			predictor._predictedDir = mCameraOrient[0];
+			vm::Matrix3x3df mCameraOrient = _predictor._predictedQuat.ToSO3Operator();
+			_predictor._predictedDir = mCameraOrient[0];
 
-			Vector3D<float> vPredictedPos(predictor._predictedPos[0], predictor._predictedPos[1], predictor._predictedPos[2]);
-			Vector3D<float> vPredictedDir(predictor._predictedDir[0], predictor._predictedDir[1], predictor._predictedDir[2]);
-			Vector3D<float> vPredictedUp(mCameraOrient[2][0], mCameraOrient[2][1], mCameraOrient[2][2]);
+			Vector3D<float> vPredictedPos((float)_predictor._predictedPos[0], (float)_predictor._predictedPos[1], (float)_predictor._predictedPos[2]);
+			Vector3D<float> vPredictedDir((float)_predictor._predictedDir[0], (float)_predictor._predictedDir[1], (float)_predictor._predictedDir[2]);
+			Vector3D<float> vPredictedUp((float)mCameraOrient[2][0], (float)mCameraOrient[2][1], (float)mCameraOrient[2][2]);
 
-			out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vPredictedDir, vPredictedUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
+			out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vPredictedDir, vPredictedUp, _predictor._cameraParams.nearPlane, _predictor._cameraParams.farPlane,
 				horizontalFovDeg, verticalFovDeg));
 
 
 			//@}
 
-			if (vm::length(predictor._predictedPos - vCameraPos) > 0.1f)
+			if (vm::length(_predictor._predictedPos - vCameraPos) > 0.1f)
 			{
-				vm::Vector3df vVelocityDirection = vm::normalize(predictor._predictedPos - vCameraPos);
+				vm::Vector3df vVelocityDirection = vm::normalize(_predictor._predictedPos - vCameraPos);
 
-				Vector3D<float> vMiddleDir = Vector3D<float>(vVelocityDirection[0], vVelocityDirection[1], vVelocityDirection[2]);
+				Vector3D<float> vMiddleDir = Vector3D<float>((float)vVelocityDirection[0], (float)vVelocityDirection[1], (float)vVelocityDirection[2]);
 				Matrix3x3<float> mCameraMiddle = GetMatrixFromForwardDirection(vMiddleDir, vNormalUp);
 
 				Vector3D<float> vMiddleUp = mCameraMiddle.line3;
 
-				out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vMiddleDir, vMiddleUp, predictor._cameraParams.nearPlane, length(predictor._predictedPos - vCameraPos),
+				out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vMiddleDir, vMiddleUp, _predictor._cameraParams.nearPlane, (float)length(_predictor._predictedPos - vCameraPos),
 					horizontalFovDeg, verticalFovDeg));
 
-				out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vNormalDir, vNormalUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
+				out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vNormalDir, vNormalUp, _predictor._cameraParams.nearPlane, _predictor._cameraParams.farPlane,
 					horizontalFovDeg, verticalFovDeg));
 			}
 		}
 
-		out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vNormalDir, vNormalUp, predictor._cameraParams.nearPlane, predictor._cameraParams.farPlane,
+		out_vecCollectObjectsData.push_back(CollectObjectsData(vNormalPos, vNormalDir, vNormalUp, _predictor._cameraParams.nearPlane, _predictor._cameraParams.farPlane,
 			horizontalFovDeg, verticalFovDeg));
 
-		predictor._cameraPos = vCameraPos;
-		predictor._cameraDir = vCameraDir;
-		predictor._cameraOrient = qCameraOrientation;
+		_predictor._cameraPos = vCameraPos;
+		_predictor._cameraDir = vCameraDir;
+		_predictor._cameraOrient = qCameraOrientation;
 
-		predictor._initialized = true;
+		_predictor._initialized = true;
 	}
 
 	void updatePredictorDebugText()
 	{
-		if (_mapVisibilityPredictors.empty())
-			return;
-
 		if (!_textBlock)
 			return;
 
-		const VisibilityPredictor& firstPredictor = _mapVisibilityPredictors.begin()->second;
-
-		_textBlock->UpdateFormattedTextLine(_paramCameraVelocity, firstPredictor._cameraVelocity[0], firstPredictor._cameraVelocity[1], firstPredictor._cameraVelocity[2]);
-		_textBlock->UpdateFormattedTextLine(_paramCameraAngularVelocity, R2D*firstPredictor._cameraAngularVelocity[0], R2D*firstPredictor._cameraAngularVelocity[1], R2D*firstPredictor._cameraAngularVelocity[2]);
+		_textBlock->UpdateFormattedTextLine(_paramCameraVelocity, _predictor._cameraVelocity[0], _predictor._cameraVelocity[1], _predictor._cameraVelocity[2]);
+		_textBlock->UpdateFormattedTextLine(_paramCameraAngularVelocity, R2D*_predictor._cameraAngularVelocity[0], R2D*_predictor._cameraAngularVelocity[1], R2D*_predictor._cameraAngularVelocity[2]);
 		
-		_textBlock->UpdateFormattedTextLine(_paramCameraPos, firstPredictor._cameraPos[0], firstPredictor._cameraPos[1], firstPredictor._cameraPos[2]);
-		_textBlock->UpdateFormattedTextLine(_paramPredictedPos, firstPredictor._predictedPos[0], firstPredictor._predictedPos[1], firstPredictor._predictedPos[2]);
+		_textBlock->UpdateFormattedTextLine(_paramCameraPos, _predictor._cameraPos[0], _predictor._cameraPos[1], _predictor._cameraPos[2]);
+		_textBlock->UpdateFormattedTextLine(_paramPredictedPos, _predictor._predictedPos[0], _predictor._predictedPos[1], _predictor._predictedPos[2]);
 
-		_textBlock->UpdateFormattedTextLine(_paramPredictedDirection, firstPredictor._predictedDir[0], firstPredictor._predictedDir[1], firstPredictor._predictedDir[2]);
-		_textBlock->UpdateFormattedTextLine(_paramCameraDirection, firstPredictor._cameraDir[0], firstPredictor._cameraDir[1], firstPredictor._cameraDir[2]);
+		_textBlock->UpdateFormattedTextLine(_paramPredictedDirection, _predictor._predictedDir[0], _predictor._predictedDir[1], _predictor._predictedDir[2]);
+		_textBlock->UpdateFormattedTextLine(_paramCameraDirection, _predictor._cameraDir[0], _predictor._cameraDir[1], _predictor._cameraDir[2]);
 	}
 };
 
@@ -373,6 +426,30 @@ void CResourceManager::SetupDebugParameters()
 void CResourceManager::SetPredictionFOV(float horizontalFovDeg, float verticalFovDeg)
 {
 	_private->SetPredictionFOV(horizontalFovDeg, verticalFovDeg);
+}
+
+void CResourceManager::SetViewProjection(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
+{
+	_private->_viewProjection.vPos = Vector3D<float>(in_vPos.x, in_vPos.y, in_vPos.z);
+	_private->_viewProjection.vDir = Vector3D<float>(in_vDir.x, in_vDir.y, in_vDir.z);
+	_private->_viewProjection.vUp = Vector3D<float>(in_vUp.x, in_vUp.y, in_vUp.z);
+
+	_private->_viewProjection.mProjection = *in_pmProjection;
+
+	_private->_bViewProjectionInitialized = true;
+}
+
+void CResourceManager::SetCamera(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, float in_fHorizontalFOV, float in_fVerticalFOV, float in_fNearPlane, float in_fFarPlane)
+{
+	_private->_viewProjection.vPos = Vector3D<float>(in_vPos.x, in_vPos.y, in_vPos.z);
+	_private->_viewProjection.vDir = Vector3D<float>(in_vDir.x, in_vDir.y, in_vDir.z);
+	_private->_viewProjection.vUp = Vector3D<float>(in_vUp.x, in_vUp.y, in_vUp.z);
+
+	float aspect = sinf(0.5f * in_fHorizontalFOV * static_cast<float>(D2R) / sinf(0.5f * in_fVerticalFOV * static_cast<float>(D2R)));
+
+	D3DXMatrixPerspectiveFovLH(&_private->_viewProjection.mProjection, in_fVerticalFOV * static_cast<float>(D2R), aspect, in_fNearPlane, in_fFarPlane);
+
+	_private->_bViewProjectionInitialized = true;
 }
 
 void CResourceManager::SetInvisibleUnloadTime(float time)
@@ -436,13 +513,19 @@ void CResourceManager::Update(float deltaTime)
 		return;
 	}
 
-	for (CVisibilityManager* visMan : _private->_visibilityManagers)
+	if (!_private->_visibilityManagers.empty())
 	{
+		/* Set camera test !
+		CameraDesc camParams;
+		(*_private->_visibilityManagers.begin())->GetCameraParameters(camParams);
+
+		SetCamera(camParams.vPos, camParams.vDir, camParams.vUp, camParams.horizontalFov, camParams.verticalFov, camParams.nearPlane, camParams.farPlane);
+		*/
+
+
 		std::vector<CollectObjectsData> vecCollectObjectsData;
-
-		_private->predictMovement(visMan, deltaTime, vecCollectObjectsData);
-
-		visMan->GetPrivateInterface()->MarkPotentiallyVisibleObjects(vecCollectObjectsData);
+		_private->predictMovement( deltaTime, vecCollectObjectsData);
+		(*_private->_visibilityManagers.begin())->GetPrivateInterface()->MarkPotentiallyVisibleObjects(vecCollectObjectsData);
 	}
 
 	map<C3DBaseObject*, float>& objectVisibilityTimers = _private->_objectVisibilityTimers;
