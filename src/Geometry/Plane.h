@@ -71,7 +71,7 @@ public:
 	{
 		assert_debug(in_fValueDergees < 180, L"illegal FOV angle");
 		m_fFOVAngle = in_fValueDergees;
-		m_fTanFOVAngle = tanf(0.5f * DEG2RAD * m_fFOVAngle);
+		m_fTanFOVAngle = tanf(0.5f * (float)(DEG2RAD) * m_fFOVAngle);
 	}
 
 	__forceinline float GetFOVAngle() const { return m_fFOVAngle; }

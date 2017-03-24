@@ -52,9 +52,6 @@ struct CameraDesc
 
 	float	nearPlane = 0;
 	float	farPlane = 0;
-
-	bool	projectionSet = false;
-	D3DMATRIX projection;
 };
 
 struct OrientedBox
