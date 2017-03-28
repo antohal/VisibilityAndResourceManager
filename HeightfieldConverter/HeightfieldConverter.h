@@ -1,5 +1,7 @@
 #pragma once
 
+#include <d3d11.h>
+
 #ifndef HEIGHTFIELD_CONVERTER_EXPORTS
 #define HEIGHFIELD_CONVERTER_API __declspec(dllimport)
 #else
@@ -42,16 +44,25 @@ class HeightfieldConverterListener
 public:
 
 	// Функция вызывается, когда триангуляция готова
-	void 	TriangulationCreated(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation) = 0;
+	virtual void 	TriangulationCreated(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation) = 0;
 };
 
 // Главный класс-триангулятор карт высот
 class HEIGHFIELD_CONVERTER_API HeightfieldConverter
 {
 public:
+
+	HeightfieldConverter();
+	~HeightfieldConverter();
 	
 	// инициализация
-	void	Init();
+	void	Init(ID3D11Device* in_pD3DDevice11);
+
+	// Создать ресурсы - нужно обязательно вызвать после создания D3D11Device
+	void	CreateResources();
+
+	// Освободить ресурсы - вызывается в случае освобождения D3D11Device (например при изменении размоеров окна)
+	void	ReleaseResources();
 
 	// Создать триангуляцию немедленно и дождаться готовности
 	bool	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation);
@@ -62,4 +73,9 @@ public:
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно с помощью DirectCompute
 	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield);
+
+private:
+
+	struct HeightfieldConverterPrivate;
+	HeightfieldConverterPrivate*	_private = nullptr;
 };
