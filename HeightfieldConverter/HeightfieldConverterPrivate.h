@@ -1,15 +1,12 @@
 #pragma once
 
-#include <atlbase.h>
-#include <d3d11.h>
-
 #include "HeightfieldConverter.h"
 
 struct HeightfieldConverter::HeightfieldConverterPrivate
 {
 
 	// инициализация
-	void	Init(ID3D11Device* in_pD3DDevice11);
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, EHeightfieldConverterMode in_Mode);
 
 	// Создать ресурсы - нужно обязательно вызвать после создания D3D11Device
 	void	CreateResources();
@@ -30,6 +27,5 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 
 private:
 
-	CComPtr<ID3D11Device>           m_ptrD3DDevice;
-	CComPtr<ID3D11ComputeShader>	m_ptrComputeShader;
+
 };

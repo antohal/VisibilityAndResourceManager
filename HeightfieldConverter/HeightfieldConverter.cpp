@@ -12,25 +12,15 @@ HeightfieldConverter::~HeightfieldConverter()
 }
 
 // инициализация
-void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11)
+void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, EHeightfieldConverterMode in_Mode)
 {
-	_private->Init(in_pD3DDevice11);
-}
-
-void HeightfieldConverter::CreateResources()
-{
-	_private->CreateResources();
-}
-
-void HeightfieldConverter::ReleaseResources()
-{
-	_private->ReleaseResources();
+	_private->Init(in_pD3DDevice11, in_pDeviceContext, in_Mode);
 }
 
 // Создать триангуляцию немедленно и дождаться готовности
-bool HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
+void HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
 {
-	return _private->CreateTriangulationImmediate(in_pHeightfield, out_pTriangulation);
+	_private->CreateTriangulationImmediate(in_pHeightfield, out_pTriangulation);
 }
 
 // добавить/удалить listener

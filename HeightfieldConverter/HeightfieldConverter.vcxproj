@@ -117,12 +117,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DirectComputeConverter.cpp" />
     <ClCompile Include="HeightfieldConverter.cpp" />
     <ClCompile Include="HeightfieldConverterPrivate.cpp" />
+    <ClCompile Include="SoftwareConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractConverter.h" />
+    <ClInclude Include="DirectComputeConverter.h" />
     <ClInclude Include="HeightfieldConverter.h" />
     <ClInclude Include="HeightfieldConverterPrivate.h" />
+    <ClInclude Include="SoftwareConverter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
