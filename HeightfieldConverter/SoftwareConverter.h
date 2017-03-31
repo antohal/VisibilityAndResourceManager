@@ -13,6 +13,7 @@ class SoftwareHeightfieldConverter : public IAbstractHeightfieldConverter
 public:
 
 	SoftwareHeightfieldConverter();
+	~SoftwareHeightfieldConverter();
 
 	//@{ IAbstractHeightfieldConverter
 
@@ -50,8 +51,6 @@ private:
 
 		SHeightfield	_heightfield;
 		STriangulation	_triangulation;
-
-		bool			_finished = false;
 
 		void	createTriangulation();
 	};

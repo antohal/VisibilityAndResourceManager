@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
+#include <d3dx10math.h>
 #include <vector>
 
 #ifndef HEIGHTFIELD_CONVERTER_EXPORTS
@@ -27,7 +28,9 @@ struct SHeightfield
 // структура вершины
 struct SVertex
 {
- 	float x, y, z;
+	D3DXVECTOR3 position;
+	D3DXVECTOR2 texture;
+	D3DXVECTOR3 normal;
 };
 
 // структура триангуляции, построенной по карте высот

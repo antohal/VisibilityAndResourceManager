@@ -312,7 +312,6 @@ private:
 		m_backBufferRTV.Release();
 
 		m_pTextRenderer->ReleaseResources();
-		m_pHeightfieldConverter->ReleaseResources();
 
 		// And we make sure that we do not have any render tarvets bound either, which could
 		// also be holding references to the back buffer.
@@ -333,7 +332,6 @@ private:
 			return -1;
 
 		m_pTextRenderer->CreateResources();
-		m_pHeightfieldConverter->CreateResources();
 
 		D3D11_VIEWPORT viewport = {
 			0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f
@@ -358,7 +356,7 @@ private:
 
 		m_pTextRenderer->InitMono(m_d2dFactory, m_swapChain);
 
-		m_pHeightfieldConverter->Init(m_device);
+		m_pHeightfieldConverter->Init(m_device, m_deviceContext, SOFTWARE_MODE);
 
 
 		/*CDirect2DTextBlock* pTextBlock = m_pTextRenderer->CreateTextBlock();
