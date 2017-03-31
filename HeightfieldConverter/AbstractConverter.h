@@ -6,6 +6,8 @@ class IAbstractHeightfieldConverter
 {
 public:
 
+	virtual ~IAbstractHeightfieldConverter() {}
+
 	// —оздать триангул€цию немедленно и дождатьс€ готовности
 	virtual void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation) = 0;
 

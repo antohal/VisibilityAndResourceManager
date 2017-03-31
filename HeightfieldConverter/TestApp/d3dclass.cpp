@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
 
+#pragma comment(lib, "d2d1.lib")
 
 D3DClass::D3DClass()
 {
@@ -14,6 +15,8 @@ D3DClass::D3DClass()
 	m_depthStencilState = 0;
 	m_depthStencilView = 0;
 	m_rasterState = 0;
+
+	m_pTextRenderer = new CDirect2DTextRenderer();
 }
 
 
@@ -24,6 +27,8 @@ D3DClass::D3DClass(const D3DClass& other)
 
 D3DClass::~D3DClass()
 {
+	if (m_pTextRenderer)
+		delete m_pTextRenderer;
 }
 
 
@@ -201,10 +206,20 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
-	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, 
+	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_BGRA_SUPPORT, &featureLevel, 1,
 										   D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
 	if(FAILED(result))
 	{
+		return false;
+	}
+
+	// And lets create our D2D factory and DWrite factory at this point as well, that way if any of them fail we'll fail out completely.
+	auto options = D2D1_FACTORY_OPTIONS();
+	options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+	result = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, options, &m_d2dFactory);
+	if (FAILED(result)) 
+	{
+	
 		return false;
 	}
 
@@ -307,7 +322,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	rasterDesc.DepthBias = 0;
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.FillMode = D3D11_FILL_WIREFRAME;//D3D11_FILL_SOLID;
 	rasterDesc.FrontCounterClockwise = false;
 	rasterDesc.MultisampleEnable = false;
 	rasterDesc.ScissorEnable = false;
@@ -346,6 +361,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	// Create an orthographic projection matrix for 2D rendering.
 	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight, screenNear, screenDepth);
+
+	m_pTextRenderer->InitMono(m_d2dFactory, m_swapChain);
+
 
     return true;
 }
@@ -407,7 +425,25 @@ void D3DClass::Shutdown()
 		m_swapChain = 0;
 	}
 
+	m_pTextRenderer->ReleaseResources();
+
+	if (m_pTextRenderer)
+		delete m_pTextRenderer;
+
+	m_pTextRenderer = nullptr;
+
+	if (m_d2dFactory)
+	{
+		m_d2dFactory->Release();
+		m_d2dFactory = 0;
+	}
+
 	return;
+}
+
+CDirect2DTextRenderer* D3DClass::GetTextRenderer()
+{
+	return m_pTextRenderer;
 }
 
 
@@ -434,6 +470,8 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 
 void D3DClass::EndScene()
 {
+	m_pTextRenderer->Render();
+
 	// Present the back buffer to the screen since rendering is complete.
 	if(m_vsync_enabled)
 	{

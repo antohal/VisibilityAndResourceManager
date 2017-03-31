@@ -162,7 +162,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// Set up the description of the static vertex buffer.
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     vertexBufferDesc.ByteWidth = sizeof(SVertex) * m_triangulation.vecVertexData.size();
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = 0;
     vertexBufferDesc.MiscFlags = 0;
 	vertexBufferDesc.StructureByteStride = 0;
@@ -287,13 +287,13 @@ void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 {
 	out_Heightfield.ID = 0;
 
-	out_Heightfield.fSizeX = 6;
-	out_Heightfield.fSizeY = 6;
+	out_Heightfield.fSizeX = 8;
+	out_Heightfield.fSizeY = 8;
 	out_Heightfield.fMinHeight = 0;
 	out_Heightfield.fMaxHeight = 1;
 
-	out_Heightfield.nCountX = 256;
-	out_Heightfield.nCountY = 256;
+	out_Heightfield.nCountX = 128;
+	out_Heightfield.nCountY = 128;
 
 	out_Heightfield.vecData.resize(out_Heightfield.nCountX * out_Heightfield.nCountY);
 

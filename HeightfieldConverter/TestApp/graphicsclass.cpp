@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
+#include <chrono>
 
 GraphicsClass::GraphicsClass()
 {
@@ -43,6 +44,17 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize Direct3D.", L"Error", MB_OK);
 		return false;
 	}
+
+	m_pTextBlock = m_D3D->GetTextRenderer()->CreateTextBlock();
+
+	m_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 250, 512), D2D1::ColorF(0.1, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
+		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
+
+	m_fpsParam = m_pTextBlock->AddParameter(L"FPS");
+
+
+	m_D3D->GetTextRenderer()->CreateResources();
+
 
 	// Create the camera object.
 	m_Camera = new CameraClass;
@@ -149,9 +161,19 @@ bool GraphicsClass::Frame()
 	bool result;
 	static float rotation = 0.0f;
 
+	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+	
+	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
+	
+	double deltaTime = elapsed.count() / 1000.0;
+	double fps = 1.0 / deltaTime;
+
+	m_pTextBlock->SetParameterValue(m_fpsParam, (float)fps);
+
+	_prevFrameTime = thisFrameTime;
 
 	// Update the rotation variable each frame.
-	rotation += (float)D3DX_PI * 0.001f;
+	rotation += (float)D3DX_PI * 0.1f * deltaTime;
 	if(rotation > 360.0f)
 	{
 		rotation -= 360.0f;

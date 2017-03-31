@@ -14,6 +14,8 @@
 #include "lightshaderclass.h"
 #include "lightclass.h"
 
+#include "CDirect2DTextRenderer.h"
+
 
 /////////////
 // GLOBALS //
@@ -47,6 +49,12 @@ private:
 	ModelClass* m_Model;
 	LightShaderClass* m_LightShader;
 	LightClass* m_Light;
+
+	CDirect2DTextBlock*	m_pTextBlock;
+
+	UINT m_fpsParam;
+
+	std::chrono::time_point<std::chrono::steady_clock>	_prevFrameTime;
 };
 
 #endif

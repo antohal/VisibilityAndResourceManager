@@ -21,7 +21,9 @@
 #include <d3dcommon.h>
 #include <d3d11.h>
 #include <d3dx10math.h>
+#include <d2d1.h>
 
+#include "CDirect2DTextRenderer.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: D3DClass
@@ -42,6 +44,8 @@ public:
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
 
+	CDirect2DTextRenderer* GetTextRenderer();
+
 	void GetProjectionMatrix(D3DXMATRIX&);
 	void GetWorldMatrix(D3DXMATRIX&);
 	void GetOrthoMatrix(D3DXMATRIX&);
@@ -60,6 +64,11 @@ private:
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11DepthStencilView* m_depthStencilView;
 	ID3D11RasterizerState* m_rasterState;
+
+	ID2D1Factory*	      m_d2dFactory;
+
+	CDirect2DTextRenderer*			m_pTextRenderer = nullptr;
+
 	D3DXMATRIX m_projectionMatrix;
 	D3DXMATRIX m_worldMatrix;
 	D3DXMATRIX m_orthoMatrix;
