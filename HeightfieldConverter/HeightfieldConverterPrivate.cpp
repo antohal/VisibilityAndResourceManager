@@ -15,7 +15,11 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 	switch (in_Mode)
 	{
 	case SOFTWARE_MODE:
-		_pAbstractConverter = new SoftwareHeightfieldConverter();
+		_pAbstractConverter = new SoftwareHeightfieldConverter(in_pD3DDevice11);
+		break;
+
+	case DIRECT_COMPUTE_MODE:
+		_pAbstractConverter = new DirectComputeHeightfieldConverter(in_pD3DDevice11, in_pDeviceContext);
 		break;
 	}
 }

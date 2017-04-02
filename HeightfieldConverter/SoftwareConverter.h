@@ -8,11 +8,14 @@
 #include <thread>
 #include <mutex>
 
+#include <atlbase.h>
+#include <d3d11.h>
+
 class SoftwareHeightfieldConverter : public IAbstractHeightfieldConverter
 {
 public:
 
-	SoftwareHeightfieldConverter();
+	SoftwareHeightfieldConverter(ID3D11Device* in_pD3DDevice11);
 	~SoftwareHeightfieldConverter();
 
 	//@{ IAbstractHeightfieldConverter
@@ -45,14 +48,20 @@ private:
 
 	struct STriangulationTask
 	{
-		STriangulationTask(const SHeightfield& heightfield) : _heightfield(heightfield)
+		STriangulationTask(SoftwareHeightfieldConverter* owner, const SHeightfield& heightfield) : _owner(owner), _heightfield(heightfield)
 		{
 		}
 
 		SHeightfield	_heightfield;
 		STriangulation	_triangulation;
 
+		std::vector<SVertex>		_vecVertexData;
+		std::vector<unsigned int>	_vecIndexData;
+
 		void	createTriangulation();
+		void	createBuffers();
+
+		SoftwareHeightfieldConverter*	_owner = nullptr;
 	};
 
 	std::mutex									_listenersMutex;
@@ -63,4 +72,6 @@ private:
 
 	std::queue<STriangulationTask>				_qTriangulationTasks;
 	std::mutex									_triangulationsMutex;
+
+	CComPtr<ID3D11Device>						_ptrD3DDevice11;
 };

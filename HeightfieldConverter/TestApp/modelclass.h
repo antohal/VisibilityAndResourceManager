@@ -48,8 +48,7 @@ public:
 
 
 private:
-	bool InitializeBuffers(ID3D11Device*);
-	void ShutdownBuffers();
+
 	void RenderBuffers(ID3D11DeviceContext*);
 
 	bool LoadTexture(ID3D11Device*, WCHAR*);
@@ -64,13 +63,10 @@ private:
 
 	static void generateHeightfieldThreadFunction(ModelClass* self);
 
-	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
-	//int m_vertexCount, m_indexCount;
-	TextureClass* m_Texture;
+	TextureClass*			m_Texture;
 	
 	std::mutex				m_mutex;
 	STriangulation			m_triangulation;
-	bool					m_bNeedToRelockBuffers = false;
 
 	HeightfieldConverter*	m_pHeightfieldConverter = nullptr;
 

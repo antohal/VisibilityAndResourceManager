@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <d3dx10math.h>
+#include <atlbase.h>
 #include <vector>
 
 #ifndef HEIGHTFIELD_CONVERTER_EXPORTS
@@ -13,16 +14,17 @@
 // структура карты высот
 struct SHeightfield
 {
-	unsigned long long	ID;						// идентификатор
+	unsigned long long	ID;							// идентификатор
 
-	float fMinHeight;							// минимальная высота (соответствующая значению 0 в данных)
-	float fMaxHeight;							// максимальная высота (соответствующая значению 255 в данных)
-	float fSizeX;								// размер по X
-	float fSizeY;								// размер по Y
+	float fMinHeight;								// минимальная высота (соответствующая значению 0 в данных)
+	float fMaxHeight;								// максимальная высота (соответствующая значению 255 в данных)
+	float fSizeX;									// размер по X
+	float fSizeY;									// размер по Y
 	
-	unsigned int nCountX;						// количество точек по X
-	unsigned int nCountY;						// количество точек по Y
-	std::vector<unsigned char>	vecData;		// массив данных [количество байт: nCountX*nCountY]
+	unsigned int nCountX;							// количество точек по X
+	unsigned int nCountY;							// количество точек по Y
+
+	std::vector<unsigned char>	vecData;			// массив данных [количество байт: nCountX*nCountY]
 };
 
 // структура вершины
@@ -31,16 +33,26 @@ struct SVertex
 	D3DXVECTOR3 position;
 	D3DXVECTOR2 texture;
 	D3DXVECTOR3 normal;
+	D3DXVECTOR3 binormal;
 };
 
 // структура триангуляции, построенной по карте высот
 // её легко превратить в буфер вершин и индексов
-struct STriangulation
+struct HEIGHFIELD_CONVERTER_API STriangulation
 {
-	unsigned long long	ID;						// идентификатор (совпадает с соответствующим Heightfield)
+	unsigned long long	ID;							// идентификатор (совпадает с соответствующим Heightfield)
 
-	std::vector<SVertex>		vecVertexData;	// массив вершин
-	std::vector<unsigned int>	vecIndexData;	// массив индексов
+	ID3D11Buffer*		pVertexBuffer = nullptr;	// Буффер вершин
+	ID3D11Buffer*		pIndexBuffer = nullptr;		// Буффер индексов
+
+	unsigned int		nVertexCount = 0;
+	unsigned int		nIndexCount = 0;
+
+	// Утилитарная функция - освободить ресурсы
+	void ReleaseBuffers();
+
+	// Считать буферы
+	void UnmapBuffers(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pDeviceContext, SVertex* out_pVertexes, unsigned int* out_pIndices);
 };
 
 // Класс-обработчик событий триангуляции (аналог callback)
