@@ -28,13 +28,11 @@ void SoftwareHeightfieldConverter::CreateTriangulationImmediate(const SHeightfie
 // добавить/удалить listener
 void SoftwareHeightfieldConverter::RegisterListener(HeightfieldConverterListener* in_pListener)
 {
-	std::lock_guard<std::mutex> lock(_listenersMutex);
 	_setListeners.insert(in_pListener);
 }
 
 void SoftwareHeightfieldConverter::UnregisterListener(HeightfieldConverterListener* in_pListener)
 {
-	std::lock_guard<std::mutex> lock(_listenersMutex);
 	_setListeners.erase(in_pListener);
 }
 
@@ -50,21 +48,25 @@ void SoftwareHeightfieldConverter::triangulationThreadFunc(SoftwareHeightfieldCo
 bool SoftwareHeightfieldConverter::processTriangulations()
 {
 	_triangulationsMutex.lock();
-	if (_qTriangulationTasks.empty())
+
+	if (_setTriangulationTasks.empty())
 	{
 		_triangulationsMutex.unlock();
 		return false;
 	}
 
-	STriangulationTask task = _qTriangulationTasks.front();
-	_qTriangulationTasks.pop();
+	STriangulationTask* task = *_setTriangulationTasks.begin();
+
+	_setTriangulationTasks.erase(task);
+
 	_triangulationsMutex.unlock();
 
-	task.createTriangulation();
+	task->createTriangulation();
 
-	std::lock_guard<std::mutex> lock(_listenersMutex);
-	for (HeightfieldConverterListener* listener : _setListeners)
-		listener->TriangulationCreated(&task._triangulation);
+	_finishedTasksMutex.lock();
+	_lstFinishedTasks.push_back(task);
+	_finishedTasksMutex.unlock();
+
 
 	return true;
 }
@@ -73,7 +75,27 @@ bool SoftwareHeightfieldConverter::processTriangulations()
 void SoftwareHeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield)
 {
 	std::lock_guard<std::mutex> lock(_triangulationsMutex);
-	_qTriangulationTasks.push(STriangulationTask(this, *in_pHeightfield));
+	//_qTriangulationTasks.push(STriangulationTask(this, *in_pHeightfield));
+
+	_setTriangulationTasks.insert(new STriangulationTask(this, *in_pHeightfield));
+}
+
+void SoftwareHeightfieldConverter::UpdateTasks()
+{
+	_finishedTasksMutex.lock();
+
+	for (STriangulationTask* task : _lstFinishedTasks)
+	{
+		for (HeightfieldConverterListener* listener : _setListeners)
+			listener->TriangulationCreated(&task->_triangulation);
+
+		delete task;
+	}
+
+	_lstFinishedTasks.clear();
+
+	_finishedTasksMutex.unlock();
+
 }
 
 void SoftwareHeightfieldConverter::STriangulationTask::createTriangulation()

@@ -7,6 +7,7 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <list>
 
 #include <atlbase.h>
 #include <d3d11.h>
@@ -29,6 +30,9 @@ public:
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	virtual void	AppendTriangulationTask(const SHeightfield* in_pHeightfield) override;
+
+	// обработать поставленные задачи
+	virtual void	UpdateTasks() override;
 
 	//@}
 
@@ -64,14 +68,16 @@ private:
 		SoftwareHeightfieldConverter*	_owner = nullptr;
 	};
 
-	std::mutex									_listenersMutex;
 	std::set<HeightfieldConverterListener*>		_setListeners;
 
 	std::thread									_triangulationThread;
 	bool										_threadFinished = false;
 
-	std::queue<STriangulationTask>				_qTriangulationTasks;
+	std::set<STriangulationTask*>				_setTriangulationTasks;
 	std::mutex									_triangulationsMutex;
+
+	std::list<STriangulationTask*>				_lstFinishedTasks;
+	std::mutex									_finishedTasksMutex;
 
 	CComPtr<ID3D11Device>						_ptrD3DDevice11;
 };

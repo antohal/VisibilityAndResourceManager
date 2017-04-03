@@ -50,3 +50,9 @@ void HeightfieldConverter::HeightfieldConverterPrivate::AppendTriangulationTask(
 	if (_pAbstractConverter)
 		_pAbstractConverter->AppendTriangulationTask(in_pHeightfield);
 }
+
+void HeightfieldConverter::HeightfieldConverterPrivate::UpdateTasks()
+{
+	if (_pAbstractConverter)
+		_pAbstractConverter->UpdateTasks();
+}

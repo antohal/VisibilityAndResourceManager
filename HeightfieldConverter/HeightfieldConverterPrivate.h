@@ -21,6 +21,8 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно с помощью DirectCompute
 	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield);
 
+	// обработать поставленные задачи
+	void	UpdateTasks();
 
 private:
 

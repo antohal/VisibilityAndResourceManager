@@ -91,6 +91,9 @@ public:
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield);
 
+	// обработать поставленные задачи
+	void	UpdateTasks();
+
 private:
 
 	struct HeightfieldConverterPrivate;

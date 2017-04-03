@@ -24,6 +24,8 @@ using namespace std;
 #include "textureclass.h"
 #include "HeightfieldConverter.h"
 
+#include "CDirect2DTextRenderer.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ModelClass
@@ -36,7 +38,7 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, WCHAR*);
+	bool Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device*, ID3D11DeviceContext*, WCHAR*);
 	void Shutdown();
 	void Render(ID3D11Device* device, ID3D11DeviceContext*);
 
@@ -64,8 +66,14 @@ private:
 	static void generateHeightfieldThreadFunction(ModelClass* self);
 
 	TextureClass*			m_Texture;
+
+	CDirect2DTextBlock*		m_pTextBlock = nullptr;
+	UINT					m_GeneratedHeightmapsParam = -1;
+	UINT					m_TriangulationsTimeParam = -1;
+
+	std::chrono::time_point<std::chrono::steady_clock>  _beginTime;
+	std::chrono::time_point<std::chrono::steady_clock>	_previousSecondTime;
 	
-	std::mutex				m_mutex;
 	STriangulation			m_triangulation;
 
 	HeightfieldConverter*	m_pHeightfieldConverter = nullptr;
@@ -73,6 +81,7 @@ private:
 	std::thread				m_generateHeightfieldThread;
 
 	bool					m_finished = false;
+	bool					m_firstRender = true;
 
 	unsigned long			m_CurID = 0;
 

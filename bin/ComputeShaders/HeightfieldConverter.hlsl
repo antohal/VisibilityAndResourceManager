@@ -33,19 +33,6 @@ struct HeightBufferItem
     uint	heights;
 };
 
-///////////////////////
-// OUTPUT DATA TYPES //
-///////////////////////
-
-/*
-struct VertexType
-{
-    float3 position;
-    float2 tex;
-	float3 normal;
-	float3 binormal;
-};*/
-
 ByteAddressBuffer 	InputHeightBuffer 		: register(t0);
 RWByteAddressBuffer OutVertexBuffer 		: register(u0);
 RWByteAddressBuffer OutIndexBuffer 			: register(u1);
@@ -58,9 +45,17 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	
 	uint ivtx = ix + iy * nCountX;
 	
-	//uint addr = ix * iy * 4;
-	//uint height = InputHeightBuffer.Load();
+	uint addr = ivtx / 4;
+	uint heights = asuint( InputHeightBuffer.Load(addr * 4 ) );
+
+	uint aHeights[4];
 	
+	aHeights[0] = (heights) & 0xFF;
+	aHeights[1] = (heights >> 8) & 0xFF;
+	aHeights[2] = (heights >> 16) & 0xFF;
+	aHeights[3] = (heights >> 24) & 0xFF;
+	
+	uint height = aHeights[ivtx % 4];
 	
 	// INDICES
 	
@@ -73,10 +68,6 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 		uint i2 = (iy + 1)*nCountX + ix;
 		uint i3 = (iy + 1)*nCountX + ix + 1;
 
-//		OutIndexBuffer.Store(nStartIndex 		* 4, ivtx);
-//		OutIndexBuffer.Store((nStartIndex + 1) 	* 4, ix);
-//		OutIndexBuffer.Store((nStartIndex + 2) 	* 4, iy);
-		
 		OutIndexBuffer.Store(nStartIndex 		* 4, i3);
 		OutIndexBuffer.Store((nStartIndex + 1) 	* 4, i1);
 		OutIndexBuffer.Store((nStartIndex + 2) 	* 4, i0);
@@ -92,7 +83,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	// VERTICES
 			
 	float posx = ix * dx - fSizeX * 0.5;
-	float posy = 0; //_heightfield.fMinHeight + (_heightfield.fMaxHeight - _heightfield.fMinHeight) * ((float)_heightfield.vecData[i] / 255.f);
+	float posy = fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f);
 	float posz = iy * dy - fSizeX * 0.5;
 
 	float tu = (float)ix / (nCountX - 1);

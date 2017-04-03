@@ -29,6 +29,9 @@ public:
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	virtual void	AppendTriangulationTask(const SHeightfield* in_pHeightfield) override;
 
+	// обработать поставленные задачи
+	virtual void	UpdateTasks();
+
 	//@}
 
 private:
@@ -72,28 +75,12 @@ private:
 		CComPtr<ID3D11Buffer>				_ptrConstantBuffer;
 	};
 
-	std::mutex									_listenersMutex;
 	std::set<HeightfieldConverterListener*>		_setListeners;
 
-	std::thread									_triangulationThread;
-	bool										_threadFinished = false;
-
-	std::queue<STriangulationTask>				_qTriangulationTasks;
-	std::mutex									_triangulationsMutex;
+	std::mutex									_tasksMutex;
+	std::queue<STriangulationTask*>				_qTriangulationTasks;
 
 	CComPtr<ID3D11Device>						_ptrD3DDevice;
 	CComPtr<ID3D11DeviceContext>				_ptrDeviceContext;
 	CComPtr<ID3D11ComputeShader>				_ptrComputeShader;
-
-	bool threadFinished() const {
-		return _threadFinished;
-	}
-
-	void setThreadFinished() {
-		_threadFinished = true;
-	}
-
-	bool processTriangulations();
-
-	static void triangulationThreadFunc(DirectComputeHeightfieldConverter*);
 };

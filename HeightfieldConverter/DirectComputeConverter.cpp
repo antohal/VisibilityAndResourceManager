@@ -176,8 +176,8 @@ void RunComputeShader(ID3D11DeviceContext* pd3dImmediateContext,
 
 	pd3dImmediateContext->CSSetShader(nullptr, nullptr, 0);
 
-	ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, ppUAViewnullptr, nullptr);
+	ID3D11UnorderedAccessView* ppUAViewnullptr[2] = { nullptr, nullptr };
+	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 2, ppUAViewnullptr, nullptr);
 
 	ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
 	pd3dImmediateContext->CSSetShaderResources(0, 2, ppSRVnullptr);
@@ -274,22 +274,11 @@ DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Devic
 		return;
 	}
 
-	_triangulationThread = std::thread(triangulationThreadFunc, this);
 }
 
 DirectComputeHeightfieldConverter::~DirectComputeHeightfieldConverter()
 {
-	setThreadFinished();
-	_triangulationThread.join();
-}
 
-void DirectComputeHeightfieldConverter::triangulationThreadFunc(DirectComputeHeightfieldConverter* self)
-{
-	while (!self->threadFinished())
-	{
-		if (!self->processTriangulations())
-			std::this_thread::sleep_for(1ns);
-	}
 }
 
 void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
@@ -301,46 +290,43 @@ void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeig
 
 void DirectComputeHeightfieldConverter::RegisterListener(HeightfieldConverterListener* in_pListener)
 {
-	std::lock_guard<std::mutex> lock(_listenersMutex);
 	_setListeners.insert(in_pListener);
 }
 
 void DirectComputeHeightfieldConverter::UnregisterListener(HeightfieldConverterListener* in_pListener)
 {
-	std::lock_guard<std::mutex> lock(_listenersMutex);
 	_setListeners.erase(in_pListener);
 }
 
 void DirectComputeHeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield)
 {
-	std::lock_guard<std::mutex> lock(_triangulationsMutex);
-	_qTriangulationTasks.push(STriangulationTask(this, *in_pHeightfield));
+	std::lock_guard<std::mutex> lock(_tasksMutex);
+	_qTriangulationTasks.push(new STriangulationTask(this, *in_pHeightfield));
 }
 
-bool DirectComputeHeightfieldConverter::processTriangulations()
+// обработать поставленные задачи
+void DirectComputeHeightfieldConverter::UpdateTasks()
 {
-	_triangulationsMutex.lock();
-	if (_qTriangulationTasks.empty())
+	std::lock_guard<std::mutex> lock(_tasksMutex);
+
+	while (!_qTriangulationTasks.empty())
 	{
-		_triangulationsMutex.unlock();
-		return false;
+		STriangulationTask* task = _qTriangulationTasks.front();
+		_qTriangulationTasks.pop();
+
+		task->createTriangulation();
+
+		for (HeightfieldConverterListener* listener : _setListeners)
+			listener->TriangulationCreated(&task->_triangulation);
+
+		delete task;
 	}
-
-	STriangulationTask task = _qTriangulationTasks.front();
-	_qTriangulationTasks.pop();
-	_triangulationsMutex.unlock();
-
-	task.createTriangulation();
-
-	std::lock_guard<std::mutex> lock(_listenersMutex);
-	for (HeightfieldConverterListener* listener : _setListeners)
-		listener->TriangulationCreated(&task._triangulation);
-
-	return true;
 }
 
 void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation()
 {
+	_triangulation.ID = _heightfield.ID;
+
 	_triangulation.nVertexCount = _heightfield.nCountX * _heightfield.nCountY;
 	_triangulation.nIndexCount = (_heightfield.nCountX - 1) * (_heightfield.nCountY - 1) * 2 * 3;
 

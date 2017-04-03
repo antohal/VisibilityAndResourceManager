@@ -40,6 +40,11 @@ void HeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeigh
 	_private->AppendTriangulationTask(in_pHeightfield);
 }
 
+void HeightfieldConverter::UpdateTasks()
+{
+	_private->UpdateTasks();
+}
+
 
 //-------------------------------------------------------------------------------------- 
 // Create a CPU accessible buffer and download the content of a GPU buffer into it 

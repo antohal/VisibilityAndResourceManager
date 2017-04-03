@@ -7,6 +7,7 @@
 ModelClass::ModelClass()
 {
 	m_Texture = 0;
+	m_firstRender = true;
 }
 
 
@@ -19,59 +20,54 @@ ModelClass::~ModelClass()
 {
 }
 
-void ModelClass::generateHeightfieldThreadFunction(ModelClass* self)
-{
-
-	float curTime = 0;
-
-	SHeightfield hf;
-
-	while (!self->m_finished)
-	{
-		curTime += 0.01f;
-
-		self->GenerateHeightfield(hf, curTime);
-
-		hf.ID = self->m_CurID;
-
-		self->m_CurID++;
-
-		self->m_pHeightfieldConverter->AppendTriangulationTask(&hf);
-	}
-}
+//void ModelClass::generateHeightfieldThreadFunction(ModelClass* self)
+//{
+//	SHeightfield hf;
+//
+//	while (!self->m_finished)
+//	{
+//		std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+//		std::chrono::duration<double, std::milli> elapsed = thisFrameTime - self->_beginTime;
+//
+//		double time = elapsed.count() / 1000.0;
+//
+//		self->GenerateHeightfield(hf, (float)time);
+//
+//		hf.ID = self->m_CurID;
+//
+//		self->m_CurID++;
+//
+//		self->m_pHeightfieldConverter->AppendTriangulationTask(&hf);
+//
+//		self->m_nHeightmapsCount++;
+//	}
+//}
 
 void ModelClass::TriangulationCreated(const STriangulation* in_pTriangulation)
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
-
+	// освобождаем буферы старой триангул€ции
 	m_triangulation.ReleaseBuffers();
 
 	m_triangulation = *in_pTriangulation;
 }
 
-bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* textureFilename)
+bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* textureFilename)
 {
 	bool result;
 
+	m_pTextBlock = debugTextBlock;
 
 	m_pHeightfieldConverter = new HeightfieldConverter();
-	m_pHeightfieldConverter->Init(device, context, SOFTWARE_MODE /*DIRECT_COMPUTE_MODE*/);
+	//m_pHeightfieldConverter->Init(device, context, SOFTWARE_MODE);
+	m_pHeightfieldConverter->Init(device, context, DIRECT_COMPUTE_MODE);
 
 	m_pHeightfieldConverter->RegisterListener(this);
 
-	SHeightfield initialHeightfield;
-	GenerateHeightfield(initialHeightfield, 1.5);
-
-
-	m_pHeightfieldConverter->CreateTriangulationImmediate(&initialHeightfield, &m_triangulation);
-
-	unsigned int * pIndices = new unsigned int[m_triangulation.nIndexCount];
-	SVertex* pVertices = new SVertex[m_triangulation.nVertexCount];
-
-	m_triangulation.UnmapBuffers(device, context, pVertices, pIndices);
-
-	delete[] pIndices;
-	delete[] pVertices;
+	if (m_pTextBlock)
+	{
+		m_GeneratedHeightmapsParam = m_pTextBlock->AddParameter(L"¬рем€ генерации карты высот (мс)");
+		m_TriangulationsTimeParam = m_pTextBlock->AddParameter(L"¬рем€ триангул€ции (мс)");
+	}
 
 	// Load the texture for this model.
 	result = LoadTexture(device, textureFilename);
@@ -82,6 +78,8 @@ bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, 
 
 	//m_generateHeightfieldThread = std::thread(generateHeightfieldThreadFunction, this);
 
+	_beginTime = _previousSecondTime = std::chrono::high_resolution_clock::now();
+
 	return true;
 }
 
@@ -90,6 +88,10 @@ void ModelClass::Shutdown()
 {
 	m_finished = true;
 
+	// release current rendering triangulation buffers
+	m_triangulation.ReleaseBuffers();
+
+	// wait for generation thread stops
 	//m_generateHeightfieldThread.join();
 
 	delete m_pHeightfieldConverter;
@@ -97,16 +99,37 @@ void ModelClass::Shutdown()
 	// Release the model texture.
 	ReleaseTexture();
 
-
-	// Release the model data.
-	//ReleaseModel();
-
 	return;
 }
 
 
 void ModelClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
+
+	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _beginTime;
+	
+	double time = elapsed.count() / 1000.0;
+
+	SHeightfield initialHeightfield;
+	GenerateHeightfield(initialHeightfield, (float)time);
+
+	std::chrono::time_point<std::chrono::steady_clock> afterGenerationTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> generationDelta = afterGenerationTime - thisFrameTime;
+
+	m_pHeightfieldConverter->CreateTriangulationImmediate(&initialHeightfield, &m_triangulation);
+
+
+	std::chrono::time_point<std::chrono::steady_clock> afterTriangulationTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> triangulationDelta = afterTriangulationTime - afterGenerationTime;
+
+	if (m_pTextBlock)
+	{
+		m_pTextBlock->SetParameterValue(m_GeneratedHeightmapsParam, generationDelta.count());
+		m_pTextBlock->SetParameterValue(m_TriangulationsTimeParam, triangulationDelta.count());
+	}
+
+
 	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	RenderBuffers(deviceContext);
 
@@ -116,7 +139,6 @@ void ModelClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 
 int ModelClass::GetIndexCount()
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_triangulation.nIndexCount;
 }
 
@@ -125,7 +147,6 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 {
 	return m_Texture->GetTexture();
 }
-
 
 
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
@@ -138,7 +159,6 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	stride = sizeof(SVertex); 
 	offset = 0;
 
-	m_mutex.lock();
 
 	ID3D11Buffer* pVertexBuffer = m_triangulation.pVertexBuffer;
 	ID3D11Buffer* pIndexBuffer = m_triangulation.pIndexBuffer;
@@ -152,8 +172,6 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 		deviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	}
-
-	m_mutex.unlock();
 
     // Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

@@ -17,4 +17,7 @@ public:
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	virtual void	AppendTriangulationTask(const SHeightfield* in_pHeightfield) = 0;
+
+	// обработать поставленные задачи
+	virtual void	UpdateTasks() = 0;
 };

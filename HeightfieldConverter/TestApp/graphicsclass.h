@@ -40,6 +40,8 @@ public:
 	void Shutdown();
 	bool Frame();
 
+	CDirect2DTextBlock*	GetTextBlock() { return m_pTextBlock; }
+
 private:
 	bool Render(float);
 
