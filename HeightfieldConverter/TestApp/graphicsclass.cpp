@@ -173,12 +173,14 @@ bool GraphicsClass::Frame()
 	_prevFrameTime = thisFrameTime;
 
 	// Update the rotation variable each frame.
-	rotation += (float)D3DX_PI * 0.1f * deltaTime;
+	/*rotation += (float)D3DX_PI * 0.1f * deltaTime;
 	if(rotation > 360.0f)
 	{
 		rotation -= 360.0f;
-	}
+	}*/
 	
+	rotation = (float)D3DX_PI * 0.3f;
+
 	// Render the graphics scene.
 	result = Render(rotation);
 	if(!result)

@@ -117,6 +117,7 @@ void ModelClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	std::chrono::time_point<std::chrono::steady_clock> afterGenerationTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> generationDelta = afterGenerationTime - thisFrameTime;
 
+	m_triangulation.ReleaseBuffers();
 	m_pHeightfieldConverter->CreateTriangulationImmediate(&initialHeightfield, &m_triangulation);
 
 
@@ -225,8 +226,8 @@ void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 	out_Heightfield.fMinHeight = 0;
 	out_Heightfield.fMaxHeight = 1;
 
-	out_Heightfield.nCountX = 128;
-	out_Heightfield.nCountY = 128;
+	out_Heightfield.nCountX = 512;
+	out_Heightfield.nCountY = 512;
 
 	out_Heightfield.vecData.resize(out_Heightfield.nCountX * out_Heightfield.nCountY);
 
@@ -237,7 +238,7 @@ void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 		{
 			size_t idx = lx + ly*out_Heightfield.nCountX;
 
-			float k = 1 + 3 * sin(time);
+			float k = 1 + 5 * sin(time);
 
 			float cx = k * (float)lx / out_Heightfield.nCountX;
 			float cy = k * (float)ly / out_Heightfield.nCountY;

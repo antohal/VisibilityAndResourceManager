@@ -131,7 +131,7 @@ void SoftwareHeightfieldConverter::STriangulationTask::createTriangulation()
 	float dx = _heightfield.fSizeX / (_heightfield.nCountX - 1);
 	float dy = _heightfield.fSizeY / (_heightfield.nCountY - 1);
 
-	_vecVertexData.reserve(_heightfield.nCountX * _heightfield.nCountY);
+	//_vecVertexData.reserve(_heightfield.nCountX * _heightfield.nCountY);
 
 	for (unsigned int i = 0; i < _heightfield.vecData.size(); i++)
 	{
