@@ -4,45 +4,6 @@
 #include "modelclass.h"
 
 
-ModelClass::ModelClass()
-{
-	m_Texture = 0;
-	m_firstRender = true;
-}
-
-
-ModelClass::ModelClass(const ModelClass& other)
-{
-}
-
-
-ModelClass::~ModelClass()
-{
-}
-
-//void ModelClass::generateHeightfieldThreadFunction(ModelClass* self)
-//{
-//	SHeightfield hf;
-//
-//	while (!self->m_finished)
-//	{
-//		std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
-//		std::chrono::duration<double, std::milli> elapsed = thisFrameTime - self->_beginTime;
-//
-//		double time = elapsed.count() / 1000.0;
-//
-//		self->GenerateHeightfield(hf, (float)time);
-//
-//		hf.ID = self->m_CurID;
-//
-//		self->m_CurID++;
-//
-//		self->m_pHeightfieldConverter->AppendTriangulationTask(&hf);
-//
-//		self->m_nHeightmapsCount++;
-//	}
-//}
-
 void ModelClass::TriangulationCreated(const STriangulation* in_pTriangulation)
 {
 	// освобождаем буферы старой триангул€ции
@@ -51,7 +12,7 @@ void ModelClass::TriangulationCreated(const STriangulation* in_pTriangulation)
 	m_triangulation = *in_pTriangulation;
 }
 
-bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* textureFilename)
+bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* pcwszTexture, WCHAR* pcwszNromalMap)
 {
 	bool result;
 
@@ -67,10 +28,12 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	{
 		m_GeneratedHeightmapsParam = m_pTextBlock->AddParameter(L"¬рем€ генерации карты высот (мс)");
 		m_TriangulationsTimeParam = m_pTextBlock->AddParameter(L"¬рем€ триангул€ции (мс)");
+
+		m_pTextBlock->AddTextLine(L"–азрешение карт высот: 1024 х 1024");
 	}
 
 	// Load the texture for this model.
-	result = LoadTexture(device, textureFilename);
+	result = LoadTextures(device, pcwszTexture, pcwszNromalMap);
 	if(!result)
 	{
 		return false;
@@ -146,9 +109,13 @@ int ModelClass::GetIndexCount()
 
 ID3D11ShaderResourceView* ModelClass::GetTexture()
 {
-	return m_Texture->GetTexture();
+	return m_pTexture->GetTexture();
 }
 
+ID3D11ShaderResourceView* ModelClass::GetNormalMap()
+{
+	return m_pNormalMap->GetTexture();
+}
 
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
@@ -181,24 +148,23 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 }
 
 
-bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
+bool ModelClass::LoadTextures(ID3D11Device* device, WCHAR* filename, WCHAR* normalmap)
 {
 	bool result;
 
 
 	// Create the texture object.
-	m_Texture = new TextureClass;
-	if(!m_Texture)
-	{
-		return false;
-	}
-
+	m_pTexture = new TextureClass;
+	
 	// Initialize the texture object.
-	result = m_Texture->Initialize(device, filename);
+	result = m_pTexture->Initialize(device, filename);
 	if(!result)
 	{
 		return false;
 	}
+
+	m_pNormalMap = new TextureClass;
+	m_pNormalMap->Initialize(device, normalmap);
 
 	return true;
 }
@@ -207,11 +173,18 @@ bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 void ModelClass::ReleaseTexture()
 {
 	// Release the texture object.
-	if(m_Texture)
+	if(m_pTexture)
 	{
-		m_Texture->Shutdown();
-		delete m_Texture;
-		m_Texture = 0;
+		m_pTexture->Shutdown();
+		delete m_pTexture;
+		m_pTexture = 0;
+	}
+
+	if (m_pNormalMap)
+	{
+		m_pNormalMap->Shutdown();
+		delete m_pNormalMap;
+		m_pNormalMap = 0;
 	}
 
 	return;
@@ -226,8 +199,8 @@ void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 	out_Heightfield.fMinHeight = 0;
 	out_Heightfield.fMaxHeight = 1;
 
-	out_Heightfield.nCountX = 512;
-	out_Heightfield.nCountY = 512;
+	out_Heightfield.nCountX = 1024;
+	out_Heightfield.nCountY = 1024;
 
 	out_Heightfield.vecData.resize(out_Heightfield.nCountX * out_Heightfield.nCountY);
 

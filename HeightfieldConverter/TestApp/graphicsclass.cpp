@@ -75,7 +75,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the model object.
-	result = m_Model->Initialize(m_pTextBlock, m_D3D->GetDevice(), m_D3D->GetDeviceContext(), L"TestData/seafloor.dds");
+	result = m_Model->Initialize(m_pTextBlock, m_D3D->GetDevice(), m_D3D->GetDeviceContext(), L"TestData/seafloor.dds", L"TestData/normal.jpg");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
@@ -217,7 +217,7 @@ bool GraphicsClass::Render(float rotation)
 
 	// Render the model using the light shader.
 	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, 
-								   m_Model->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
+								   m_Model->GetTexture(), m_Model->GetNormalMap(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
 	if(!result)
 	{
 		return false;

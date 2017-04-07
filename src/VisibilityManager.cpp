@@ -232,6 +232,8 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	float									_fWorldRadius = 10000000;
 	float									_fMinCellSize = 100;
 
+	unsigned int							_uiEyeID = 0;
+
 	struct SObjectAddRequest
 	{
 		C3DBaseObject*	_Object;
@@ -1037,7 +1039,7 @@ void CVisibilityManager::VisibilityManagerPrivate::SetObjectVisibleOnThisFrame(C
 		for (C3DBaseFaceSet* pFaceSet : obj._vecFaceSets)
 		{
 			if (C3DBaseMaterial* material = pFaceSet->GetMaterialRef())
-				material->AddVisibleFaceSet(pFaceSet);
+				material->AddVisibleFaceSet(pFaceSet, _uiEyeID);
 		}
 	}
 }
@@ -1064,6 +1066,11 @@ bool CVisibilityManager::IsTextureVisible(C3DBaseTexture* texture) const
 void CVisibilityManager::SetPredictionModeEnabled(bool enabled)
 {
 	_private->_bPredictionMode = enabled;
+}
+
+void CVisibilityManager::SetEye(unsigned int in_uiEye)
+{
+	_private->_uiEyeID = in_uiEye;
 }
 
 float CVisibilityManager::GetTexturePriority(C3DBaseTexture* texture) const

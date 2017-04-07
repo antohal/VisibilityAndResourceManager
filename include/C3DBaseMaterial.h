@@ -14,7 +14,7 @@ public:
 	virtual E3DResourceType	GetType() const { return C3DRESOURCE_MATERIAL; }
 
 	// Функция используется в процессе рендеринга [для взаимодействия процесса рендера с Visman]
-	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*) = 0;
+	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*, unsigned int in_uiEyeId) = 0;
 
 	// Получить набор техник
 	//virtual void	GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const = 0;

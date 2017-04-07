@@ -1,14 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HeightfieldConverter", "HeightfieldConverter.vcxproj", "{49A72C94-92FB-4052-B8A0-CC7CE509A83E}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HeightfieldConverterTest", "HeightfieldConverterTest.vcxproj", "{648E30B6-3759-48C4-A5FA-D51935EE486A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{49A72C94-92FB-4052-B8A0-CC7CE509A83E} = {49A72C94-92FB-4052-B8A0-CC7CE509A83E}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestApp", "TestApp\TestApp.vcxproj", "{4FC2D55B-07AC-4DF2-8C5C-4F1802CB0205}"
 EndProject
@@ -28,14 +23,6 @@ Global
 		{49A72C94-92FB-4052-B8A0-CC7CE509A83E}.Release|x64.Build.0 = Release|x64
 		{49A72C94-92FB-4052-B8A0-CC7CE509A83E}.Release|x86.ActiveCfg = Release|Win32
 		{49A72C94-92FB-4052-B8A0-CC7CE509A83E}.Release|x86.Build.0 = Release|Win32
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Debug|x64.ActiveCfg = Debug|x64
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Debug|x64.Build.0 = Debug|x64
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Debug|x86.ActiveCfg = Debug|Win32
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Debug|x86.Build.0 = Debug|Win32
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Release|x64.ActiveCfg = Release|x64
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Release|x64.Build.0 = Release|x64
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Release|x86.ActiveCfg = Release|Win32
-		{648E30B6-3759-48C4-A5FA-D51935EE486A}.Release|x86.Build.0 = Release|Win32
 		{4FC2D55B-07AC-4DF2-8C5C-4F1802CB0205}.Debug|x64.ActiveCfg = Debug|x64
 		{4FC2D55B-07AC-4DF2-8C5C-4F1802CB0205}.Debug|x64.Build.0 = Debug|x64
 		{4FC2D55B-07AC-4DF2-8C5C-4F1802CB0205}.Debug|x86.ActiveCfg = Debug|Win32

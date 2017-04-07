@@ -96,6 +96,8 @@ public:
 	// получить дальнюю отсекающую плоскость
 	float GetFarClipPlane () const;
 
+	// Установить идентификатор глаза (передается дальше в C3DBaseMaterial::AddVisibleFaceSet)
+	void SetEye(unsigned int in_uiEye);
 
 	void SetViewProjection(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection);
 

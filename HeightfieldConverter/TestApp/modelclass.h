@@ -34,16 +34,14 @@ class ModelClass : public HeightfieldConverterListener
 {
 
 public:
-	ModelClass();
-	ModelClass(const ModelClass&);
-	~ModelClass();
 
-	bool Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device*, ID3D11DeviceContext*, WCHAR*);
+	bool Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device*, ID3D11DeviceContext*, WCHAR* pcwszTexture, WCHAR* pcwszNromalMap);
 	void Shutdown();
 	void Render(ID3D11Device* device, ID3D11DeviceContext*);
 
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();
+	ID3D11ShaderResourceView* GetNormalMap();
 
 
 	virtual void 	TriangulationCreated(const STriangulation* in_pTriangulation) override;
@@ -53,19 +51,15 @@ private:
 
 	void RenderBuffers(ID3D11DeviceContext*);
 
-	bool LoadTexture(ID3D11Device*, WCHAR*);
+	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*);
 	void ReleaseTexture();
-
-	//bool LoadModel(char*);
-	//void ReleaseModel();
 
 	void GenerateHeightfield(SHeightfield& out_Heightfield, float time);
 
 private:
 
-	static void generateHeightfieldThreadFunction(ModelClass* self);
-
-	TextureClass*			m_Texture;
+	TextureClass*			m_pTexture = nullptr;
+	TextureClass*			m_pNormalMap = nullptr;
 
 	CDirect2DTextBlock*		m_pTextBlock = nullptr;
 	UINT					m_GeneratedHeightmapsParam = -1;
@@ -84,7 +78,6 @@ private:
 	bool					m_firstRender = true;
 
 	unsigned long			m_CurID = 0;
-
 };
 
 #endif

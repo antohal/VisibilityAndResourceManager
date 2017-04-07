@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include <stdarg.h>
+#include <mutex>
 
 #include "string_cast.hpp"
 
@@ -88,6 +89,7 @@ struct CDirect2DTextRenderer::TextRendererPrivate
 		return _textRenderer;
 	}
 
+	std::mutex						_textBlocksMutex;
 	std::set<CDirect2DTextBlock*>	_setTextBlocks;
 
 	IAbstractTextRenderer*			_textRenderer = nullptr;
@@ -121,12 +123,16 @@ void CDirect2DTextRenderer::Render()
 CDirect2DTextBlock*	CDirect2DTextRenderer::CreateTextBlock()
 {
 	CDirect2DTextBlock* pNewTextBlock = new CDirect2DTextBlock(this);
+
+	std::lock_guard<std::mutex> lock(_private->_textBlocksMutex);
 	_private->_setTextBlocks.insert(pNewTextBlock);
 	return pNewTextBlock;
 }
 
 void CDirect2DTextRenderer::DeleteTextBlock(CDirect2DTextBlock* in_pTextBlock)
 {
+	std::lock_guard<std::mutex> lock(_private->_textBlocksMutex);
+
 	auto it = _private->_setTextBlocks.find(in_pTextBlock);
 	if (it == _private->_setTextBlocks.end())
 	{
@@ -220,6 +226,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	void AddTextLine(const std::wstring& in_wsTextLine)
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		_lstTextLines.push_back(TextLine());
 
 		TextLine& line = _lstTextLines.back();
@@ -237,6 +245,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	UINT AddParameter(const std::wstring& in_wsParamName)
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		_lstTextLines.push_back(TextLine());
 
 		TextLine& line = _lstTextLines.back();
@@ -252,6 +262,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	void SetParameterValue(UINT in_paramHandle, float in_fParameterValue)
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		auto it = _mapParameters.find(in_paramHandle);
 
 		if (it == _mapParameters.end())
@@ -285,6 +297,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	void ClearText()
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		_RenderedText.clear();
 		_lstTextLines.clear();
 		_mapParameters.clear();
@@ -297,6 +311,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 
 	UINT AddFormattedTextLine(const wchar_t* in_pcwszFormat)
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		_lstTextLines.push_back(TextLine());
 
 		TextLine& line = _lstTextLines.back();
@@ -314,6 +330,8 @@ struct CDirect2DTextBlock::TextBlockPrivate
 	// »зменить параметры форматированной строки
 	void UpdateFormattedTextLine(UINT in_uiFormattedLineId, va_list args)
 	{
+		std::lock_guard<std::mutex> lock(_textBlockMutex);
+
 		auto it = _mapParameters.find(in_uiFormattedLineId);
 
 		if (it == _mapParameters.end())
@@ -344,6 +362,7 @@ struct CDirect2DTextBlock::TextBlockPrivate
 		float			_fParamValue = 0;
 	};
 
+	std::mutex						_textBlockMutex;
 	std::list<TextLine>				_lstTextLines;
 	std::map<UINT, TextLine*>		_mapParameters;
 

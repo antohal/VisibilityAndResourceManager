@@ -181,7 +181,7 @@ public:
 
 	//@{ C3DBaseMaterial
 
-	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*) {}
+	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*, unsigned int) {}
 
 	//virtual void	GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const = 0;
 	virtual size_t	GetTechniquesCount() const;
