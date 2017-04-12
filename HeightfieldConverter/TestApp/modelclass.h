@@ -39,6 +39,11 @@ public:
 	void Shutdown();
 	void Render(ID3D11Device* device, ID3D11DeviceContext*);
 
+	void SetDemoMode(bool in_bDemoMode)
+	{
+		m_bDemoMode = in_bDemoMode;
+	}
+
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();
 	ID3D11ShaderResourceView* GetNormalMap();
@@ -76,6 +81,8 @@ private:
 
 	bool					m_finished = false;
 	bool					m_firstRender = true;
+
+	bool					m_bDemoMode = false;
 
 	unsigned long			m_CurID = 0;
 };

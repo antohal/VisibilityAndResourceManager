@@ -1,11 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HeightfieldConverter", "HeightfieldConverter.vcxproj", "{49A72C94-92FB-4052-B8A0-CC7CE509A83E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestApp", "TestApp\TestApp.vcxproj", "{4FC2D55B-07AC-4DF2-8C5C-4F1802CB0205}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49A72C94-92FB-4052-B8A0-CC7CE509A83E} = {49A72C94-92FB-4052-B8A0-CC7CE509A83E}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

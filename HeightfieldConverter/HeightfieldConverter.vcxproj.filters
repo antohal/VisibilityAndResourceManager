@@ -21,9 +21,6 @@
     <ClCompile Include="HeightfieldConverterPrivate.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="SoftwareConverter.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="DirectComputeConverter.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
@@ -42,9 +39,6 @@
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="DirectComputeConverter.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="SoftwareConverter.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="mathmisc.h">

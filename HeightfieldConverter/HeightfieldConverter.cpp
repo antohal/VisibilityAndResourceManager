@@ -12,9 +12,9 @@ HeightfieldConverter::~HeightfieldConverter()
 }
 
 // инициализация
-void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, EHeightfieldConverterMode in_Mode)
+void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext)
 {
-	_private->Init(in_pD3DDevice11, in_pDeviceContext, in_Mode);
+	_private->Init(in_pD3DDevice11, in_pDeviceContext);
 }
 
 // Создать триангуляцию немедленно и дождаться готовности
@@ -45,89 +45,37 @@ void HeightfieldConverter::UpdateTasks()
 	_private->UpdateTasks();
 }
 
-
-//-------------------------------------------------------------------------------------- 
-// Create a CPU accessible buffer and download the content of a GPU buffer into it 
-// This function is very useful for debugging CS programs 
-//--------------------------------------------------------------------------------------  
-_Use_decl_annotations_
-ID3D11Buffer* CreateAndCopyToDebugBuf(ID3D11Device* pDevice, ID3D11DeviceContext* pd3dImmediateContext, ID3D11Buffer* pBuffer)
+// Задать глобальный коэффициент масштаба.
+// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
+void HeightfieldConverter::SetWorldScale(float in_fScale)
 {
-	ID3D11Buffer* debugbuf = nullptr;
-
-	D3D11_BUFFER_DESC desc;
-	ZeroMemory(&desc, sizeof(desc));
-	pBuffer->GetDesc(&desc);
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	desc.Usage = D3D11_USAGE_STAGING;
-	desc.BindFlags = 0;
-	desc.MiscFlags = 0;
-	if (SUCCEEDED(pDevice->CreateBuffer(&desc, nullptr, &debugbuf)))
-	{
-		//#if defined(_DEBUG) || defined(PROFILE) 
-		//debugbuf->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Debug") - 1, "Debug");
-		//#endif 
-
-		pd3dImmediateContext->CopyResource(debugbuf, pBuffer);
-	}
-
-	return debugbuf;
+	_private->SetWorldScale(in_fScale);
 }
 
-void STriangulation::UnmapBuffers(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pDeviceContext, SVertex* out_pVertexes, unsigned int* out_pIndices)
+// Считать данные карты высот из текстуры
+void HeightfieldConverter::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield)
 {
-	// Read back the result from GPU, verify its correctness against result computed by CPU 
-	if (pVertexBuffer)
-	{
-		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(in_pD3D11Device, in_pDeviceContext, pVertexBuffer);
-		D3D11_MAPPED_SUBRESOURCE MappedResource;
-
-		SVertex *p;
-		in_pDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource);
-
-		// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
-		// This is also a common trick to debug CS programs. 
-		p = (SVertex*) MappedResource.pData;
-
-		memcpy(out_pVertexes, p, nVertexCount * sizeof(SVertex));
-
-		in_pDeviceContext->Unmap(debugbuf, 0);
-
-		if (debugbuf)
-			debugbuf->Release();
-	}
-
-	// Read back the result from GPU, verify its correctness against result computed by CPU 
-	if (pIndexBuffer)
-	{
-		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(in_pD3D11Device, in_pDeviceContext, pIndexBuffer);
-		D3D11_MAPPED_SUBRESOURCE MappedResource;
-
-		unsigned int *p;
-		in_pDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource);
-
-		// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
-		// This is also a common trick to debug CS programs. 
-		p = (unsigned int*) MappedResource.pData;
-
-		memcpy(out_pIndices, p, nIndexCount * 4);
-
-		in_pDeviceContext->Unmap(debugbuf, 0);
-
-		if (debugbuf)
-			debugbuf->Release();
-	}
+	_private->ReadHeightfieldDataFromTexture(in_pcwszTextureFileName, out_Heightfield);
 }
 
-void STriangulation::ReleaseBuffers()
+void HeightfieldConverter::ReadHeightfieldDataFromMemory(const unsigned char* in_pData, unsigned int in_nWidth, unsigned int in_nHeight, SHeightfield& out_Heightfield)
 {
-	ULONG lref = 0;
-	if (pIndexBuffer)
-		lref = pIndexBuffer->Release();
 
-	if (pVertexBuffer)
-		lref = pVertexBuffer->Release();
+}
 
-	pIndexBuffer = nullptr;
-	pVertexBuffer = nullptr;
+// Освободить буферы триангуляции
+void HeightfieldConverter::ReleaseTriangulation(STriangulation* triangulation)
+{
+	_private->ReleaseTriangulation(triangulation);
+}
+
+void HeightfieldConverter::ReleaseHeightfield(SHeightfield* heightfield)
+{
+	_private->ReleaseHeightfield(heightfield);
+}
+
+// Получить буферы вершин и индексов в памяти
+void HeightfieldConverter::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
+{
+	_private->UnmapTriangulation(triangulation, out_pVertexes, out_pIndices);
 }

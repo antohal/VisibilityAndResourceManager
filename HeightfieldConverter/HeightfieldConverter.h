@@ -14,17 +14,28 @@
 // структура карты высот
 struct SHeightfield
 {
-	unsigned long long	ID;							// идентификатор
+	// конфигурация карты высот
+	struct SHeightfieldConfig
+	{
+		float fMinLattitude;					// минимальная широта (рад)
+		float fMaxLattitude;					// максимальная широта (рад)
 
-	float fMinHeight;								// минимальная высота (соответствующая значению 0 в данных)
-	float fMaxHeight;								// максимальная высота (соответствующая значению 255 в данных)
-	float fSizeX;									// размер по X
-	float fSizeY;									// размер по Y
+		float fMinLongitude;					// минимальная долгота (рад)
+		float fMaxLongitude;					// максимальная долгота (рад)
+
+		float fMinHeight;						// минимальная высота над уровнем эллипсоида WGS-84, метры (соответствующая значению 0 в данных)
+		float fMaxHeight;						// максимальная высота над уровнем эллипсоида WGS-84, метры (соответствующая значению 255 в данных)
+
+		unsigned int nCountX;					// количество точек по долготе
+		unsigned int nCountY;					// количество точек по широте
+
+		unsigned int nChannel = 0;				// номер канала в текстуре
+	};							
+
+	unsigned long long				ID;			// идентификатор
+	SHeightfieldConfig				Config;		// конфигурация
 	
-	unsigned int nCountX;							// количество точек по X
-	unsigned int nCountY;							// количество точек по Y
-
-	std::vector<unsigned char>	vecData;			// массив данных [количество байт: nCountX*nCountY]
+	ID3D11ShaderResourceView*		pTextureSRV = nullptr;	// текстура с данными
 };
 
 // структура вершины
@@ -36,23 +47,24 @@ struct SVertex
 	D3DXVECTOR3 binormal;
 };
 
-// структура триангуляции, построенной по карте высот
-// её легко превратить в буфер вершин и индексов
-struct HEIGHFIELD_CONVERTER_API STriangulation
+// структура триангуляции, построенной по карте высот, содержащая буферы вершин и индексов
+struct STriangulation
 {
 	unsigned long long	ID;							// идентификатор (совпадает с соответствующим Heightfield)
 
 	ID3D11Buffer*		pVertexBuffer = nullptr;	// Буффер вершин
 	ID3D11Buffer*		pIndexBuffer = nullptr;		// Буффер индексов
 
-	unsigned int		nVertexCount = 0;
-	unsigned int		nIndexCount = 0;
+	unsigned int		nVertexCount = 0;			// количество вершин
+	unsigned int		nIndexCount = 0;			// количество индексов
 
-	// Утилитарная функция - освободить ресурсы
-	void ReleaseBuffers();
+	double				vPosition[3];				// Точка начала координат триангуляции (лежит на поверхности эллипсоида)
+	double				vXAxis[3];					// Координаты оси X (направлена на север вдоль поверхности эллипсоида)
+	double				vYAxis[3];					// Координаты оси Y (направлена по нормали к поверхности эллипсоида)
+	double				vZAxis[3];					// Координаты оси Z (направлена на восток вдоль поверхности эллипсоида)
 
-	// Считать буферы
-	void UnmapBuffers(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pDeviceContext, SVertex* out_pVertexes, unsigned int* out_pIndices);
+	double				vBoundBoxMinimum[3];		// Минимум баунд-бокса
+	double				vBoundBoxMaximum[3];		// Максимум баунд-бокса
 };
 
 // Класс-обработчик событий триангуляции (аналог callback)
@@ -64,12 +76,6 @@ public:
 	virtual void 	TriangulationCreated(const STriangulation* in_pTriangulation) = 0;
 };
 
-enum EHeightfieldConverterMode
-{
-	SOFTWARE_MODE,
-	DIRECT_COMPUTE_MODE
-};
-
 // Главный класс-триангулятор карт высот
 class HEIGHFIELD_CONVERTER_API HeightfieldConverter
 {
@@ -79,7 +85,17 @@ public:
 	~HeightfieldConverter();
 	
 	// инициализация
-	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, EHeightfieldConverterMode in_Mode);
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext);
+
+	// Задать глобальный коэффициент масштаба.
+	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
+	void	SetWorldScale(float in_fScale);
+
+	// Считать данные карты высот из текстуры
+	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield);
+
+	// Считать данные карты высот из памяти
+	void	ReadHeightfieldDataFromMemory(const unsigned char* in_pData, unsigned int in_nWidth, unsigned int in_nHeight, SHeightfield& out_Heightfield);
 
 	// Создать триангуляцию немедленно и дождаться готовности
 	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation);
@@ -94,8 +110,19 @@ public:
 	// обработать поставленные задачи
 	void	UpdateTasks();
 
+	// Освободить карту высот
+	void	ReleaseHeightfield(SHeightfield*);
+
+	// Освободить буферы триангуляции
+	void	ReleaseTriangulation(STriangulation*);
+
+	// Получить буферы вершин и индексов в памяти
+	void	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
+
 private:
 
 	struct HeightfieldConverterPrivate;
 	HeightfieldConverterPrivate*	_private = nullptr;
+
+	friend class DirectComputeHeightfieldConverter;
 };

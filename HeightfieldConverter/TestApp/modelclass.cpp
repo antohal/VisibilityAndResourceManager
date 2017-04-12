@@ -2,15 +2,16 @@
 // Filename: modelclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "modelclass.h"
-
+#include "vecmath.h"
 
 void ModelClass::TriangulationCreated(const STriangulation* in_pTriangulation)
 {
 	// освобождаем буферы старой триангул€ции
-	m_triangulation.ReleaseBuffers();
+	m_pHeightfieldConverter->ReleaseTriangulation(&m_triangulation);
 
 	m_triangulation = *in_pTriangulation;
 }
+
 
 bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* pcwszTexture, WCHAR* pcwszNromalMap)
 {
@@ -19,8 +20,7 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	m_pTextBlock = debugTextBlock;
 
 	m_pHeightfieldConverter = new HeightfieldConverter();
-	//m_pHeightfieldConverter->Init(device, context, SOFTWARE_MODE);
-	m_pHeightfieldConverter->Init(device, context, DIRECT_COMPUTE_MODE);
+	m_pHeightfieldConverter->Init(device, context);
 
 	m_pHeightfieldConverter->RegisterListener(this);
 
@@ -39,6 +39,34 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 		return false;
 	}
 
+	SHeightfield testHeightfield;
+
+	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/Heightmap.dds", testHeightfield);
+
+	testHeightfield.ID = 0;
+	testHeightfield.Config.fMinHeight = 0;
+	testHeightfield.Config.fMaxHeight = 1;
+
+	/*testHeightfield.Config.fMinLattitude = 30*D2R;
+	testHeightfield.Config.fMaxLattitude = 40*D2R;
+	testHeightfield.Config.fMinLongitude = 40*D2R;
+	testHeightfield.Config.fMaxLongitude = 50*D2R;*/
+
+	testHeightfield.Config.fMinLattitude = -4;
+	testHeightfield.Config.fMaxLattitude = 4;
+	testHeightfield.Config.fMinLongitude = -4;
+	testHeightfield.Config.fMaxLongitude = 4;
+
+	m_pHeightfieldConverter->CreateTriangulationImmediate(&testHeightfield, &m_triangulation);
+
+	SVertex* pVertices = new SVertex[m_triangulation.nVertexCount];
+	unsigned int* pIndices = new unsigned int[m_triangulation.nIndexCount];
+
+	m_pHeightfieldConverter->UnmapTriangulation(&m_triangulation, pVertices, pIndices);
+
+
+	m_pHeightfieldConverter->ReleaseHeightfield(&testHeightfield);
+
 	//m_generateHeightfieldThread = std::thread(generateHeightfieldThreadFunction, this);
 
 	_beginTime = _previousSecondTime = std::chrono::high_resolution_clock::now();
@@ -52,7 +80,7 @@ void ModelClass::Shutdown()
 	m_finished = true;
 
 	// release current rendering triangulation buffers
-	m_triangulation.ReleaseBuffers();
+	m_pHeightfieldConverter->ReleaseTriangulation(&m_triangulation);
 
 	// wait for generation thread stops
 	//m_generateHeightfieldThread.join();
@@ -68,29 +96,34 @@ void ModelClass::Shutdown()
 
 void ModelClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
-
-	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _beginTime;
-	
-	double time = elapsed.count() / 1000.0;
-
-	SHeightfield initialHeightfield;
-	GenerateHeightfield(initialHeightfield, (float)time);
-
-	std::chrono::time_point<std::chrono::steady_clock> afterGenerationTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> generationDelta = afterGenerationTime - thisFrameTime;
-
-	m_triangulation.ReleaseBuffers();
-	m_pHeightfieldConverter->CreateTriangulationImmediate(&initialHeightfield, &m_triangulation);
-
-
-	std::chrono::time_point<std::chrono::steady_clock> afterTriangulationTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> triangulationDelta = afterTriangulationTime - afterGenerationTime;
-
-	if (m_pTextBlock)
+	if (m_bDemoMode)
 	{
-		m_pTextBlock->SetParameterValue(m_GeneratedHeightmapsParam, generationDelta.count());
-		m_pTextBlock->SetParameterValue(m_TriangulationsTimeParam, triangulationDelta.count());
+		std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _beginTime;
+
+		double time = elapsed.count() / 1000.0;
+
+		SHeightfield heightfield;
+		GenerateHeightfield(heightfield, (float)time);
+
+		std::chrono::time_point<std::chrono::steady_clock> afterGenerationTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> generationDelta = afterGenerationTime - thisFrameTime;
+
+		m_pHeightfieldConverter->ReleaseTriangulation(&m_triangulation);
+
+		m_pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, &m_triangulation);
+
+		m_pHeightfieldConverter->ReleaseHeightfield(&heightfield);
+
+
+		std::chrono::time_point<std::chrono::steady_clock> afterTriangulationTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> triangulationDelta = afterTriangulationTime - afterGenerationTime;
+
+		if (m_pTextBlock)
+		{
+			m_pTextBlock->SetParameterValue(m_GeneratedHeightmapsParam, generationDelta.count());
+			m_pTextBlock->SetParameterValue(m_TriangulationsTimeParam, triangulationDelta.count());
+		}
 	}
 
 
@@ -192,34 +225,42 @@ void ModelClass::ReleaseTexture()
 
 void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 {
+	const unsigned int c_nWidth = 1024, c_nHeight = 1024;
+
 	out_Heightfield.ID = 0;
 
-	out_Heightfield.fSizeX = 8;
-	out_Heightfield.fSizeY = 8;
-	out_Heightfield.fMinHeight = 0;
-	out_Heightfield.fMaxHeight = 1;
+	out_Heightfield.Config.fMinLattitude = 30;
+	out_Heightfield.Config.fMaxLattitude = 60;
 
-	out_Heightfield.nCountX = 1024;
-	out_Heightfield.nCountY = 1024;
+	out_Heightfield.Config.fMinLongitude = 30;
+	out_Heightfield.Config.fMaxLongitude = 60;
 
-	out_Heightfield.vecData.resize(out_Heightfield.nCountX * out_Heightfield.nCountY);
+	out_Heightfield.Config.fMinHeight = 0;
+	out_Heightfield.Config.fMaxHeight = 1;
 
-	for (unsigned int lx = 0; lx < out_Heightfield.nCountX; lx++)
+	out_Heightfield.Config.nCountX = c_nWidth;
+	out_Heightfield.Config.nCountY = c_nHeight;
+
+	std::vector<unsigned char> vecData;
+	vecData.resize(out_Heightfield.Config.nCountX * out_Heightfield.Config.nCountY);
+
+	for (unsigned int lx = 0; lx < out_Heightfield.Config.nCountX; lx++)
 	{
 
-		for (unsigned int ly = 0; ly < out_Heightfield.nCountY; ly++)
+		for (unsigned int ly = 0; ly < out_Heightfield.Config.nCountY; ly++)
 		{
-			size_t idx = lx + ly*out_Heightfield.nCountX;
+			size_t idx = lx + ly*out_Heightfield.Config.nCountX;
 
 			float k = 1 + 5 * sin(time);
 
-			float cx = k * (float)lx / out_Heightfield.nCountX;
-			float cy = k * (float)ly / out_Heightfield.nCountY;
+			float cx = k * (float)lx / out_Heightfield.Config.nCountX;
+			float cy = k * (float)ly / out_Heightfield.Config.nCountY;
 
 			float val = 0.5f + 0.5f*sin(cx * cy);
 
-			out_Heightfield.vecData[idx] = static_cast<unsigned char>(val * 255);
+			vecData[idx] = static_cast<unsigned char>(val * 255);
 		}
-
 	}
+
+	m_pHeightfieldConverter->ReadHeightfieldDataFromMemory(&vecData[0], c_nWidth, c_nHeight, out_Heightfield);
 }

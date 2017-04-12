@@ -89,6 +89,9 @@
       <PreprocessorDefinitions>HEIGHTFIELD_CONVERTER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../3rdParty/D3DX/include</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -116,6 +119,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -123,7 +127,6 @@
     <ClCompile Include="DirectComputeConverter.cpp" />
     <ClCompile Include="HeightfieldConverter.cpp" />
     <ClCompile Include="HeightfieldConverterPrivate.cpp" />
-    <ClCompile Include="SoftwareConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractConverter.h" />
@@ -132,7 +135,6 @@
     <ClInclude Include="HeightfieldConverter.h" />
     <ClInclude Include="HeightfieldConverterPrivate.h" />
     <ClInclude Include="mathmisc.h" />
-    <ClInclude Include="SoftwareConverter.h" />
     <ClInclude Include="vecmath.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

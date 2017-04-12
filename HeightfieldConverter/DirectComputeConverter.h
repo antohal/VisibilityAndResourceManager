@@ -9,12 +9,13 @@
 #include <set>
 
 #include "AbstractConverter.h"
+#include "HeightfieldConverterPrivate.h"
 
 class DirectComputeHeightfieldConverter : public IAbstractHeightfieldConverter
 {
 public:
 
-	DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext);
+	DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, HeightfieldConverter::HeightfieldConverterPrivate* owner);
 	~DirectComputeHeightfieldConverter();
 
 	//@{ IAbstractHeightfieldConverter
@@ -36,6 +37,16 @@ public:
 
 private:
 
+	struct ConstantBufferData
+	{
+		SHeightfield::SHeightfieldConfig Config;
+		
+		float fWorldScale = 1;
+		
+		float fTemp1 = 0;
+		float fTemp2 = 0;
+	};
+
 	struct STriangulationTask
 	{
 		STriangulationTask(DirectComputeHeightfieldConverter* owner, const SHeightfield& heightfield) : _owner(owner), _heightfield(heightfield)
@@ -46,23 +57,10 @@ private:
 		STriangulation	_triangulation;
 
 		void	createTriangulation();
+		void	computeBasis();
 		
 		void	createInputBuffers();
 		void	createOutputBuffers();
-
-		struct ConstantBuffer
-		{
-			float fMinHeight;
-			float fMaxHeight;
-			float fSizeX;
-			float fSizeY;
-
-			unsigned int nCountX;
-			unsigned int nCountY;
-
-			float temp1;
-			float temp2;
-		};
 
 		DirectComputeHeightfieldConverter*	_owner = nullptr;
 
@@ -70,7 +68,6 @@ private:
 		CComPtr<ID3D11UnorderedAccessView>	_ptrVertexBufferUAV;
 
 		CComPtr<ID3D11Buffer>				_ptrInputBuffer;
-		CComPtr<ID3D11ShaderResourceView>	_ptrInputSRV;
 
 		CComPtr<ID3D11Buffer>				_ptrConstantBuffer;
 	};
@@ -83,4 +80,6 @@ private:
 	CComPtr<ID3D11Device>						_ptrD3DDevice;
 	CComPtr<ID3D11DeviceContext>				_ptrDeviceContext;
 	CComPtr<ID3D11ComputeShader>				_ptrComputeShader;
+
+	HeightfieldConverter::HeightfieldConverterPrivate*	_owner = nullptr;
 };

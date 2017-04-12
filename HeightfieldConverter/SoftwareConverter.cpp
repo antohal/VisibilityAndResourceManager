@@ -102,21 +102,21 @@ void SoftwareHeightfieldConverter::STriangulationTask::createTriangulation()
 {
 	_triangulation.ID = _heightfield.ID;
 
-	if (_heightfield.nCountX <= 1 || _heightfield.nCountY <= 1)
+	if (_heightfield.Config.nCountX <= 1 || _heightfield.Config.nCountY <= 1)
 	{
 		// TODO: log
 
 		return;
 	}
 
-	for (unsigned int ly = 0; ly < _heightfield.nCountY - 1; ly++)
+	for (unsigned int ly = 0; ly < _heightfield.Config.nCountY - 1; ly++)
 	{
-		for (unsigned int lx = 0; lx < _heightfield.nCountX - 1; lx++)
+		for (unsigned int lx = 0; lx < _heightfield.Config.nCountX - 1; lx++)
 		{
-			unsigned int i0 = ly*_heightfield.nCountX + lx;
-			unsigned int i1 = ly*_heightfield.nCountX + lx + 1;
-			unsigned int i2 = (ly + 1)*_heightfield.nCountX + lx;
-			unsigned int i3 = (ly + 1)*_heightfield.nCountX + lx + 1;
+			unsigned int i0 = ly*_heightfield.Config.nCountX + lx;
+			unsigned int i1 = ly*_heightfield.Config.nCountX + lx + 1;
+			unsigned int i2 = (ly + 1)*_heightfield.Config.nCountX + lx;
+			unsigned int i3 = (ly + 1)*_heightfield.Config.nCountX + lx + 1;
 
 			_vecIndexData.push_back(i3);
 			_vecIndexData.push_back(i1);
@@ -128,23 +128,26 @@ void SoftwareHeightfieldConverter::STriangulationTask::createTriangulation()
 		}
 	}
 
-	float dx = _heightfield.fSizeX / (_heightfield.nCountX - 1);
-	float dy = _heightfield.fSizeY / (_heightfield.nCountY - 1);
+	float fSizeX = _heightfield.Config.fMaxLongitude - _heightfield.Config.fMinLongitude;
+	float fSizeY = _heightfield.Config.fMaxLattitude - _heightfield.Config.fMinLattitude;
+
+	float dx = fSizeX / (_heightfield.Config.nCountX - 1);
+	float dy = fSizeY / (_heightfield.Config.nCountY - 1);
 
 	//_vecVertexData.reserve(_heightfield.nCountX * _heightfield.nCountY);
 
 	for (unsigned int i = 0; i < _heightfield.vecData.size(); i++)
 	{
-		unsigned int ly = i / _heightfield.nCountX;
-		unsigned int lx = i - ly * _heightfield.nCountX;
+		unsigned int ly = i / _heightfield.Config.nCountX;
+		unsigned int lx = i - ly * _heightfield.Config.nCountX;
 		
 		SVertex vtx;
-		vtx.position.y = _heightfield.fMinHeight + (_heightfield.fMaxHeight - _heightfield.fMinHeight) * ((float)_heightfield.vecData[i] / 255.f);
-		vtx.position.x = lx * dx - _heightfield.fSizeX * 0.5;
-		vtx.position.z = ly * dy - _heightfield.fSizeX * 0.5;
+		vtx.position.y = _heightfield.Config.fMinHeight + (_heightfield.Config.fMaxHeight - _heightfield.Config.fMinHeight) * ((float)_heightfield.vecData[i] / 255.f);
+		vtx.position.x = lx * dx - fSizeX * 0.5;
+		vtx.position.z = ly * dy - fSizeX * 0.5;
 
-		vtx.texture.x = (float)lx / (_heightfield.nCountX - 1);
-		vtx.texture.y = (float)ly / (_heightfield.nCountY - 1);
+		vtx.texture.x = (float)lx / (_heightfield.Config.nCountX - 1);
+		vtx.texture.y = (float)ly / (_heightfield.Config.nCountY - 1);
 
 		vtx.normal.x = 0;
 		vtx.normal.y = 1;

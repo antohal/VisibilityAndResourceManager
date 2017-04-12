@@ -3,30 +3,37 @@
 /////////////
 cbuffer HeightfieldSettings  : register(b0)
 {
-	float fMinHeight;								// минимальная высота (соответствующая значению 0 в данных)
-	float fMaxHeight;								// максимальная высота (соответствующая значению 255 в данных)
-	float fSizeX;									// размер по X
-	float fSizeY;									// размер по Y
+	float fMinLattitude;				// минимальная широта
+	float fMaxLattitude;				// максимальная широта
+
+	float fMinLongitude;				// минимальная долгота
+	float fMaxLongitude;				// максимальная долгота
+
+	float fMinHeight;					// минимальная высота (соответствующая значению 0 в данных)
+	float fMaxHeight;					// максимальная высота (соответствующая значению 255 в данных)
+
+	uint nCountX;						// количество точек по X
+	uint nCountY;						// количество точек по Y
 	
-	uint nCountX;									// количество точек по X
-	uint nCountY;									// количество точек по Y
+	uint nChannel;						// номер канала в текстуре
+	
+	float fWorldScale;
 	
 	float fTemp1;
 	float fTemp2;
 };
 
-//////////////////////
-// INPUT DATA TYPES //
-//////////////////////
 
-struct HeightBufferItem
+SamplerState HeightTextureSampler
 {
-    uint	heights;
+    Filter   = MIN_MAG_MIP_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
 };
 
-ByteAddressBuffer 	InputHeightBuffer 		: register(t0);
-RWByteAddressBuffer OutVertexBuffer 		: register(u0);
-RWByteAddressBuffer OutIndexBuffer 			: register(u1);
+Texture2D				InputHeightTexture		: register(t0);
+RWByteAddressBuffer 	OutVertexBuffer 		: register(u0);
+RWByteAddressBuffer 	OutIndexBuffer 			: register(u1);
 
 // получить индекс вершины
 uint GetVertexId(uint ix, uint iy)
@@ -34,10 +41,31 @@ uint GetVertexId(uint ix, uint iy)
 	return ix + iy * nCountX;
 }
 
+// получить точку на поверхности эллипсоида WGS-84
+double3 GetWGS84SurfacePoint(double longitude, double lattitude)
+{
+	double Rmin = 6356752.3142;
+	double Rmax = 6378137;
+
+	double cosB = cos(lattitude);
+	double sinB = sin(lattitude);
+
+	double cosA = cos(longitude);
+	double sinA = sin(longitude);
+
+	double R = sqrt( Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB) );
+
+	return double3(
+			R*cosA*cosB,
+			R*sinA*cosB,
+			R*sinB
+		);
+}
+
 // получить высоту вершины по индексам вдоль осей x и y
 uint GetVertexHeight(uint ix, uint iy)
 {
-	uint ivtx = GetVertexId(ix, iy);
+	/*uint ivtx = GetVertexId(ix, iy);
 	
 	uint addr = ivtx / 4;
 	uint heights = asuint( InputHeightBuffer.Load(addr * 4 ) );
@@ -49,12 +77,27 @@ uint GetVertexHeight(uint ix, uint iy)
 	aHeights[2] = (heights >> 16) & 0xFF;
 	aHeights[3] = (heights >> 24) & 0xFF;
 	
-	return aHeights[ivtx % 4];
+	return aHeights[ivtx % 4];*/
+	
+	float2 texCoord;
+	
+	float fx = ix;
+	float fy = iy;
+	
+	texCoord.x = fx/nCountX;
+	texCoord.y = fy/nCountY;
+	
+	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
+	
+	return TexColor.r * 255;
 }
 
 // получить позицию вершины
 float3 GetVertexPos(uint ix, uint iy, uint height)
 {
+	float fSizeX = fMaxLongitude - fMinLongitude;
+	float fSizeY = fMaxLattitude - fMinLattitude;
+
 	float dx = fSizeX / (nCountX - 1);
 	float dy = fSizeY / (nCountY - 1);
 	

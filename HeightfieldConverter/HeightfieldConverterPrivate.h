@@ -3,13 +3,22 @@
 #include "HeightfieldConverter.h"
 #include "AbstractConverter.h"
 
+#include <atlbase.h>
+
 struct HeightfieldConverter::HeightfieldConverterPrivate
 {
 
 	~HeightfieldConverterPrivate();
 
 	// инициализация
-	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, EHeightfieldConverterMode in_Mode);
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext/*, EHeightfieldConverterMode in_Mode*/);
+
+	// Задать глобальный коэффициент масштаба.
+	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
+	void	SetWorldScale(float in_fScale);
+
+	// Считать данные карты высот из текстуры
+	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield);
 
 	// Создать триангуляцию немедленно и дождаться готовности
 	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation);
@@ -24,7 +33,25 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	// обработать поставленные задачи
 	void	UpdateTasks();
 
+	// Освободить карту высот
+	void	ReleaseHeightfield(SHeightfield*);
+
+	// Освободить буферы триангуляции
+	void	ReleaseTriangulation(STriangulation*);
+
+	// Получить буферы вершин и индексов в памяти
+	void	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
+
+	float	GetWorldScale() const {
+		return _fScale;
+	}
+
 private:
 
 	IAbstractHeightfieldConverter*	_pAbstractConverter = nullptr;
+
+	CComPtr<ID3D11Device>			_ptrD3DDevice;
+	CComPtr<ID3D11DeviceContext>	_ptrDeviceContext;
+
+	float							_fScale = 1;
 };

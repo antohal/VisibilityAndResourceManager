@@ -3,6 +3,7 @@
 #include <d3dcompiler.h>
 
 #include <chrono>
+#include "vecmath.h"
 
 using namespace std::chrono_literals;
 
@@ -172,6 +173,7 @@ void RunComputeShader(ID3D11DeviceContext* pd3dImmediateContext,
 		pd3dImmediateContext->CSSetConstantBuffers(0, 1, ppCB);
 	}
 
+
 	pd3dImmediateContext->Dispatch(X, Y, Z);
 
 	pd3dImmediateContext->CSSetShader(nullptr, nullptr, 0);
@@ -236,8 +238,10 @@ HRESULT CreateStructuredBuffer(ID3D11Device* pDevice, UINT uElementSize, UINT uC
 		return pDevice->CreateBuffer(&desc, nullptr, ppBufOut);
 }
 
-DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext)
+DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, HeightfieldConverter::HeightfieldConverterPrivate* in_pOwner)
 {
+	_owner = in_pOwner;
+
 	_ptrD3DDevice = in_pD3DDevice11;
 	_ptrDeviceContext = in_pDeviceContext;
 
@@ -327,45 +331,80 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 {
 	_triangulation.ID = _heightfield.ID;
 
-	_triangulation.nVertexCount = _heightfield.nCountX * _heightfield.nCountY;
-	_triangulation.nIndexCount = (_heightfield.nCountX - 1) * (_heightfield.nCountY - 1) * 2 * 3;
+	_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
+	_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
+
+	computeBasis();
 
 	createOutputBuffers();
 	createInputBuffers();
 
-	ID3D11ShaderResourceView* aRViews[1] = { _ptrInputSRV };
+	ID3D11ShaderResourceView* aRViews[1] = { _heightfield.pTextureSRV };
 	ID3D11UnorderedAccessView* aUAViews[2] = { _ptrVertexBufferUAV, _ptrIndexBufferUAV };
-	
-	ConstantBuffer constantBuffer;
 
-	constantBuffer.fMaxHeight = _heightfield.fMaxHeight;
-	constantBuffer.fMinHeight = _heightfield.fMinHeight;
-	constantBuffer.fSizeX = _heightfield.fSizeX;
-	constantBuffer.fSizeY = _heightfield.fSizeY;
-	constantBuffer.nCountX = _heightfield.nCountX;
-	constantBuffer.nCountY = _heightfield.nCountY;
+	ConstantBufferData constantData;
 
-	constantBuffer.temp1 = 0;
-	constantBuffer.temp2 = 0;
+	constantData.Config = _heightfield.Config;
+	constantData.fWorldScale = _owner->_owner->GetWorldScale();
 
-	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantBuffer, sizeof(ConstantBuffer), 2, aUAViews,
-		_heightfield.nCountX, 
-		_heightfield.nCountY,
+	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &_heightfield.Config, sizeof(_heightfield.Config), 2, aUAViews,
+		_heightfield.Config.nCountX, 
+		_heightfield.Config.nCountY,
 		1);
+}
+
+vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude)
+{
+	const double Rmin = 6356752.3142;
+	const double Rmax = 6378137;
+
+	double cosB = cos(lattitude);
+	double sinB = sin(lattitude);
+
+	double cosA = cos(longitude);
+	double sinA = sin(longitude);
+
+	double R = sqrt( Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB) );
+
+	return vm::Vector3df(
+			R*cosA*cosB,
+			R*sinA*cosB,
+			R*sinB
+		);
+}
+
+vm::Vector3df GetWGS84SurfaceNormal(const vm::Vector3df& in_vSurfacePoint)
+{
+	const double Rmin = 6356752.3142;
+	const double Rmax = 6378137;
+
+	vm::Vector3df vUnnormalizedNormal = vm::Vector3df(
+			2 * in_vSurfacePoint[0] / (Rmax*Rmax),
+			2 * in_vSurfacePoint[1] / (Rmax*Rmax),
+			2 * in_vSurfacePoint[2] / (Rmin*Rmin)
+		);
+
+	return normalize(vUnnormalizedNormal);
+}
+
+void DirectComputeHeightfieldConverter::STriangulationTask::computeBasis()
+{
+	double middleLattitude = (_heightfield.Config.fMinLattitude + _heightfield.Config.fMaxLattitude)*0.5;
+	double middleLongitude = (_heightfield.Config.fMinLongitude + _heightfield.Config.fMaxLongitude)*0.5;
+
+	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
+	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+
+	memcpy(_triangulation.vPosition, &vMiddlePoint[0], 3*sizeof(double));
 }
 
 void DirectComputeHeightfieldConverter::STriangulationTask::createInputBuffers()
 {
-	//CreateStructuredBuffer(_owner->_ptrD3DDevice, 4, _heightfield.vecData.size() / 4, &_heightfield.vecData[0], &_ptrInputBuffer);
-
-	CreateRawBuffer(_owner->_ptrD3DDevice, _heightfield.vecData.size(), &_heightfield.vecData[0], &_ptrInputBuffer);
-	CreateBufferSRV(_owner->_ptrD3DDevice, _ptrInputBuffer, &_ptrInputSRV);
-
 	D3D11_BUFFER_DESC constantBufferDesc;
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantBufferDesc.ByteWidth = sizeof(ConstantBuffer);
+	constantBufferDesc.ByteWidth = sizeof(ConstantBufferData);
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	constantBufferDesc.MiscFlags = 0;
