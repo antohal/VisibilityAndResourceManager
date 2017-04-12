@@ -1279,6 +1279,55 @@ inline Quaternion<Type> operator +(const Quaternion<Type>& q1, const Quaternion<
 //@}
 
 
+template <typename Real>
+class BoundBox
+{
+public:
+
+	BoundBox()
+	{
+
+	}
+
+	BoundBox(const Vector<Real, 3>& vPoint)
+		: _vMin(vPoint), _vMax(vPoint)
+	{
+
+	}
+
+	BoundBox(const Vector<Real, 3>& vMin, const Vector<Real, 3>& vMax)
+		: _vMin(vMin), _vMax(vMax)
+	{
+
+	}
+
+
+	Vector<Real, 3> center() const 
+	{
+		return 0.5*(_vMin + _vMax);
+	}
+
+	Real radius() const
+	{
+		return length(0.5*(_vMax - _vMin));
+	}
+
+	void update(const Vector<Real, 3>& v)
+	{
+		for (unsigned int i = 0; i < 3; i++)
+		{
+			if (v[i] > _vMax[i])
+				_vMax[i] = v[i];
+
+			if (v[i] < _vMin[i])
+				_vMin[i] = v[i];
+		}
+	}
+
+	Vector<Real, 3>		_vMin = Vector<Real, 3>(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector<Real, 3>		_vMax = Vector<Real, 3>(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+};
+
 
 //*********************************************************************//
 //

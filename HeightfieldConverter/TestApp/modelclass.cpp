@@ -21,7 +21,7 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	m_pHeightfieldConverter = new HeightfieldConverter();
 	m_pHeightfieldConverter->Init(device, context);
-
+	m_pHeightfieldConverter->SetWorldScale(0.00001f);
 	m_pHeightfieldConverter->RegisterListener(this);
 
 	if (m_pTextBlock)
@@ -45,17 +45,12 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	testHeightfield.ID = 0;
 	testHeightfield.Config.fMinHeight = 0;
-	testHeightfield.Config.fMaxHeight = 1;
+	testHeightfield.Config.fMaxHeight = 100000;
 
-	/*testHeightfield.Config.fMinLattitude = 30*D2R;
+	testHeightfield.Config.fMinLattitude = 30*D2R;
 	testHeightfield.Config.fMaxLattitude = 40*D2R;
 	testHeightfield.Config.fMinLongitude = 40*D2R;
-	testHeightfield.Config.fMaxLongitude = 50*D2R;*/
-
-	testHeightfield.Config.fMinLattitude = -4;
-	testHeightfield.Config.fMaxLattitude = 4;
-	testHeightfield.Config.fMinLongitude = -4;
-	testHeightfield.Config.fMaxLongitude = 4;
+	testHeightfield.Config.fMaxLongitude = 50*D2R;
 
 	m_pHeightfieldConverter->CreateTriangulationImmediate(&testHeightfield, &m_triangulation);
 
@@ -74,6 +69,15 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	return true;
 }
 
+float ModelClass::GetRadius() const
+{
+	vm::BoundBox<float> bbox(
+		vm::Vector3df(m_triangulation.vBoundBoxMinimum[0], m_triangulation.vBoundBoxMinimum[1], m_triangulation.vBoundBoxMinimum[2]),
+		vm::Vector3df(m_triangulation.vBoundBoxMaximum[0], m_triangulation.vBoundBoxMaximum[1], m_triangulation.vBoundBoxMaximum[2])
+	);
+
+	return bbox.radius();
+}
 
 void ModelClass::Shutdown()
 {

@@ -19,8 +19,29 @@ cbuffer HeightfieldSettings  : register(b0)
 	
 	float fWorldScale;
 	
-	float fTemp1;
-	float fTemp2;
+	uint vObjectCenterX0, vObjectCenterX1;
+	uint vObjectCenterY0, vObjectCenterY1;
+	uint vObjectCenterZ0, vObjectCenterZ1;
+
+	uint vObjectXAxisX0, vObjectXAxisX1;
+	uint vObjectXAxisY0, vObjectXAxisY1;
+	uint vObjectXAxisZ0, vObjectXAxisZ1;
+
+	uint vObjectYAxisX0, vObjectYAxisX1;
+	uint vObjectYAxisY0, vObjectYAxisY1;
+	uint vObjectYAxisZ0, vObjectYAxisZ1;
+
+	uint vObjectZAxisX0, vObjectZAxisX1;
+	uint vObjectZAxisY0, vObjectZAxisY1;
+	uint vObjectZAxisZ0, vObjectZAxisZ1;
+
+	/*double3	vObjectCenter;
+	double3 vObjectXAxis;
+	double3 vObjectYAxis;
+	double3 vObjectZAxis;*/
+
+	float temp1;
+	float temp2;
 };
 
 
@@ -62,6 +83,21 @@ double3 GetWGS84SurfacePoint(double longitude, double lattitude)
 		);
 }
 
+// нормаль к эллипсоиду в точке на поверхности
+double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
+{
+	const double Rmin = 6356752.3142;
+	const double Rmax = 6378137;
+
+	double3 vUnnormalizedNormal = double3(
+		2 * in_vSurfacePoint.x / (Rmax*Rmax),
+		2 * in_vSurfacePoint.y / (Rmax*Rmax),
+		2 * in_vSurfacePoint.z / (Rmin*Rmin)
+	);
+
+	return normalize(vUnnormalizedNormal);
+}
+
 // получить высоту вершины по индексам вдоль осей x и y
 uint GetVertexHeight(uint ix, uint iy)
 {
@@ -95,16 +131,38 @@ uint GetVertexHeight(uint ix, uint iy)
 // получить позицию вершины
 float3 GetVertexPos(uint ix, uint iy, uint height)
 {
-	float fSizeX = fMaxLongitude - fMinLongitude;
-	float fSizeY = fMaxLattitude - fMinLattitude;
-
-	float dx = fSizeX / (nCountX - 1);
-	float dy = fSizeY / (nCountY - 1);
+	double3	vObjectCenter = double3(asdouble(vObjectCenterX0, vObjectCenterX1), asdouble(vObjectCenterY0, vObjectCenterY1), asdouble(vObjectCenterZ0, vObjectCenterZ1));
+	double3 vObjectXAxis = double3(asdouble(vObjectXAxisX0, vObjectXAxisX1), asdouble(vObjectXAxisY0, vObjectXAxisY1), asdouble(vObjectXAxisZ0, vObjectXAxisZ1));
+	double3 vObjectYAxis = double3(asdouble(vObjectYAxisX0, vObjectYAxisX1), asdouble(vObjectYAxisY0, vObjectYAxisY1), asdouble(vObjectYAxisZ0, vObjectYAxisZ1));
+	double3 vObjectZAxis = double3(asdouble(vObjectZAxisX0, vObjectZAxisX1), asdouble(vObjectZAxisY0, vObjectZAxisY1), asdouble(vObjectZAxisZ0, vObjectZAxisZ1));
 	
-	return float3(	ix * dx - fSizeX * 0.5, 
-					fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
-					iy * dy - fSizeX * 0.5
-					);
+
+	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
+	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
+
+	float dlong = fLongitudeAmpl / (nCountX - 1);
+	float dlat = fLattitudeAmpl / (nCountY - 1);
+
+	float longitude = fMinLongitude + ix * dlong;
+	float lattitude = fMinLattitude + iy * dlat;
+	
+	double3 vSurfacePoint = GetWGS84SurfacePoint(longitude, lattitude);
+	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
+
+	double3 vVertex = vSurfacePoint + vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f));
+
+	double3 vDelta = fWorldScale*vVertex - vObjectCenter;
+
+	double xCoord = dot(vDelta, vObjectXAxis);
+	double yCoord = dot(vDelta, vObjectYAxis);
+	double zCoord = dot(vDelta, vObjectZAxis);
+
+	//return float3(	ix * dx - fSizeX * 0.5, 
+	//				fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
+	//				iy * dy - fSizeX * 0.5
+	//				);
+
+	return fWorldScale * float3(vSurfacePoint.x, vSurfacePoint.y, vSurfacePoint.z);// float3(xCoord, yCoord, zCoord);
 }
 
 [numthreads(1, 1, 1)]
@@ -112,6 +170,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 {
 	uint ix = DTid.x;
 	uint iy = DTid.y;
+
 
 	// INDICES
 	

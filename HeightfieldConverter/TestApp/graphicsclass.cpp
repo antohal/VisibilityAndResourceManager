@@ -64,7 +64,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Set the initial position of the camera.
-	m_Camera->SetPosition(0.0f, 8.0f, -10.0f);
+	//m_Camera->SetPosition(0.0f, 8.0f, -10.0f);
+	m_Camera->SetPosition(0.0f, 16.0f, -20.0f);
 	m_Camera->SetRotation(40, 0, 0);
 	
 	// Create the model object.

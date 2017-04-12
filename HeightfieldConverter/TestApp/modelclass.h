@@ -51,6 +51,7 @@ public:
 
 	virtual void 	TriangulationCreated(const STriangulation* in_pTriangulation) override;
 
+	float GetRadius() const;
 
 private:
 

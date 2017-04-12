@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommand>E:\GitWork\VisibilityAndResourceManager\bin\TestApp.exe</LocalDebuggerCommand>
-    <LocalDebuggerWorkingDirectory>E:\GitWork\VisibilityAndResourceManager\bin</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommand>Z:\Compas\VisibilityAndResourceManager\bin\TestApp.exe</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>Z:\Compas\VisibilityAndResourceManager\bin\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerDebuggerType>Auto</LocalDebuggerDebuggerType>
   </PropertyGroup>
