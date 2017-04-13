@@ -369,12 +369,12 @@ vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude)
 	double cosA = cos(longitude);
 	double sinA = sin(longitude);
 
-	double R = sqrt( Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB) );
+	double R = sqrt(Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB));
 
 	return vm::Vector3df(
-			R*cosA*cosB,
-			R*sinA*cosB,
-			R*sinB
+		R*cosA*cosB,
+		R*sinA*cosB,
+		R*sinB
 		);
 }
 
@@ -384,9 +384,9 @@ vm::Vector3df GetWGS84SurfaceNormal(const vm::Vector3df& in_vSurfacePoint)
 	const double Rmax = 6378137;
 
 	vm::Vector3df vUnnormalizedNormal = vm::Vector3df(
-			2 * in_vSurfacePoint[0] / (Rmax*Rmax),
-			2 * in_vSurfacePoint[1] / (Rmax*Rmax),
-			2 * in_vSurfacePoint[2] / (Rmin*Rmin)
+		2 * in_vSurfacePoint[0] / (Rmax*Rmax),
+		2 * in_vSurfacePoint[1] / (Rmax*Rmax),
+		2 * in_vSurfacePoint[2] / (Rmin*Rmin)
 		);
 
 	return normalize(vUnnormalizedNormal);
@@ -407,7 +407,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::computeBasis()
 	vm::Vector3df vEast = vm::normalize(vm::cross(vNormal, vm::Vector3df(0, 0, 1)));
 	vm::Vector3df vNorth = vm::normalize(vm::cross(vNormal, vEast));
 
-	memcpy(_triangulation.vPosition, &vMiddlePoint[0], 3*sizeof(double));
+	memcpy(_triangulation.vPosition, &vMiddlePoint[0], 3 * sizeof(double));
 	memcpy(_triangulation.vXAxis, &vNorth[0], 3 * sizeof(double));
 	memcpy(_triangulation.vYAxis, &vNormal[0], 3 * sizeof(double));
 	memcpy(_triangulation.vZAxis, &vEast[0], 3 * sizeof(double));
@@ -418,28 +418,28 @@ void DirectComputeHeightfieldConverter::STriangulationTask::computeBasis()
 	vBoundBox.update(vMiddlePoint + vNormal*_heightfield.Config.fMaxHeight);
 
 	vBoundBox.update(
-		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude) 
+		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude)*_heightfield.Config.fMinHeight);
 	vBoundBox.update(
-		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude) 
+		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMinLongitude, _heightfield.Config.fMinLattitude)*_heightfield.Config.fMaxHeight);
 
 	vBoundBox.update(
-		GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude) 
+		GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude)*_heightfield.Config.fMinHeight);
-	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude) 
+	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMinLattitude)*_heightfield.Config.fMaxHeight);
 
 	vBoundBox.update(
-		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude) 
+		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude)*_heightfield.Config.fMinHeight);
 	vBoundBox.update(
-		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude) 
+		GetWGS84SurfacePoint(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMinLongitude, _heightfield.Config.fMaxLattitude)*_heightfield.Config.fMaxHeight);
 
-	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude) 
+	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude) *_heightfield.Config.fMinHeight);
-	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude) 
+	vBoundBox.update(GetWGS84SurfacePoint(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude)
 		+ GetWGS84SurfaceNormal(_heightfield.Config.fMaxLongitude, _heightfield.Config.fMaxLattitude)*_heightfield.Config.fMaxHeight);
 
 	memcpy(_triangulation.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
@@ -483,6 +483,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createOutputBuffers(
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 
 	HRESULT result;
+	int i;
 
 	if (_triangulation.nIndexCount == 0)
 		return;

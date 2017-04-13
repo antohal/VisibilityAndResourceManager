@@ -21,7 +21,9 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	m_pHeightfieldConverter = new HeightfieldConverter();
 	m_pHeightfieldConverter->Init(device, context);
-	m_pHeightfieldConverter->SetWorldScale(0.00001f);
+
+	m_pHeightfieldConverter->SetWorldScale(0.000001f);
+
 	m_pHeightfieldConverter->RegisterListener(this);
 
 	if (m_pTextBlock)
@@ -39,28 +41,27 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 		return false;
 	}
 
-	SHeightfield testHeightfield;
+	
 
-	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/Heightmap.dds", testHeightfield);
+	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/terrain.png", testHeightfield);
+	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/heightmap.dds", m_testHeightfield);
 
-	testHeightfield.ID = 0;
-	testHeightfield.Config.fMinHeight = 0;
-	testHeightfield.Config.fMaxHeight = 100000;
+	m_testHeightfield.ID = 0;
+	m_testHeightfield.Config.fMinHeight = 0;
+	m_testHeightfield.Config.fMaxHeight = 600000;
 
-	testHeightfield.Config.fMinLattitude = 30*D2R;
-	testHeightfield.Config.fMaxLattitude = 40*D2R;
-	testHeightfield.Config.fMinLongitude = 40*D2R;
-	testHeightfield.Config.fMaxLongitude = 50*D2R;
+	m_testHeightfield.Config.fMinLattitude = -40 * D2R;
+	m_testHeightfield.Config.fMaxLattitude = 40 * D2R;
+	m_testHeightfield.Config.fMinLongitude = 90 * D2R;
+	m_testHeightfield.Config.fMaxLongitude = 170 * D2R;
 
-	m_pHeightfieldConverter->CreateTriangulationImmediate(&testHeightfield, &m_triangulation);
+	m_pHeightfieldConverter->CreateTriangulationImmediate(&m_testHeightfield, &m_triangulation);
 
 	SVertex* pVertices = new SVertex[m_triangulation.nVertexCount];
 	unsigned int* pIndices = new unsigned int[m_triangulation.nIndexCount];
 
 	m_pHeightfieldConverter->UnmapTriangulation(&m_triangulation, pVertices, pIndices);
 
-
-	m_pHeightfieldConverter->ReleaseHeightfield(&testHeightfield);
 
 	//m_generateHeightfieldThread = std::thread(generateHeightfieldThreadFunction, this);
 
@@ -69,18 +70,11 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	return true;
 }
 
-float ModelClass::GetRadius() const
-{
-	vm::BoundBox<float> bbox(
-		vm::Vector3df(m_triangulation.vBoundBoxMinimum[0], m_triangulation.vBoundBoxMinimum[1], m_triangulation.vBoundBoxMinimum[2]),
-		vm::Vector3df(m_triangulation.vBoundBoxMaximum[0], m_triangulation.vBoundBoxMaximum[1], m_triangulation.vBoundBoxMaximum[2])
-	);
-
-	return bbox.radius();
-}
 
 void ModelClass::Shutdown()
 {
+	m_pHeightfieldConverter->ReleaseHeightfield(&m_testHeightfield);
+
 	m_finished = true;
 
 	// release current rendering triangulation buffers
@@ -107,17 +101,13 @@ void ModelClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 
 		double time = elapsed.count() / 1000.0;
 
-		SHeightfield heightfield;
-		GenerateHeightfield(heightfield, (float)time);
+		GenerateHeightfield((float)time);
 
 		std::chrono::time_point<std::chrono::steady_clock> afterGenerationTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> generationDelta = afterGenerationTime - thisFrameTime;
 
 		m_pHeightfieldConverter->ReleaseTriangulation(&m_triangulation);
-
-		m_pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, &m_triangulation);
-
-		m_pHeightfieldConverter->ReleaseHeightfield(&heightfield);
+		m_pHeightfieldConverter->CreateTriangulationImmediate(&m_testHeightfield, &m_triangulation);
 
 
 		std::chrono::time_point<std::chrono::steady_clock> afterTriangulationTime = std::chrono::high_resolution_clock::now();
@@ -227,9 +217,19 @@ void ModelClass::ReleaseTexture()
 	return;
 }
 
-void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
+void ModelClass::GenerateHeightfield(float time)
 {
-	const unsigned int c_nWidth = 1024, c_nHeight = 1024;
+	m_testHeightfield.ID = 0;
+	m_testHeightfield.Config.fMinHeight = 0;
+	m_testHeightfield.Config.fMaxHeight = 900000*sin(time);
+
+	m_testHeightfield.Config.fMinLattitude = -60 * D2R;
+	m_testHeightfield.Config.fMaxLattitude = 60 * D2R;
+	m_testHeightfield.Config.fMinLongitude = 190 * D2R;
+	m_testHeightfield.Config.fMaxLongitude = 360 * D2R;
+
+
+	/*const unsigned int c_nWidth = 1024, c_nHeight = 1024;
 
 	out_Heightfield.ID = 0;
 
@@ -266,5 +266,5 @@ void ModelClass::GenerateHeightfield(SHeightfield & out_Heightfield, float time)
 		}
 	}
 
-	m_pHeightfieldConverter->ReadHeightfieldDataFromMemory(&vecData[0], c_nWidth, c_nHeight, out_Heightfield);
+	m_pHeightfieldConverter->ReadHeightfieldDataFromMemory(&vecData[0], c_nWidth, c_nHeight, out_Heightfield);*/
 }

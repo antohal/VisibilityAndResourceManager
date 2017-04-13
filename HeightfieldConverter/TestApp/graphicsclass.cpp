@@ -64,9 +64,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Set the initial position of the camera.
-	//m_Camera->SetPosition(0.0f, 8.0f, -10.0f);
-	m_Camera->SetPosition(0.0f, 16.0f, -20.0f);
-	m_Camera->SetRotation(40, 0, 0);
+	m_Camera->SetPosition(0.0f, 10.0f, -20.0f);
+	m_Camera->SetRotation(30, 0, 0);
 	
 	// Create the model object.
 	m_Model = new ModelClass;
@@ -107,7 +106,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// Initialize the light object.
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(0.0f, -1.0f, -1.0f);
+	m_Light->SetDirection(0.0f, 1.0f, 0.0f);
 
 	return true;
 }
@@ -167,6 +166,10 @@ bool GraphicsClass::Frame()
 	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
 	
 	double deltaTime = elapsed.count() / 1000.0;
+	
+	if (deltaTime > 1)
+		deltaTime = 1;
+
 	double fps = 1.0 / deltaTime;
 
 	m_pTextBlock->SetParameterValue(m_fpsParam, (float)fps);
@@ -180,7 +183,9 @@ bool GraphicsClass::Frame()
 		rotation -= 360.0f;
 	}*/
 	
-	rotation = (float)D3DX_PI * 0.3f;
+	//rotation = (float)D3DX_PI * 0.3f;
+
+	rotation += (float)D3DX_PI * 0.1f * deltaTime;
 
 	// Render the graphics scene.
 	result = Render(rotation);
@@ -200,7 +205,7 @@ bool GraphicsClass::Render(float rotation)
 
 
 	// Clear the buffers to begin the scene.
-	m_D3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
+	m_D3D->BeginScene(0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
 	m_Camera->Render();

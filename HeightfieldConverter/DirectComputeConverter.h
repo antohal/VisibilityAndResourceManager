@@ -37,13 +37,12 @@ public:
 
 private:
 
-
 	struct ConstantBufferData
 	{
 		SHeightfield::SHeightfieldConfig Config;
 		
 		float fWorldScale = 1;
-		
+
 		double vCenter[3];					// Точка начала координат триангуляции (лежит на поверхности эллипсоида)
 		double vXAxis[3];					// Координаты оси X (направлена на север вдоль поверхности эллипсоида)
 		double vYAxis[3];					// Координаты оси Y (направлена по нормали к поверхности эллипсоида)

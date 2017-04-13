@@ -51,7 +51,6 @@ public:
 
 	virtual void 	TriangulationCreated(const STriangulation* in_pTriangulation) override;
 
-	float GetRadius() const;
 
 private:
 
@@ -60,7 +59,7 @@ private:
 	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*);
 	void ReleaseTexture();
 
-	void GenerateHeightfield(SHeightfield& out_Heightfield, float time);
+	void GenerateHeightfield(float time);
 
 private:
 
@@ -75,6 +74,7 @@ private:
 	std::chrono::time_point<std::chrono::steady_clock>	_previousSecondTime;
 	
 	STriangulation			m_triangulation;
+	SHeightfield			m_testHeightfield;
 
 	HeightfieldConverter*	m_pHeightfieldConverter = nullptr;
 

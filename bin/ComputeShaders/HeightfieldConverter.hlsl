@@ -93,7 +93,7 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 		2 * in_vSurfacePoint.x / (Rmax*Rmax),
 		2 * in_vSurfacePoint.y / (Rmax*Rmax),
 		2 * in_vSurfacePoint.z / (Rmin*Rmin)
-	);
+		);
 
 	return normalize(vUnnormalizedNormal);
 }
@@ -131,11 +131,15 @@ uint GetVertexHeight(uint ix, uint iy)
 // получить позицию вершины
 float3 GetVertexPos(uint ix, uint iy, uint height)
 {
+	
+	/*
 	double3	vObjectCenter = double3(asdouble(vObjectCenterX0, vObjectCenterX1), asdouble(vObjectCenterY0, vObjectCenterY1), asdouble(vObjectCenterZ0, vObjectCenterZ1));
 	double3 vObjectXAxis = double3(asdouble(vObjectXAxisX0, vObjectXAxisX1), asdouble(vObjectXAxisY0, vObjectXAxisY1), asdouble(vObjectXAxisZ0, vObjectXAxisZ1));
 	double3 vObjectYAxis = double3(asdouble(vObjectYAxisX0, vObjectYAxisX1), asdouble(vObjectYAxisY0, vObjectYAxisY1), asdouble(vObjectYAxisZ0, vObjectYAxisZ1));
 	double3 vObjectZAxis = double3(asdouble(vObjectZAxisX0, vObjectZAxisX1), asdouble(vObjectZAxisY0, vObjectZAxisY1), asdouble(vObjectZAxisZ0, vObjectZAxisZ1));
-	
+	*/
+
+	/*
 
 	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
 	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
@@ -145,7 +149,7 @@ float3 GetVertexPos(uint ix, uint iy, uint height)
 
 	float longitude = fMinLongitude + ix * dlong;
 	float lattitude = fMinLattitude + iy * dlat;
-	
+
 	double3 vSurfacePoint = GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
 
@@ -157,12 +161,63 @@ float3 GetVertexPos(uint ix, uint iy, uint height)
 	double yCoord = dot(vDelta, vObjectYAxis);
 	double zCoord = dot(vDelta, vObjectZAxis);
 
-	//return float3(	ix * dx - fSizeX * 0.5, 
+	//return float3(	ix * dx - fSizeX * 0.5,
 	//				fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
 	//				iy * dy - fSizeX * 0.5
 	//				);
 
 	return fWorldScale * float3(vSurfacePoint.x, vSurfacePoint.y, vSurfacePoint.z);// float3(xCoord, yCoord, zCoord);
+
+	
+	*/
+
+	double middleLattitude = (fMinLattitude + fMaxLattitude)*0.5;
+	double middleLongitude = (fMinLongitude + fMaxLongitude)*0.5;
+
+
+	double3 vMiddlePoint = fWorldScale * GetWGS84SurfacePoint(middleLongitude, middleLattitude);
+	double3 vMiddleNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+	double3 vEast = normalize(cross(vMiddleNormal, double3(0, 0, 1)));
+	double3 vNorth = normalize(cross(vMiddleNormal, vEast));
+
+
+
+	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
+	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
+
+	float dlong = fLongitudeAmpl / (nCountX - 1);
+	float dlat = fLattitudeAmpl / (nCountY - 1);
+
+	float longitude = fMinLongitude + ix * dlong;
+	float lattitude = fMinLattitude + iy * dlat;
+
+	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
+	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
+
+	double3 vVertex = vSurfacePoint + fWorldScale * vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f));
+
+	double3 vDelta = vVertex - vMiddlePoint;
+
+	double xCoord = dot(vDelta, vNorth);
+	double yCoord = dot(vDelta, vMiddleNormal);
+	double zCoord = dot(vDelta, vEast);
+
+	return float3(xCoord, yCoord, zCoord);
+
+	/*
+
+	float fSizeX = fMaxLongitude - fMinLongitude;
+	float fSizeY = fMaxLattitude - fMinLattitude;
+
+	float dx = fSizeX / (nCountX - 1);
+	float dy = fSizeY / (nCountY - 1);
+	
+	return float3(	ix * dx - fSizeX * 0.5, 
+					fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
+					iy * dy - fSizeX * 0.5
+					);
+
+					*/
 }
 
 [numthreads(1, 1, 1)]
@@ -170,7 +225,6 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 {
 	uint ix = DTid.x;
 	uint iy = DTid.y;
-
 
 	// INDICES
 	
