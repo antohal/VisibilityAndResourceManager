@@ -101,20 +101,6 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 // получить высоту вершины по индексам вдоль осей x и y
 uint GetVertexHeight(uint ix, uint iy)
 {
-	/*uint ivtx = GetVertexId(ix, iy);
-	
-	uint addr = ivtx / 4;
-	uint heights = asuint( InputHeightBuffer.Load(addr * 4 ) );
-
-	uint aHeights[4];
-	
-	aHeights[0] = (heights) & 0xFF;
-	aHeights[1] = (heights >> 8) & 0xFF;
-	aHeights[2] = (heights >> 16) & 0xFF;
-	aHeights[3] = (heights >> 24) & 0xFF;
-	
-	return aHeights[ivtx % 4];*/
-	
 	float2 texCoord;
 	
 	float fx = ix;
@@ -129,59 +115,8 @@ uint GetVertexHeight(uint ix, uint iy)
 }
 
 // получить позицию вершины
-float3 GetVertexPos(uint ix, uint iy, uint height)
+float3 GetVertexPos(uint ix, uint iy, uint height, double3 vMiddlePoint, double3 vMiddleNormal, double3 vEast, double3 vNorth)
 {
-	
-	/*
-	double3	vObjectCenter = double3(asdouble(vObjectCenterX0, vObjectCenterX1), asdouble(vObjectCenterY0, vObjectCenterY1), asdouble(vObjectCenterZ0, vObjectCenterZ1));
-	double3 vObjectXAxis = double3(asdouble(vObjectXAxisX0, vObjectXAxisX1), asdouble(vObjectXAxisY0, vObjectXAxisY1), asdouble(vObjectXAxisZ0, vObjectXAxisZ1));
-	double3 vObjectYAxis = double3(asdouble(vObjectYAxisX0, vObjectYAxisX1), asdouble(vObjectYAxisY0, vObjectYAxisY1), asdouble(vObjectYAxisZ0, vObjectYAxisZ1));
-	double3 vObjectZAxis = double3(asdouble(vObjectZAxisX0, vObjectZAxisX1), asdouble(vObjectZAxisY0, vObjectZAxisY1), asdouble(vObjectZAxisZ0, vObjectZAxisZ1));
-	*/
-
-	/*
-
-	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
-	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
-
-	float dlong = fLongitudeAmpl / (nCountX - 1);
-	float dlat = fLattitudeAmpl / (nCountY - 1);
-
-	float longitude = fMinLongitude + ix * dlong;
-	float lattitude = fMinLattitude + iy * dlat;
-
-	double3 vSurfacePoint = GetWGS84SurfacePoint(longitude, lattitude);
-	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
-
-	double3 vVertex = vSurfacePoint + vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f));
-
-	double3 vDelta = fWorldScale*vVertex - vObjectCenter;
-
-	double xCoord = dot(vDelta, vObjectXAxis);
-	double yCoord = dot(vDelta, vObjectYAxis);
-	double zCoord = dot(vDelta, vObjectZAxis);
-
-	//return float3(	ix * dx - fSizeX * 0.5,
-	//				fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
-	//				iy * dy - fSizeX * 0.5
-	//				);
-
-	return fWorldScale * float3(vSurfacePoint.x, vSurfacePoint.y, vSurfacePoint.z);// float3(xCoord, yCoord, zCoord);
-
-	
-	*/
-
-	double middleLattitude = (fMinLattitude + fMaxLattitude)*0.5;
-	double middleLongitude = (fMinLongitude + fMaxLongitude)*0.5;
-
-
-	double3 vMiddlePoint = fWorldScale * GetWGS84SurfacePoint(middleLongitude, middleLattitude);
-	double3 vMiddleNormal = GetWGS84SurfaceNormal(vMiddlePoint);
-	double3 vEast = normalize(cross(vMiddleNormal, double3(0, 0, 1)));
-	double3 vNorth = normalize(cross(vMiddleNormal, vEast));
-
-
-
 	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
 	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
 
@@ -203,21 +138,6 @@ float3 GetVertexPos(uint ix, uint iy, uint height)
 	double zCoord = dot(vDelta, vEast);
 
 	return float3(xCoord, yCoord, zCoord);
-
-	/*
-
-	float fSizeX = fMaxLongitude - fMinLongitude;
-	float fSizeY = fMaxLattitude - fMinLattitude;
-
-	float dx = fSizeX / (nCountX - 1);
-	float dy = fSizeY / (nCountY - 1);
-	
-	return float3(	ix * dx - fSizeX * 0.5, 
-					fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f),
-					iy * dy - fSizeX * 0.5
-					);
-
-					*/
 }
 
 [numthreads(1, 1, 1)]
@@ -225,6 +145,15 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 {
 	uint ix = DTid.x;
 	uint iy = DTid.y;
+
+	double middleLattitude = (fMinLattitude + fMaxLattitude)*0.5;
+	double middleLongitude = (fMinLongitude + fMaxLongitude)*0.5;
+
+	double3 vMiddlePoint = fWorldScale * GetWGS84SurfacePoint(middleLongitude, middleLattitude);
+	double3 vMiddleNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+	double3 vEast = normalize(cross(vMiddleNormal, double3(0, 0, 1)));
+	double3 vNorth = normalize(cross(vMiddleNormal, vEast));
+
 
 	// INDICES
 	
@@ -237,19 +166,19 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 		uint i2 = (iy + 1)*nCountX + ix;
 		uint i3 = (iy + 1)*nCountX + ix + 1;
 
-		OutIndexBuffer.Store(nStartIndex 		* 4, i3);
+		OutIndexBuffer.Store(nStartIndex 		* 4, i0);
 		OutIndexBuffer.Store((nStartIndex + 1) 	* 4, i1);
-		OutIndexBuffer.Store((nStartIndex + 2) 	* 4, i0);
+		OutIndexBuffer.Store((nStartIndex + 2) 	* 4, i3);
 
-		OutIndexBuffer.Store((nStartIndex + 3) 	* 4, i2);
+		OutIndexBuffer.Store((nStartIndex + 3) 	* 4, i0);
 		OutIndexBuffer.Store((nStartIndex + 4) 	* 4, i3);
-		OutIndexBuffer.Store((nStartIndex + 5) 	* 4, i0);
+		OutIndexBuffer.Store((nStartIndex + 5) 	* 4, i2);
 	}
 	
 	// VERTICES
 	
 	uint thisVertexHeight = GetVertexHeight(ix, iy);
-	float3 vVertexPos = GetVertexPos(ix, iy, thisVertexHeight);
+	float3 vVertexPos = GetVertexPos(ix, iy, thisVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	
 	float3 vLeftVertex = vVertexPos;
 	float3 vRightVertex = vVertexPos;
@@ -259,25 +188,25 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	if (ix > 1)
 	{
 		uint leftVertexHeight = GetVertexHeight(ix - 1, iy);
-		vLeftVertex = GetVertexPos(ix - 1, iy, leftVertexHeight);
+		vLeftVertex = GetVertexPos(ix - 1, iy, leftVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 	
 	if (ix < nCountX - 1)
 	{
 		uint rightVertexHeight = GetVertexHeight(ix + 1, iy);
-		vRightVertex = GetVertexPos(ix + 1, iy, rightVertexHeight);
+		vRightVertex = GetVertexPos(ix + 1, iy, rightVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
 	if (iy > 1)
 	{
 		uint upperVertexHeight = GetVertexHeight(ix, iy - 1);
-		vUpperVertex = GetVertexPos(ix, iy - 1, upperVertexHeight);
+		vUpperVertex = GetVertexPos(ix, iy - 1, upperVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 	
 	if (iy < nCountY - 1)
 	{
 		uint lowerVertexHeight = GetVertexHeight(ix, iy + 1);
-		vLowerVertex = GetVertexPos(ix, iy + 1, lowerVertexHeight);
+		vLowerVertex = GetVertexPos(ix, iy + 1, lowerVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
 	float2 texcoord = float2((float)ix / (nCountX - 1), (float)iy / (nCountY - 1));
@@ -287,9 +216,9 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	float3 nld = cross(vLeftVertex - vVertexPos, vLowerVertex - vVertexPos);
 	float3 nul = cross(vUpperVertex - vVertexPos, vLeftVertex - vVertexPos);
 	
-	float3 normal = normalize(nur + nrd + nld + nul);
+	float3 normal = -normalize(nur + nrd + nld + nul);
 	
-	float3 binormal = normalize(cross(float3(1, 0, 0), normal));
+	float3 binormal = -normalize(cross(float3(1, 0, 0), normal));
 	
 	
 	// STORE IN VERTEX BUFFER

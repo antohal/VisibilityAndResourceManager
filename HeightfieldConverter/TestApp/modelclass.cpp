@@ -43,17 +43,18 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	
 
-	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/terrain.png", testHeightfield);
 	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/heightmap.dds", m_testHeightfield);
+	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/grad_02.dds", m_testHeightfield);
 
 	m_testHeightfield.ID = 0;
 	m_testHeightfield.Config.fMinHeight = 0;
 	m_testHeightfield.Config.fMaxHeight = 600000;
+	//m_testHeightfield.Config.fMaxHeight = 100;
 
-	m_testHeightfield.Config.fMinLattitude = -40 * D2R;
-	m_testHeightfield.Config.fMaxLattitude = 40 * D2R;
-	m_testHeightfield.Config.fMinLongitude = 90 * D2R;
-	m_testHeightfield.Config.fMaxLongitude = 170 * D2R;
+	m_testHeightfield.Config.fMinLattitude = -30 * D2R;
+	m_testHeightfield.Config.fMaxLattitude = 30 * D2R;
+	m_testHeightfield.Config.fMinLongitude = 0 * D2R;
+	m_testHeightfield.Config.fMaxLongitude = 60 * D2R;
 
 	m_pHeightfieldConverter->CreateTriangulationImmediate(&m_testHeightfield, &m_triangulation);
 
