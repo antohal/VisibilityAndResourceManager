@@ -2,6 +2,7 @@
 // Filename: d3dclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
+#include <D3DX11tex.h>
 
 #pragma comment(lib, "d2d1.lib")
 
@@ -367,6 +368,71 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	m_pTextRenderer->InitMono(m_d2dFactory, m_swapChain);
 
+	//@{ пример кода сохранения текстуры в формате dds R32_FLOAT
+
+	ID3D11Texture2D* pTextureInMemory = NULL;
+
+	const UINT uiWidth = 512;
+	const UINT uiHeight = 512;
+
+	D3D11_TEXTURE2D_DESC textureInCPUMemoryDesc;
+
+	textureInCPUMemoryDesc.Width = uiWidth;
+	textureInCPUMemoryDesc.Height = uiHeight;
+	textureInCPUMemoryDesc.MipLevels = 1;
+	textureInCPUMemoryDesc.ArraySize = 1;
+	textureInCPUMemoryDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	textureInCPUMemoryDesc.SampleDesc.Count = 1;
+	textureInCPUMemoryDesc.SampleDesc.Quality = 0;
+	textureInCPUMemoryDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureInCPUMemoryDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureInCPUMemoryDesc.CPUAccessFlags = 0;
+	textureInCPUMemoryDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initialData;
+
+	// назначаем данные
+
+	float* pixelData = new float[uiWidth*uiHeight];
+
+	for (UINT i = 0; i < uiWidth; i++)
+	{
+		for (UINT j = 0; j < uiHeight; j++)
+		{
+			float k = 5;
+			float cx = k * (float) i / uiWidth;
+			float cy = k * (float) j / uiHeight;
+
+			float val = 0.5f + 0.5f*sin(cx * cy);
+
+			pixelData[i + j*uiWidth] = val * 600000.f;
+		}
+	}
+
+	initialData.pSysMem = pixelData;
+	initialData.SysMemPitch = uiWidth * sizeof(float);
+	initialData.SysMemSlicePitch = uiHeight * uiWidth * sizeof(float);
+
+
+	HRESULT hr = m_device->CreateTexture2D(&textureInCPUMemoryDesc, &initialData, &pTextureInMemory);
+
+	if (hr == S_OK)
+	{
+		hr = D3DX11SaveTextureToFileW(m_deviceContext, pTextureInMemory, D3DX11_IFF_DDS, L"TestData/GeneratedHeightmap.dds");
+
+		if (FAILED(hr))
+		{
+
+			// cannot save - error
+
+		}
+
+		// освобождаем текстуру.
+		pTextureInMemory->Release();
+		pTextureInMemory = NULL;
+	}
+
+	//@}
 
     return true;
 }

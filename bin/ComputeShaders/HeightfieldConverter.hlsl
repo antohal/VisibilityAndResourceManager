@@ -99,7 +99,7 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 }
 
 // получить высоту вершины по индексам вдоль осей x и y
-uint GetVertexHeight(uint ix, uint iy)
+float GetVertexHeight(uint ix, uint iy)
 {
 	float2 texCoord;
 	
@@ -111,11 +111,11 @@ uint GetVertexHeight(uint ix, uint iy)
 	
 	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
 	
-	return TexColor.r * 255;
+	return TexColor.r;
 }
 
 // получить позицию вершины
-float3 GetVertexPos(uint ix, uint iy, uint height, double3 vMiddlePoint, double3 vMiddleNormal, double3 vEast, double3 vNorth)
+float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double3 vMiddleNormal, double3 vEast, double3 vNorth)
 {
 	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
 	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
@@ -129,7 +129,11 @@ float3 GetVertexPos(uint ix, uint iy, uint height, double3 vMiddlePoint, double3
 	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
 
-	double3 vVertex = vSurfacePoint + fWorldScale * vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height / 255.f));
+	//double3 vVertex = vSurfacePoint + fWorldScale * vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height));
+	
+	double scaledHeight = fWorldScale * height;
+	
+	double3 vVertex = vSurfacePoint + scaledHeight * vSurfaceNormal;
 
 	double3 vDelta = vVertex - vMiddlePoint;
 
@@ -177,7 +181,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	
 	// VERTICES
 	
-	uint thisVertexHeight = GetVertexHeight(ix, iy);
+	float thisVertexHeight = GetVertexHeight(ix, iy);
 	float3 vVertexPos = GetVertexPos(ix, iy, thisVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	
 	float3 vLeftVertex = vVertexPos;
@@ -187,25 +191,25 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	
 	if (ix > 1)
 	{
-		uint leftVertexHeight = GetVertexHeight(ix - 1, iy);
+		float leftVertexHeight = GetVertexHeight(ix - 1, iy);
 		vLeftVertex = GetVertexPos(ix - 1, iy, leftVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 	
 	if (ix < nCountX - 1)
 	{
-		uint rightVertexHeight = GetVertexHeight(ix + 1, iy);
+		float rightVertexHeight = GetVertexHeight(ix + 1, iy);
 		vRightVertex = GetVertexPos(ix + 1, iy, rightVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
 	if (iy > 1)
 	{
-		uint upperVertexHeight = GetVertexHeight(ix, iy - 1);
+		float upperVertexHeight = GetVertexHeight(ix, iy - 1);
 		vUpperVertex = GetVertexPos(ix, iy - 1, upperVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 	
 	if (iy < nCountY - 1)
 	{
-		uint lowerVertexHeight = GetVertexHeight(ix, iy + 1);
+		float lowerVertexHeight = GetVertexHeight(ix, iy + 1);
 		vLowerVertex = GetVertexPos(ix, iy + 1, lowerVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 

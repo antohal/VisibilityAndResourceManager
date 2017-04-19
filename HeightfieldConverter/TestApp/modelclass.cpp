@@ -43,7 +43,8 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	
 
-	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/heightmap.dds", m_testHeightfield);
+	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/GeneratedHeightmap.dds", m_testHeightfield);
+	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/heightmap.dds", m_testHeightfield);
 	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/grad_02.dds", m_testHeightfield);
 
 	m_testHeightfield.ID = 0;
