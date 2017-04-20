@@ -132,6 +132,7 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 	//double3 vVertex = vSurfacePoint + fWorldScale * vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height));
 	
 	double scaledHeight = fWorldScale * height;
+	//double scaledHeight = fWorldScale * (fMinHeight + (fMaxHeight - fMinHeight) * height);
 	
 	double3 vVertex = vSurfacePoint + scaledHeight * vSurfaceNormal;
 

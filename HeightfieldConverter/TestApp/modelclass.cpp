@@ -22,7 +22,7 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	m_pHeightfieldConverter = new HeightfieldConverter();
 	m_pHeightfieldConverter->Init(device, context);
 
-	m_pHeightfieldConverter->SetWorldScale(0.000001f);
+	m_pHeightfieldConverter->SetWorldScale(0.0001f);
 
 	m_pHeightfieldConverter->RegisterListener(this);
 
@@ -43,7 +43,7 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 
 	
 
-	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/GeneratedHeightmap.dds", m_testHeightfield);
+	m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/Test3.dds", m_testHeightfield);
 	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/heightmap.dds", m_testHeightfield);
 	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"TestData/grad_02.dds", m_testHeightfield);
 
@@ -52,10 +52,10 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	m_testHeightfield.Config.fMaxHeight = 600000;
 	//m_testHeightfield.Config.fMaxHeight = 100;
 
-	m_testHeightfield.Config.fMinLattitude = -30 * D2R;
-	m_testHeightfield.Config.fMaxLattitude = 30 * D2R;
-	m_testHeightfield.Config.fMinLongitude = 0 * D2R;
-	m_testHeightfield.Config.fMaxLongitude = 60 * D2R;
+	m_testHeightfield.Config.fMinLattitude = 27 * D2R;
+	m_testHeightfield.Config.fMaxLattitude = 28 * D2R;
+	m_testHeightfield.Config.fMinLongitude = 86 * D2R;
+	m_testHeightfield.Config.fMaxLongitude = 87 * D2R;
 
 	m_pHeightfieldConverter->CreateTriangulationImmediate(&m_testHeightfield, &m_triangulation);
 
