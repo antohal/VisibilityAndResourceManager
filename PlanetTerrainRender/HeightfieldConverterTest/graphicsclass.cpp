@@ -75,7 +75,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the model object.
-	result = m_Model->Initialize(m_pTextBlock, m_D3D->GetDevice(), m_D3D->GetDeviceContext(), L"TestData/seafloor.dds", L"TestData/normal.jpg");
+	result = m_Model->Initialize(m_pTextBlock, m_D3D->GetDevice(), m_D3D->GetDeviceContext(), L"HeightfieldConverterTestData/seafloor.dds", L"HeightfieldConverterTestData/normal.jpg");
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);

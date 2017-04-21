@@ -25,6 +25,7 @@ struct VertexInputType
 	float3 binormal : BINORMAL;
 };
 
+
 struct PixelInputType
 {
     float4 position : SV_POSITION;

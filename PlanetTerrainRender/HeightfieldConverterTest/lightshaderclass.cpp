@@ -31,7 +31,7 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"TestData/light.vs", L"TestData/light.ps");
+	result = InitializeShader(device, hwnd, L"HeightfieldConverterTestData/light.vs", L"HeightfieldConverterTestData/light.ps");
 	if(!result)
 	{
 		return false;
@@ -310,7 +310,7 @@ void LightShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND h
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
 
 	// Get the length of the message.
-	bufferSize = errorMessage->GetBufferSize();
+	bufferSize = (unsigned long)errorMessage->GetBufferSize();
 
 	// Open a file to write the error message to.
 	fout.open("shader-error.txt");

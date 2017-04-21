@@ -2,8 +2,6 @@
 
 #include <d3d11.h>
 #include <d3dx10math.h>
-#include <atlbase.h>
-#include <vector>
 
 #ifndef HEIGHTFIELD_CONVERTER_EXPORTS
 #define HEIGHFIELD_CONVERTER_API __declspec(dllimport)

@@ -24,14 +24,11 @@
     <ClCompile Include="DirectComputeConverter.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="Debug.cpp">
+    <ClCompile Include="..\Common\Debug.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HeightfieldConverter.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="HeightfieldConverterPrivate.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -41,14 +38,20 @@
     <ClInclude Include="DirectComputeConverter.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="mathmisc.h">
+    <ClInclude Include="..\include\HeightfieldConverter.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="vecmath.h">
+    <ClInclude Include="..\Common\Debug.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="Debug.h">
+    <ClInclude Include="..\Common\mathmisc.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="..\Common\vecmath.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HeightfieldConverter.hlsl" />
   </ItemGroup>
 </Project>

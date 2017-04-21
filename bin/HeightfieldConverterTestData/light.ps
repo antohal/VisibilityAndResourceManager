@@ -31,6 +31,8 @@ struct PixelInputType
 };
 
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,7 +51,8 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 
 	float3 tangent = cross(input.normal, input.binormal);
 
-	float3 N = input.normal*TexNormal.z + tangent*TexNormal.x + input.binormal*TexNormal.y;
+	//float3 N = input.normal*TexNormal.z + tangent*TexNormal.x + input.binormal*TexNormal.y;
+	float3 N = input.normal;
 
 	// Invert the light direction for calculations.
     lightDir = -lightDirection;

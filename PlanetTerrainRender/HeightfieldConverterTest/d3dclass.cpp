@@ -418,7 +418,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	if (hr == S_OK)
 	{
-		hr = D3DX11SaveTextureToFileW(m_deviceContext, pTextureInMemory, D3DX11_IFF_DDS, L"TestData/GeneratedHeightmap.dds");
+		hr = D3DX11SaveTextureToFileW(m_deviceContext, pTextureInMemory, D3DX11_IFF_DDS, L"HeightfieldConverterTestData/GeneratedHeightmap.dds");
 
 		if (FAILED(hr))
 		{

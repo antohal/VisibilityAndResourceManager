@@ -483,7 +483,6 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createOutputBuffers(
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 
 	HRESULT result;
-	int i;
 
 	if (_triangulation.nIndexCount == 0)
 		return;
