@@ -1,0 +1,84 @@
+#pragma once
+
+#include "TerrainDataManager.h"
+#include "TerrainDataManagerImpl.h"
+
+#include <string>
+#include <vector>
+
+#include <atlbase.h>
+
+class CTerrainBlockData::CTerrainBlockDataImplementation
+{
+public:
+
+	CTerrainBlockDataImplementation(CTerrainBlockData* in_pHolder);
+	~CTerrainBlockDataImplementation();
+
+	// инициализация
+	void									Init(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner, float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude,
+		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockData* in_pParent);
+
+	//@{ получить минимальные значения по долготе и широте
+	float									GetMinimumLattitude() const;
+	float									GetMaximumLattitude() const;
+
+	float									GetMinimumLongitude() const;
+	float									GetMaximumLongitude() const;
+	//@}
+
+	// получить имя файла текстуры
+	const wchar_t*							GetTextureFileName() const;
+
+	// получить имя файла карты высот
+	const wchar_t*							GetHeightmapFileName() const;
+
+	// получить указатель на родительский блок (возвращает null, если является корневым)
+	const CTerrainBlockData*				GetParentBlockData() const;
+
+	// получить количество дочерних блоков
+	unsigned int							GetChildBlockDataCount() const;
+
+	// получить указатель на дочерний блок
+	const CTerrainBlockData*				GetChildBlockData(unsigned int id) const;
+
+	// загрузить ресурсы
+	void									LoadResources();
+
+	// выгрузить ресурсы
+	void									UnloadResources();
+
+	// получить текстуру с картой высот
+	ID3D11ShaderResourceView*				GetHeighmap() const;
+
+	// получить текстуру Земли
+	ID3D11ShaderResourceView*				GetTexture() const;
+
+	// загрузить дочерние блоки из указанной директории
+	void									LoadChildsFromDirectory(const std::wstring& in_wsDirectory);
+
+	// создание экземпляра [статическая]
+	static CTerrainBlockData*				CreateTerrainBlockDataInstance(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
+		float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude, const std::wstring& in_wsTextureFileName, 
+		const std::wstring& in_wsHeightmapFileName, CTerrainBlockData* in_pParent);
+
+private:
+
+	float									_fMinLattitude = 0;
+	float									_fMaxLattitude = 0;
+
+	float									_fMinLongitude = 0;
+	float									_fMaxLongitude = 0;
+
+	std::wstring							_wsTextureFileName;
+	std::wstring							_wsHeightmapFileName;
+
+	CTerrainBlockData*						_pParentBlock = nullptr;
+	std::vector<CTerrainBlockData*>			_vecChildBlocks;
+
+	CComPtr<ID3D11ShaderResourceView>		_ptrHeightmapResource;
+	CComPtr<ID3D11ShaderResourceView>		_ptrTextureResource;
+
+	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
+	CTerrainBlockData*						_pHolder = nullptr;
+};
