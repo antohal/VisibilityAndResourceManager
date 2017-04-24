@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HeightfieldConverter", "HeightfieldConverter\HeightfieldConverter.vcxproj", "{49A72C94-92FB-4052-B8A0-CC7CE509A83E}"
 EndProject
@@ -13,6 +13,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerrainDataManager", "TerrainDataManager\TerrainDataManager.vcxproj", "{532C3BB1-8D39-44FF-A879-A3E423A0CBC7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlanetTerrainViewer", "PlanetTerrainViewer\PlanetTerrainViewer.vcxproj", "{65FE00EE-D8E4-4020-A8C2-634F72361B7C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49A72C94-92FB-4052-B8A0-CC7CE509A83E} = {49A72C94-92FB-4052-B8A0-CC7CE509A83E}
+		{532C3BB1-8D39-44FF-A879-A3E423A0CBC7} = {532C3BB1-8D39-44FF-A879-A3E423A0CBC7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

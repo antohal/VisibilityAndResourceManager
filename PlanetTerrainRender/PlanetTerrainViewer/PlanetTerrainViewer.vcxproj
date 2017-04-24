@@ -149,7 +149,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Direct3DSystem.cpp" />
+    <ClCompile Include="GraphicsContext.cpp" />
+    <ClCompile Include="KeyboardInput.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Scene.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Direct3DSystem.h" />
+    <ClInclude Include="GraphicsContext.h" />
+    <ClInclude Include="KeyboardInput.h" />
+    <ClInclude Include="Scene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
