@@ -4,7 +4,7 @@ class CKeyboardInput
 {
 public:
 
-	void Initialize();
+	CKeyboardInput();
 
 	void KeyDown(unsigned int);
 	void KeyUp(unsigned int);
@@ -12,5 +12,7 @@ public:
 	bool IsKeyDown(unsigned int);
 
 private:
-	bool m_keys[256];
+
+	bool _keys[256];
+
 };

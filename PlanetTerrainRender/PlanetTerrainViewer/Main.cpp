@@ -2,6 +2,8 @@
 
 #include "Application.h"
 #include "TerrainDataManager.h"
+#include "PlanetCameraController.h"
+#include "GraphicsContext.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
@@ -17,19 +19,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainData = nullptr;*/
 
 
-	CD3DApplication* pD3DApplication = new CD3DApplication;
+	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (pD3DApplication->Initialize(L"TerrainViewer", 1024, 768, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, false))
 	{
+		delete pApplication;
 
-		pD3DApplication->Run();
-
+		return -1;
 	}
 
-	pD3DApplication->Shutdown();
+	CPlanetCameraController* pPlanetCameraController = new CPlanetCameraController();
+	pPlanetCameraController->CreateDebugTextBlock();
 
-	delete pD3DApplication;
+	pApplication->GetGraphicsContext()->GetScene()->GetMainCamera()->SetController(pPlanetCameraController);
+	
+	pApplication->Run();
+
+	pApplication->Shutdown();
+
+
+	delete pPlanetCameraController;
+	delete pApplication;
 
 	return 0;
 }

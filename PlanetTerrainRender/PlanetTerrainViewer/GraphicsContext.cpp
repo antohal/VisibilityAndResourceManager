@@ -7,6 +7,16 @@ const bool VSYNC_ENABLED = false;
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
 
+CD3DGraphicsContext::CD3DGraphicsContext()
+{
+	_pScene = new CD3DScene;
+}
+
+CD3DGraphicsContext::~CD3DGraphicsContext()
+{
+	delete _pScene;
+}
+
 bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int in_uiScreenHeight, HWND in_Hwnd, bool in_bFullscreen)
 {
 	bool result;
@@ -29,13 +39,10 @@ bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int
 
 	_pTextBlock = _pD3DSystem->GetTextRenderer()->CreateTextBlock();
 
-	_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 250, 512), D2D1::ColorF(0.1, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
+	_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 10, 250, 200), D2D1::ColorF(0.1f, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
 		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
 
 	_uiFpsParam = _pTextBlock->AddParameter(L"FPS");
-
-
-	_pD3DSystem->GetTextRenderer()->CreateResources();
 
 
 	return true;
@@ -59,11 +66,15 @@ void CD3DGraphicsContext::Shutdown()
 
 bool CD3DGraphicsContext::Frame()
 {
-	bool result;
-	static float rotation = 0.0f;
+
+	if (!_bResourcesCreated)
+	{
+		_pD3DSystem->CreateResources();
+
+		_bResourcesCreated = true;
+	}
 
 	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
-	
 	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
 	
 	double deltaTime = elapsed.count() / 1000.0;
@@ -77,11 +88,21 @@ bool CD3DGraphicsContext::Frame()
 
 	_prevFrameTime = thisFrameTime;
 
+	_pScene->Update((float)deltaTime);
 
 	Render();
 
-
 	return true;
+}
+
+CDirect3DSystem * CD3DGraphicsContext::GetSystem()
+{
+	return _pD3DSystem;
+}
+
+const CDirect3DSystem * CD3DGraphicsContext::GetSystem() const
+{
+	return _pD3DSystem;
 }
 
 
@@ -90,7 +111,7 @@ void CD3DGraphicsContext::Render()
 	// Clear the buffers to begin the scene.
 	_pD3DSystem->BeginScene(0.0f, 0.0f, 1.0f, 1.0f);
 
-
+	_pScene->Render(this);
 
 	// Present the rendered scene to the screen.
 	_pD3DSystem->EndScene();

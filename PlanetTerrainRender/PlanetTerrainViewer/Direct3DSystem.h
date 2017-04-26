@@ -33,24 +33,25 @@ public:
 	CDirect3DSystem();
 	~CDirect3DSystem();
 
-	bool Initialize(unsigned int screenWidth, unsigned int screenHeight, bool vsync, HWND hwnd, bool fullscreen,
+	bool								Initialize(unsigned int screenWidth, unsigned int screenHeight, bool vsync, HWND hwnd, bool fullscreen,
 		float screenDepth, float screenNear);
 
-	void Shutdown();
+	void								Shutdown();
 	
-	void BeginScene(float, float, float, float);
-	void EndScene();
+	void								BeginScene(float, float, float, float);
+	void								EndScene();
 
-	ID3D11Device* GetDevice();
-	ID3D11DeviceContext* GetDeviceContext();
+	void								CreateResources();
+	void								ReleaseResources();
 
-	CDirect2DTextRenderer* GetTextRenderer();
+	ID3D11Device*						GetDevice();
+	ID3D11DeviceContext*				GetDeviceContext();
 
-	void GetProjectionMatrix(D3DXMATRIX&);
-	void GetWorldMatrix(D3DXMATRIX&);
-	void GetOrthoMatrix(D3DXMATRIX&);
+	CDirect2DTextRenderer*				GetTextRenderer();
 
-	void GetVideoCardInfo(std::string& out_strDesc, unsigned int& out_uiMemory);
+	void								GetVideoCardInfo(std::string& out_strDesc, unsigned int& out_uiMemory);
+
+	const D3DXMATRIX&					GetProjectionMatrix() const;
 
 private:
 
@@ -72,6 +73,4 @@ private:
 	CDirect2DTextRenderer*				_pTextRenderer = nullptr;
 
 	D3DXMATRIX							_mProjectionMatrix;
-	D3DXMATRIX							_mWorldMatrix;
-	D3DXMATRIX							_mOrthoMatrix;
 };

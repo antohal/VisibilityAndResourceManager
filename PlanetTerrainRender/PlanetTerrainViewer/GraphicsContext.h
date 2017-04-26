@@ -10,6 +10,9 @@ class CD3DGraphicsContext
 {
 public:
 
+	CD3DGraphicsContext();
+	~CD3DGraphicsContext();
+
 	bool					Initialize(unsigned int in_uiWidth, unsigned int in_uiHeight, HWND in_Hwnd, bool in_bFullscreen);
 	
 	void					Shutdown();
@@ -17,6 +20,9 @@ public:
 
 	CDirect2DTextBlock*		GetTextBlock() { return _pTextBlock; }
 	CD3DScene*				GetScene() { return _pScene; }
+
+	CDirect3DSystem*		GetSystem();
+	const CDirect3DSystem*	GetSystem() const;
 
 private:
 	
@@ -30,6 +36,8 @@ private:
 	CD3DScene*				_pScene = nullptr;
 
 	UINT					_uiFpsParam = -1;
+
+	bool					_bResourcesCreated = false;
 
 	std::chrono::time_point<std::chrono::steady_clock>	_prevFrameTime;
 };

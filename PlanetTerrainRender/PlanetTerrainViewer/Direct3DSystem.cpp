@@ -349,11 +349,6 @@ bool CDirect3DSystem::Initialize(unsigned int screenWidth, unsigned int screenHe
 	// Create the projection matrix for 3D rendering.
 	D3DXMatrixPerspectiveFovLH(&_mProjectionMatrix, g_FieldOfView, screenAspect, screenNear, screenDepth);
 
-    // Initialize the world matrix to the identity matrix.
-    D3DXMatrixIdentity(&_mWorldMatrix);
-
-	// Create an orthographic projection matrix for 2D rendering.
-	D3DXMatrixOrthoLH(&_mOrthoMatrix, (float)screenWidth, (float)screenHeight, screenNear, screenDepth);
 
 	_pTextRenderer->InitMono(_ptrD2dFactory, _ptrSwapChain);
 
@@ -361,6 +356,21 @@ bool CDirect3DSystem::Initialize(unsigned int screenWidth, unsigned int screenHe
     return true;
 }
 
+void CDirect3DSystem::CreateResources()
+{
+	_pTextRenderer->CreateResources();
+}
+
+void CDirect3DSystem::ReleaseResources()
+{
+	_pTextRenderer->ReleaseResources();
+}
+
+
+const D3DXMATRIX& CDirect3DSystem::GetProjectionMatrix() const
+{
+	return _mProjectionMatrix;
+}
 
 void CDirect3DSystem::Shutdown()
 {
@@ -437,27 +447,6 @@ ID3D11Device* CDirect3DSystem::GetDevice()
 ID3D11DeviceContext* CDirect3DSystem::GetDeviceContext()
 {
 	return _ptrDeviceContext;
-}
-
-
-void CDirect3DSystem::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
-{
-	projectionMatrix = _mProjectionMatrix;
-	return;
-}
-
-
-void CDirect3DSystem::GetWorldMatrix(D3DXMATRIX& worldMatrix)
-{
-	worldMatrix = _mWorldMatrix;
-	return;
-}
-
-
-void CDirect3DSystem::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
-{
-	orthoMatrix = _mOrthoMatrix;
-	return;
 }
 
 

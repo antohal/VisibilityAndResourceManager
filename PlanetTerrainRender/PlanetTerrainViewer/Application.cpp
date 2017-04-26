@@ -1,7 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////
-// Filename: systemclass.cpp
-////////////////////////////////////////////////////////////////////////////////
 #include "Application.h"
+#include "MouseInput.h"
+#include "KeyboardInput.h"
+#include "GraphicsContext.h"
 
 static CD3DApplication* g_pApplicationHandle = nullptr;
 
@@ -27,22 +27,14 @@ bool CD3DApplication::Initialize(const std::wstring& in_wsApplicationName, unsig
 	// Initialize the windows api.
 	InitializeWindowsAPI(screenWidth, screenHeight);
 
-	// Create the input object.  This object will be used to handle reading the keyboard input from the user.
-	_pKeyboardInput = new CKeyboardInput;
-	if(!_pKeyboardInput)
-	{
-		return false;
-	}
+	// Create the keyboard input object.  This object will be used to handle reading the keyboard input from the user.
+	_pKeyboardInput = new CKeyboardInput();
 
-	// Initialize the input object.
-	_pKeyboardInput->Initialize();
+	// Create mouse input object/
+	_pMouseInput = new CMouseInput();
 
 	// Create the graphics object.  This object will handle rendering all the graphics for this application.
-	_pGraphicsContext = new CD3DGraphicsContext;
-	if(!_pGraphicsContext)
-	{
-		return false;
-	}
+	_pGraphicsContext = new CD3DGraphicsContext();
 
 	// Initialize the graphics object.
 	result = _pGraphicsContext->Initialize(screenWidth, screenHeight, _Hwnd, in_bFullScreen);
@@ -84,7 +76,14 @@ void CD3DApplication::Shutdown()
 	if(_pKeyboardInput)
 	{
 		delete _pKeyboardInput;
-		_pKeyboardInput = 0;
+		_pKeyboardInput = nullptr;
+	}
+
+	// Release mouse input object
+	if (_pMouseInput)
+	{
+		delete _pMouseInput;
+		_pMouseInput = nullptr;
 	}
 
 	// Shutdown the window.
@@ -137,18 +136,16 @@ void CD3DApplication::Run()
 
 bool CD3DApplication::Frame()
 {
-	bool result;
-
-
 	// Check if the user pressed escape and wants to exit the application.
 	if(_pKeyboardInput->IsKeyDown(VK_ESCAPE))
 	{
 		return false;
 	}
 
+	_pMouseInput->Frame();
+
 	// Do the frame processing for the graphics object.
-	result = _pGraphicsContext->Frame();
-	if(!result)
+	if (!_pGraphicsContext->Frame())
 	{
 		return false;
 	}
@@ -157,7 +154,7 @@ bool CD3DApplication::Frame()
 }
 
 
-LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(umsg)
 	{
@@ -165,7 +162,7 @@ LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wp
 		case WM_KEYDOWN:
 		{
 			// If a key is pressed send it to the input object so it can record that state.
-			_pKeyboardInput->KeyDown((unsigned int)wparam);
+			_pKeyboardInput->KeyDown((unsigned int)wParam);
 			return 0;
 		}
 
@@ -173,14 +170,59 @@ LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wp
 		case WM_KEYUP:
 		{
 			// If a key is released then send it to the input object so it can unset the state for that key.
-			_pKeyboardInput->KeyUp((unsigned int)wparam);
+			_pKeyboardInput->KeyUp((unsigned int)wParam);
 			return 0;
 		}
+
+		//@{ Mouse buttons handling
+		case WM_LBUTTONDOWN:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_LEFT, true);
+			return 0;
+		}
+
+		case WM_LBUTTONUP:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_LEFT, false);
+			return 0;
+		}
+
+		case WM_MBUTTONDOWN:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_MIDDLE, true);
+			return 0;
+		}
+
+		case WM_MBUTTONUP:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_MIDDLE, false);
+			return 0;
+		}
+
+		case WM_RBUTTONDOWN:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_RIGHT, true);
+			return 0;
+		}
+
+		case WM_RBUTTONUP:
+		{
+			_pMouseInput->SetButtonState(CMouseInput::BUTTON_RIGHT, false);
+			return 0;
+		}
+
+		case WM_MOUSEWHEEL:
+		{
+			_pMouseInput->WheelMoved(GET_WHEEL_DELTA_WPARAM(wParam));
+			return 0;
+		}
+		//@}
+
 
 		// Any other messages send to the default message handler as our application won't make use of them.
 		default:
 		{
-			return DefWindowProc(hwnd, umsg, wparam, lparam);
+			return DefWindowProc(hwnd, umsg, wParam, lParam);
 		}
 	}
 }
@@ -324,4 +366,34 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 			return g_pApplicationHandle->MessageHandler(hwnd, umessage, wparam, lparam);
 		}
 	}
+}
+
+CD3DGraphicsContext* CD3DApplication::GetGraphicsContext()
+{
+	return _pGraphicsContext;
+}
+
+const CD3DGraphicsContext* CD3DApplication::GetGraphicsContext() const
+{
+	return _pGraphicsContext;
+}
+
+CKeyboardInput* CD3DApplication::GetKeyboardInput()
+{
+	return _pKeyboardInput;
+}
+
+const CKeyboardInput* CD3DApplication::GetKeyboardInput() const
+{
+	return _pKeyboardInput;
+}
+
+CMouseInput * CD3DApplication::GetMouseInput()
+{
+	return _pMouseInput;
+}
+
+const CMouseInput * CD3DApplication::GetMouseInput() const
+{
+	return _pMouseInput;
 }
