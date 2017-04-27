@@ -8,6 +8,11 @@
 
 CTerrainDataManager::CTerrainDataManager()
 {
+	LogInit("TerrainDataManager.log");
+	LogEnable(true);
+
+	LogMessage("CTerrainDataManager::Init OK.");
+
 	_implementation = new CTerrainDataManager::CTerrainDataManagerImplementation();
 }
 
@@ -15,17 +20,6 @@ CTerrainDataManager::~CTerrainDataManager()
 {
 	delete _implementation;
 }
-
-void CTerrainDataManager::Init(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pD3D11DeviceContext)
-{
-	_implementation->Init(in_pD3D11Device, in_pD3D11DeviceContext);
-
-	LogInit("TerrainDataManager.log");
-	LogEnable(true);
-
-	LogMessage("CTerrainDataManager::Init OK.");
-}
-
 
 // Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
 bool CTerrainDataManager::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockData** out_ppRootDataBlock)
@@ -70,10 +64,4 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 void CTerrainDataManager::CTerrainDataManagerImplementation::ReleaseTerrainDataInfo(CTerrainBlockData* in_pTerrainDataBlock)
 {
 	delete in_pTerrainDataBlock;
-}
-
-void CTerrainDataManager::CTerrainDataManagerImplementation::Init(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pD3D11DeviceContext)
-{
-	_ptrD3DDevice = in_pD3D11Device;
-	_ptrDeviceContext = in_pD3D11DeviceContext;
 }

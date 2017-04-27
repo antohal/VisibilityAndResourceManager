@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlanetTerrainViewer", "Plan
 		{532C3BB1-8D39-44FF-A879-A3E423A0CBC7} = {532C3BB1-8D39-44FF-A879-A3E423A0CBC7}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DdsGenerator", "DdsGenerator\DdsGenerator.vcxproj", "{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -58,6 +60,14 @@ Global
 		{65FE00EE-D8E4-4020-A8C2-634F72361B7C}.Release|x64.Build.0 = Release|x64
 		{65FE00EE-D8E4-4020-A8C2-634F72361B7C}.Release|x86.ActiveCfg = Release|Win32
 		{65FE00EE-D8E4-4020-A8C2-634F72361B7C}.Release|x86.Build.0 = Release|Win32
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Debug|x64.ActiveCfg = Debug|x64
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Debug|x64.Build.0 = Debug|x64
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Debug|x86.ActiveCfg = Debug|Win32
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Debug|x86.Build.0 = Debug|Win32
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Release|x64.ActiveCfg = Release|x64
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Release|x64.Build.0 = Release|x64
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Release|x86.ActiveCfg = Release|Win32
+		{8E576AA6-D1E5-455B-BB51-CFD31C768E0B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

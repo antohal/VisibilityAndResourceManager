@@ -1,7 +1,5 @@
 #pragma once
 
-#include <d3d11.h>
-
 #ifndef TERRAINDATAMANAGER_EXPORTS
 #define TERRAINDATAMANAGER_API __declspec(dllimport)
 #else
@@ -37,18 +35,6 @@ public:
 	// получить указатель на дочерний блок
 	const CTerrainBlockData*		GetChildBlockData(unsigned int id) const;
 
-	// загрузить ресурсы
-	void							LoadResources();
-
-	// выгрузить ресурсы
-	void							UnloadResources();
-
-	// получить текстуру с картой высот
-	ID3D11ShaderResourceView*		GetHeighmap() const;
-
-	// получить текстуру «емли
-	ID3D11ShaderResourceView*		GetTexture() const;
-
 protected:
 
 	~CTerrainBlockData();
@@ -67,9 +53,6 @@ public:
 
 	CTerrainDataManager();
 	~CTerrainDataManager();
-
-	// »нициализировать
-	void	Init(ID3D11Device* in_pD3D11Device, ID3D11DeviceContext* in_pD3D11DeviceContext);
 
 	// «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
 	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockData** out_ppRootDataBlock);

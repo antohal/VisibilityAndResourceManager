@@ -5,6 +5,8 @@
 #include "PlanetCameraController.h"
 #include "GraphicsContext.h"
 
+#include "Log.h"
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
 	/*CTerrainDataManager	DataManager;
@@ -18,6 +20,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	pTerrainData = nullptr;*/
 
+	LogInit("TerrainViewer.log");
+
+	LogEnable(true);
 
 	CD3DApplication* pApplication = new CD3DApplication;
 

@@ -17,12 +17,10 @@ public:
 	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*, unsigned int in_uiEyeId) = 0;
 
 	// ѕолучить набор техник
-	//virtual void	GetTechniques(std::vector<C3DBaseTechnique*>& out_vecTechniques) const = 0;
 	virtual size_t	GetTechniquesCount() const = 0;
 	virtual C3DBaseTechnique*	GetTechniqueById(size_t id) const = 0;
 
 	// получить список текстур
-	//virtual void	GetTextures(std::vector<C3DBaseTexture*>& out_vecTextures) const = 0;
 	virtual size_t	GetTexturesCount() const = 0;
 	virtual C3DBaseTexture*	GetTextureById(size_t id) const = 0;
 
