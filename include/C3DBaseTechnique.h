@@ -1,5 +1,7 @@
 #pragma once
 
+#include "C3DBaseResource.h"
+
 // базовая техника
 class C3DBaseTechnique : public C3DBaseResource
 {

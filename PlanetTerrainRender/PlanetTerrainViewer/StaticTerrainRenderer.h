@@ -8,6 +8,7 @@
 #include "C3DBaseObject.h"
 #include "C3DBaseFaceSet.h"
 #include "C3DBaseMaterial.h"
+#include "C3DBaseManager.h"
 
 #include "TerrainDataManager.h"
 
@@ -18,6 +19,8 @@ class CD3DStaticTerrainFaceset;
 class CD3DStaticTerrainObject : public C3DBaseObject
 {
 public:
+
+	CD3DStaticTerrainObject();
 
 	void	SetFaceset(CD3DStaticTerrainFaceset*);
 
@@ -41,7 +44,7 @@ public:
 
 	// получить список фейссетов
 	virtual size_t							GetFaceSetsCount() const { return 1; }
-	virtual C3DBaseFaceSet*					GetFaceSetById(size_t id) const { if (id == 0) return _pFaceset; }
+	virtual C3DBaseFaceSet*					GetFaceSetById(size_t id) const;
 
 	virtual C3DBaseManager*					GetManager() const { return nullptr; }
 
@@ -63,15 +66,12 @@ public:
 	// получить ссылку на материал
 	virtual C3DBaseMaterial*				GetMaterialRef() override;
 
-	virtual C3DBaseManager*					GetManager() const { 
-	
-		if (!_pMaterialRef)
-			return nullptr;
-
-		return _pMaterialRef->GetManager();
-	}
+	virtual C3DBaseManager*					GetManager() const;
 
 	//@}
+
+	void	Load();
+	void	Unload();
 
 private:
 
@@ -99,7 +99,10 @@ public:
 	virtual size_t	GetTexturesCount() const override { return 0; }
 	virtual C3DBaseTexture*	GetTextureById(size_t id) const override { return nullptr; }
 
-	virtual C3DBaseManager*					GetManager() const { return _pOwner; }
+	virtual C3DBaseManager*					GetManager() const;
+
+	void	Load();
+	void	Unload();
 
 private:
 
@@ -122,21 +125,23 @@ public:
 
 	void			AddVisibleMaterial(CD3DStaticTerrainMaterial*);
 
-	//@{ CD3DSceneRenderer
-
-	virtual void	GetObjects(std::list<C3DBaseObject*>& out_lstObjects) const;
-	virtual void	Render(CD3DGraphicsContext* in_pContext) override;
-
-	//@}
-
 
 	//@{ C3DBaseManager
 
 	// Запросить загрузку ресурса
-	virtual void RequestLoadResource(C3DBaseResource*);
+	virtual void RequestLoadResource(C3DBaseResource* in_pResource);
 
 	// запросить выгрузку ресурса
-	virtual void RequestUnloadResource(C3DBaseResource*);
+	virtual void RequestUnloadResource(C3DBaseResource* in_pResource);
+
+	//@}
+
+protected:
+
+	//@{ CD3DSceneRenderer
+
+	virtual void	GetObjects(std::list<C3DBaseObject*>& out_lstObjects) const;
+	virtual void	Render(CD3DGraphicsContext* in_pContext) override;
 
 	//@}
 

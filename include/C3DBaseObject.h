@@ -4,6 +4,9 @@
 
 #include "C3DBaseMesh.h"
 
+struct D3DXVECTOR3;
+struct D3DXMATRIX;
+
 // базовый класс объекта в сцене
 class RESOURCEMANAGER_API C3DBaseObject : public C3DBaseResource
 {

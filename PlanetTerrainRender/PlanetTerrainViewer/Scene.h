@@ -2,8 +2,6 @@
 
 #include "Camera.h"
 
-#include "VisibilityManager.h"
-#include "ResourceManager.h"
 #include "C3DBaseObject.h"
 
 #include <set>

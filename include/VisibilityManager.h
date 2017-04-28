@@ -2,7 +2,7 @@
 
 #include "3DEngineInterface.h"
 
-#include <d3d9types.h>
+//#include <d3d9types.h>
 
 
 #ifdef VisibilityManager_EXPORTS
@@ -12,6 +12,8 @@
 #endif
 
 struct D3DXVECTOR3;
+struct _D3DMATRIX;
+typedef struct _D3DMATRIX D3DMATRIX;
 
 //! \struct Vector3
 //! \date 2012/5/22

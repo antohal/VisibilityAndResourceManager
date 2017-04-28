@@ -2,8 +2,6 @@
 
 #include "vecmath.h"
 
-#include <D3DX10math.h>
-
 class CD3DCamera;
 
 class CD3DCameraController

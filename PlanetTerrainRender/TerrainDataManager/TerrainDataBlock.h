@@ -42,18 +42,6 @@ public:
 	// получить указатель на дочерний блок
 	const CTerrainBlockData*				GetChildBlockData(unsigned int id) const;
 
-	// загрузить ресурсы
-	void									LoadResources();
-
-	// выгрузить ресурсы
-	void									UnloadResources();
-
-	// получить текстуру с картой высот
-	ID3D11ShaderResourceView*				GetHeighmap() const;
-
-	// получить текстуру Земли
-	ID3D11ShaderResourceView*				GetTexture() const;
-
 	// загрузить дочерние блоки из указанной директории
 	void									LoadChildsFromDirectory(const std::wstring& in_wsDirectory);
 
@@ -75,9 +63,6 @@ private:
 
 	CTerrainBlockData*						_pParentBlock = nullptr;
 	std::vector<CTerrainBlockData*>			_vecChildBlocks;
-
-	CComPtr<ID3D11ShaderResourceView>		_ptrHeightmapResource;
-	CComPtr<ID3D11ShaderResourceView>		_ptrTextureResource;
 
 	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
 	CTerrainBlockData*						_pHolder = nullptr;

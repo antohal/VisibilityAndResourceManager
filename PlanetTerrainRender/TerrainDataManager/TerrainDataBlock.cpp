@@ -305,27 +305,3 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 		}
 	}
 }
-
-// загрузить ресурсы
-void CTerrainBlockData::CTerrainBlockDataImplementation::LoadResources()
-{
-
-}
-
-// выгрузить ресурсы
-void CTerrainBlockData::CTerrainBlockDataImplementation::UnloadResources()
-{
-
-}
-
-// получить текстуру с картой высот
-ID3D11ShaderResourceView* CTerrainBlockData::CTerrainBlockDataImplementation::GetHeighmap() const
-{
-	return _ptrHeightmapResource;
-}
-
-// получить текстуру Земли
-ID3D11ShaderResourceView* CTerrainBlockData::CTerrainBlockDataImplementation::GetTexture() const
-{
-	return _ptrTextureResource;
-}

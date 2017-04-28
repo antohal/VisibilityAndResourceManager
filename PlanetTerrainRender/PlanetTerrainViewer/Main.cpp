@@ -4,22 +4,12 @@
 #include "TerrainDataManager.h"
 #include "PlanetCameraController.h"
 #include "GraphicsContext.h"
+#include "StaticTerrainRenderer.h"
 
 #include "Log.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
-	/*CTerrainDataManager	DataManager;
-
-	CTerrainBlockData* pTerrainData = nullptr;
-
-	DataManager.LoadTerrainDataInfo(L"PlanetViewerData\\TestPlanet\\", &pTerrainData);
-
-
-	DataManager.ReleaseTerrainDataInfo(pTerrainData);
-
-	pTerrainData = nullptr;*/
-
 	LogInit("TerrainViewer.log");
 
 	LogEnable(true);
@@ -34,16 +24,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 		return -1;
 	}
 
+	//@{ Prepare camera controller
+
 	CPlanetCameraController* pPlanetCameraController = new CPlanetCameraController();
 	pPlanetCameraController->CreateDebugTextBlock();
 
 	pApplication->GetGraphicsContext()->GetScene()->GetMainCamera()->SetController(pPlanetCameraController);
 	
+	//@}
+
+
+	//@{ Prepare terrain rendering pipeline
+
+	CD3DStaticTerrainRenderer* pTerrainRenderer = new CD3DStaticTerrainRenderer;
+
+	pTerrainRenderer->LoadPlanet(L"PlanetViewerData//TestPlanet");
+
+	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pTerrainRenderer);
+
+	//@}
+
+
+	// Run the application
 	pApplication->Run();
 
+	// Shutdown application
 	pApplication->Shutdown();
 
 
+
+	// delete objects
+
+	delete pTerrainRenderer;
 	delete pPlanetCameraController;
 	delete pApplication;
 

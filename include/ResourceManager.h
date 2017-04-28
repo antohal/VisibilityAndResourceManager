@@ -4,8 +4,6 @@
 
 #include "ResourceManagerLink.h"
 
-#include <d3d9types.h>
-
 //@{ предопределения
 
 class C3DBaseObjectManager;
@@ -17,7 +15,8 @@ class CVisibilityManager;
 
 // из D2DTextRenderer
 class CDirect2DTextBlock;
-
+struct _D3DMATRIX;
+typedef struct _D3DMATRIX D3DMATRIX;
 //@}
 
 // Класс менеджера ресурсов.

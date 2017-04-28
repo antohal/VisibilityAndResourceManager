@@ -1,5 +1,8 @@
 #include "Scene.h"
 
+#include "VisibilityManager.h"
+#include "ResourceManager.h"
+
 void CD3DScene::Update(float deltaTime)
 {
 	_mainCamera.Update(deltaTime);
