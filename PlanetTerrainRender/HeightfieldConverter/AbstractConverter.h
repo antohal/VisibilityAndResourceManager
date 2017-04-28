@@ -8,6 +8,8 @@ public:
 
 	virtual ~IAbstractHeightfieldConverter() {}
 
+	virtual void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords) = 0;
+
 	// —оздать триангул€цию немедленно и дождатьс€ готовности
 	virtual void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation) = 0;
 

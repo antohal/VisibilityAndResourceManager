@@ -3,45 +3,17 @@
 /////////////
 cbuffer HeightfieldSettings  : register(b0)
 {
-	float fMinLattitude;				// минимальная широта
-	float fMaxLattitude;				// максимальная широта
+	float	fMinLattitude;				// минимальная широта
+	float	fMaxLattitude;				// максимальная широта
 
-	float fMinLongitude;				// минимальная долгота
-	float fMaxLongitude;				// максимальная долгота
+	float	fMinLongitude;				// минимальная долгота
+	float	fMaxLongitude;				// максимальная долгота
 
-	float fMinHeight;					// минимальная высота (соответствующая значению 0 в данных)
-	float fMaxHeight;					// максимальная высота (соответствующая значению 255 в данных)
-
-	uint nCountX;						// количество точек по X
-	uint nCountY;						// количество точек по Y
+	uint	nCountX;					// количество точек по X
+	uint	nCountY;					// количество точек по Y
 	
-	uint nChannel;						// номер канала в текстуре
-	
-	float fWorldScale;
-	
-	uint vObjectCenterX0, vObjectCenterX1;
-	uint vObjectCenterY0, vObjectCenterY1;
-	uint vObjectCenterZ0, vObjectCenterZ1;
-
-	uint vObjectXAxisX0, vObjectXAxisX1;
-	uint vObjectXAxisY0, vObjectXAxisY1;
-	uint vObjectXAxisZ0, vObjectXAxisZ1;
-
-	uint vObjectYAxisX0, vObjectYAxisX1;
-	uint vObjectYAxisY0, vObjectYAxisY1;
-	uint vObjectYAxisZ0, vObjectYAxisZ1;
-
-	uint vObjectZAxisX0, vObjectZAxisX1;
-	uint vObjectZAxisY0, vObjectZAxisY1;
-	uint vObjectZAxisZ0, vObjectZAxisZ1;
-
-	/*double3	vObjectCenter;
-	double3 vObjectXAxis;
-	double3 vObjectYAxis;
-	double3 vObjectZAxis;*/
-
-	float temp1;
-	float temp2;
+	float	fWorldScale;				// Масштаб мира
+	float	fHeightScale;				// Масштаб высоты
 };
 
 
@@ -129,12 +101,11 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
 
-	//double3 vVertex = vSurfacePoint + fWorldScale * vSurfaceNormal*(fMinHeight + (fMaxHeight - fMinHeight) * (height));
-	
 	double scaledHeight = fWorldScale * height;
-	//double scaledHeight = fWorldScale * (fMinHeight + (fMaxHeight - fMinHeight) * height);
 	
 	double3 vVertex = vSurfacePoint + scaledHeight * vSurfaceNormal;
+
+	// local coords
 
 	double3 vDelta = vVertex - vMiddlePoint;
 

@@ -1,8 +1,12 @@
 #include "HeightfieldConverter.h"
 #include "HeightfieldConverterPrivate.h"
+#include "Log.h"
 
 HeightfieldConverter::HeightfieldConverter()
 {
+	LogInit("HeightfieldConverter.log");
+	LogEnable(true);
+
 	_private = new HeightfieldConverterPrivate;
 }
 
@@ -15,6 +19,16 @@ HeightfieldConverter::~HeightfieldConverter()
 void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext)
 {
 	_private->Init(in_pD3DDevice11, in_pDeviceContext);
+}
+
+void HeightfieldConverter::SetHeightScale(float in_fHeightScale)
+{
+	_private->SetHeightScale(in_fHeightScale);
+}
+
+void HeightfieldConverter::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
+{
+	_private->ComputeTriangulationCoords(in_Coords, out_TriangulationCoords);
 }
 
 // —оздать триангул€цию немедленно и дождатьс€ готовности

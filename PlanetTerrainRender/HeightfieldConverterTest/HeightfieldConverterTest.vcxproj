@@ -119,8 +119,8 @@
       </Command>
     </PostBuildEvent>
     <CustomBuildStep>
-      <Command>cp "$(ProjectDir)light.ps" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps"
-cp "$(ProjectDir)light.vs" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs"</Command>
+      <Command>copy "$(ProjectDir)light.ps" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps"
+copy "$(ProjectDir)light.vs" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs"</Command>
       <Message>Copying shaders</Message>
       <Outputs>$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps;$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs;%(Outputs)</Outputs>
       <Inputs>$(ProjectDir)light.ps;$(ProjectDir)light.vs;%(Inputs)</Inputs>
@@ -168,8 +168,8 @@ cp "$(ProjectDir)light.vs" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\
       </Command>
     </PostBuildEvent>
     <CustomBuildStep>
-      <Command>cp "$(ProjectDir)light.ps" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps"
-cp "$(ProjectDir)light.vs" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs"</Command>
+      <Command>copy "$(ProjectDir)light.ps" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps"
+copy "$(ProjectDir)light.vs" "$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.ps;$(ProjectDir)..\..\bin\HeightfieldConverterTestData\light.vs;%(Outputs)</Outputs>

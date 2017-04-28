@@ -105,7 +105,7 @@
       </Message>
     </PostBuildEvent>
     <CustomBuildStep>
-      <Command>cp "$(ProjectDir)HeightfieldConverter.hlsl" "$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl"</Command>
+      <Command>copy "$(ProjectDir)HeightfieldConverter.hlsl" "$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl"</Command>
       <Message>Copying shaders</Message>
       <Outputs>$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl</Outputs>
       <Inputs>$(ProjectDir)HeightfieldConverter.hlsl</Inputs>
@@ -147,7 +147,7 @@
       </Message>
     </PostBuildEvent>
     <CustomBuildStep>
-      <Command>cp "$(ProjectDir)HeightfieldConverter.hlsl" "$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl"</Command>
+      <Command>copy  "$(ProjectDir)HeightfieldConverter.hlsl" "$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl"</Command>
       <Message>Copying shaders</Message>
       <Outputs>$(ProjectDir)..\..\bin\ComputeShaders\HeightfieldConverter.hlsl</Outputs>
       <Inputs>$(ProjectDir)HeightfieldConverter.hlsl</Inputs>
@@ -156,14 +156,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\Debug.cpp" />
+    <ClCompile Include="..\Common\Log.cpp" />
+    <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="DirectComputeConverter.cpp" />
     <ClCompile Include="HeightfieldConverter.cpp" />
     <ClCompile Include="HeightfieldConverterPrivate.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Debug.h" />
+    <ClInclude Include="..\Common\Log.h" />
     <ClInclude Include="..\Common\mathmisc.h" />
     <ClInclude Include="..\Common\vecmath.h" />
+    <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\HeightfieldConverter.h" />
     <ClInclude Include="AbstractConverter.h" />
     <ClInclude Include="DirectComputeConverter.h" />

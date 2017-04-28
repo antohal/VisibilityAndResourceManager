@@ -48,14 +48,11 @@ bool ModelClass::Initialize(CDirect2DTextBlock* debugTextBlock, ID3D11Device* de
 	//m_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"HeightfieldConverterTestData/grad_02.dds", m_testHeightfield);
 
 	m_testHeightfield.ID = 0;
-	m_testHeightfield.Config.fMinHeight = 0;
-	m_testHeightfield.Config.fMaxHeight = 600000;
-	//m_testHeightfield.Config.fMaxHeight = 100;
 
-	m_testHeightfield.Config.fMinLattitude = (float) (27 * D2R);
-	m_testHeightfield.Config.fMaxLattitude = (float) (28 * D2R);
-	m_testHeightfield.Config.fMinLongitude = (float) (86 * D2R);
-	m_testHeightfield.Config.fMaxLongitude = (float) (87 * D2R);
+	m_testHeightfield.Config.Coords.fMinLattitude = (float) (27 * D2R);
+	m_testHeightfield.Config.Coords.fMaxLattitude = (float) (28 * D2R);
+	m_testHeightfield.Config.Coords.fMinLongitude = (float) (86 * D2R);
+	m_testHeightfield.Config.Coords.fMaxLongitude = (float) (87 * D2R);
 
 	m_pHeightfieldConverter->CreateTriangulationImmediate(&m_testHeightfield, &m_triangulation);
 
@@ -222,13 +219,11 @@ void ModelClass::ReleaseTexture()
 void ModelClass::GenerateHeightfield(float time)
 {
 	m_testHeightfield.ID = 0;
-	m_testHeightfield.Config.fMinHeight = 0;
-	m_testHeightfield.Config.fMaxHeight = 900000*sin(time);
 
-	m_testHeightfield.Config.fMinLattitude = -60 * D2R;
-	m_testHeightfield.Config.fMaxLattitude = 60 * D2R;
-	m_testHeightfield.Config.fMinLongitude = 190 * D2R;
-	m_testHeightfield.Config.fMaxLongitude = 360 * D2R;
+	m_testHeightfield.Config.Coords.fMinLattitude = -60 * D2R;
+	m_testHeightfield.Config.Coords.fMaxLattitude = 60 * D2R;
+	m_testHeightfield.Config.Coords.fMinLongitude = 190 * D2R;
+	m_testHeightfield.Config.Coords.fMaxLongitude = 360 * D2R;
 
 
 	/*const unsigned int c_nWidth = 1024, c_nHeight = 1024;

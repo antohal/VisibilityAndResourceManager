@@ -3,6 +3,8 @@
 #include "SoftwareConverter.h"
 #include "DirectComputeConverter.h"
 
+#include "Log.h"
+
 #include <d3dx11tex.h>
 
 #pragma comment(lib, "d3dx11.lib")
@@ -71,6 +73,17 @@ void HeightfieldConverter::HeightfieldConverterPrivate::SetWorldScale(float in_f
 	_fScale = in_fScale;
 }
 
+void HeightfieldConverter::HeightfieldConverterPrivate::SetHeightScale(float in_fHeightScale)
+{
+	_fHeightScale = in_fHeightScale;
+}
+
+void HeightfieldConverter::HeightfieldConverterPrivate::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
+{
+	if (_pAbstractConverter)
+		_pAbstractConverter->ComputeTriangulationCoords(in_Coords, out_TriangulationCoords);
+}
+
 // —читать данные карты высот из текстуры
 void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield)
 {
@@ -78,6 +91,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(_ptrD3DDevice, in_pcwszTextureFileName, NULL, NULL, &out_Heightfield.pTextureSRV, NULL);
 	if (FAILED(result))
 	{
+		LogMessage("HeightfieldConverter:ReadHeightfieldDataFromTexture error D3DX11CreateShaderResourceViewFromFileW");
 		return;
 	}
 

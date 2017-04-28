@@ -20,6 +20,8 @@ public:
 
 	//@{ IAbstractHeightfieldConverter
 
+	virtual void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords) override;
+
 	// Создать триангуляцию немедленно и дождаться готовности
 	virtual void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation) override;
 
@@ -39,17 +41,10 @@ private:
 
 	struct ConstantBufferData
 	{
-		SHeightfield::SHeightfieldConfig Config;
+		SHeightfield::SConfig Config;
 		
 		float fWorldScale = 1;
-
-		double vCenter[3];					// Точка начала координат триангуляции (лежит на поверхности эллипсоида)
-		double vXAxis[3];					// Координаты оси X (направлена на север вдоль поверхности эллипсоида)
-		double vYAxis[3];					// Координаты оси Y (направлена по нормали к поверхности эллипсоида)
-		double vZAxis[3];					// Координаты оси Z (направлена на восток вдоль поверхности эллипсоида)
-
-		float temp1;
-		float temp2;
+		float fHeightScale = 1;
 	};
 
 	struct STriangulationTask

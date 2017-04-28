@@ -12,57 +12,65 @@
 // структура карты высот
 struct SHeightfield
 {
-	// конфигурация карты высот
-	struct SHeightfieldConfig
+	// Координаты карты высот
+	struct SCoordinates
 	{
-		float fMinLattitude;					// минимальная широта (рад)
-		float fMaxLattitude;					// максимальная широта (рад)
+		float					fMinLattitude;				// минимальная широта (рад)
+		float					fMaxLattitude;				// максимальная широта (рад)
 
-		float fMinLongitude;					// минимальная долгота (рад)
-		float fMaxLongitude;					// максимальная долгота (рад)
+		float					fMinLongitude;				// минимальная долгота (рад)
+		float					fMaxLongitude;				// максимальная долгота (рад)
+	};
 
-		float fMinHeight;						// минимальная высота над уровнем эллипсоида WGS-84, метры (соответствующая значению 0 в данных)
-		float fMaxHeight;						// максимальная высота над уровнем эллипсоида WGS-84, метры (соответствующая значению 255 в данных)
+	// Конфигурация карты высот
+	struct SConfig
+	{
+		SCoordinates			Coords;
 
-		unsigned int nCountX;					// количество точек по долготе
-		unsigned int nCountY;					// количество точек по широте
-
-		unsigned int nChannel = 0;				// номер канала в текстуре
+		unsigned int			nCountX;					// количество точек по долготе
+		unsigned int			nCountY;					// количество точек по широте
 	};							
 
-	unsigned long long				ID;			// идентификатор
-	SHeightfieldConfig				Config;		// конфигурация
+	unsigned long long			ID;							// идентификатор
+	SConfig						Config;						// конфигурация
 	
-	ID3D11ShaderResourceView*		pTextureSRV = nullptr;	// текстура с данными
+	ID3D11ShaderResourceView*	pTextureSRV = nullptr;		// текстура с данными [формат текстуры - float]
 };
 
 // структура вершины
 struct SVertex
 {
-	D3DXVECTOR3 position;
-	D3DXVECTOR2 texture;
-	D3DXVECTOR3 normal;
-	D3DXVECTOR3 binormal;
+	D3DXVECTOR3					position;
+	D3DXVECTOR2					texture;
+	D3DXVECTOR3					normal;
+	D3DXVECTOR3					binormal;
+};
+
+// информация о координатах триангулированной области
+// [можно заранее ее получить из HeightfieldConverter с помощью вызова ComputeTriangulationCoords]
+struct STriangulationCoordsInfo
+{
+	double						vPosition[3];				// Точка начала координат триангуляции (лежит на поверхности эллипсоида)
+	double						vXAxis[3];					// Координаты оси X (направлена на север вдоль поверхности эллипсоида)
+	double						vYAxis[3];					// Координаты оси Y (направлена по нормали к поверхности эллипсоида)
+	double						vZAxis[3];					// Координаты оси Z (направлена на восток вдоль поверхности эллипсоида)
+
+	double						vBoundBoxMinimum[3];		// Минимум баунд-бокса
+	double						vBoundBoxMaximum[3];		// Максимум баунд-бокса
 };
 
 // структура триангуляции, построенной по карте высот, содержащая буферы вершин и индексов
 struct STriangulation
 {
-	unsigned long long	ID;							// идентификатор (совпадает с соответствующим Heightfield)
+	unsigned long long			ID;							// идентификатор (совпадает с соответствующим Heightfield)
 
-	ID3D11Buffer*		pVertexBuffer = nullptr;	// Буффер вершин
-	ID3D11Buffer*		pIndexBuffer = nullptr;		// Буффер индексов
+	ID3D11Buffer*				pVertexBuffer = nullptr;	// Буффер вершин
+	ID3D11Buffer*				pIndexBuffer = nullptr;		// Буффер индексов
 
-	unsigned int		nVertexCount = 0;			// количество вершин
-	unsigned int		nIndexCount = 0;			// количество индексов
+	unsigned int				nVertexCount = 0;			// количество вершин
+	unsigned int				nIndexCount = 0;			// количество индексов
 
-	double				vPosition[3];				// Точка начала координат триангуляции (лежит на поверхности эллипсоида)
-	double				vXAxis[3];					// Координаты оси X (направлена на север вдоль поверхности эллипсоида)
-	double				vYAxis[3];					// Координаты оси Y (направлена по нормали к поверхности эллипсоида)
-	double				vZAxis[3];					// Координаты оси Z (направлена на восток вдоль поверхности эллипсоида)
-
-	double				vBoundBoxMinimum[3];		// Минимум баунд-бокса
-	double				vBoundBoxMaximum[3];		// Максимум баунд-бокса
+	STriangulationCoordsInfo	Info;
 };
 
 // Класс-обработчик событий триангуляции (аналог callback)
@@ -71,7 +79,7 @@ class HeightfieldConverterListener
 public:
 
 	// Функция вызывается, когда триангуляция готова
-	virtual void 	TriangulationCreated(const STriangulation* in_pTriangulation) = 0;
+	virtual void 				TriangulationCreated(const STriangulation* in_pTriangulation) = 0;
 };
 
 // Главный класс-триангулятор карт высот
@@ -88,6 +96,12 @@ public:
 	// Задать глобальный коэффициент масштаба.
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 	void	SetWorldScale(float in_fScale);
+
+	// Задать множитель высоты, считываемых из текстур карт высот
+	void	SetHeightScale(float in_fHeightScale);
+
+	// Рассчитать координаты триангулированной области
+	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 
 	// Считать данные карты высот из текстуры
 	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield);

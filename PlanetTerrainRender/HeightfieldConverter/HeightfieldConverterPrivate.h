@@ -17,6 +17,10 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 	void	SetWorldScale(float in_fScale);
 
+	void	SetHeightScale(float in_fHeightScale);
+
+	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
+
 	// Считать данные карты высот из текстуры
 	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield);
 
@@ -46,6 +50,10 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 		return _fScale;
 	}
 
+	float	GetHeightScale() const {
+		return _fHeightScale;
+	}
+
 private:
 
 	IAbstractHeightfieldConverter*	_pAbstractConverter = nullptr;
@@ -54,4 +62,5 @@ private:
 	CComPtr<ID3D11DeviceContext>	_ptrDeviceContext;
 
 	float							_fScale = 1;
+	float							_fHeightScale = 1;
 };

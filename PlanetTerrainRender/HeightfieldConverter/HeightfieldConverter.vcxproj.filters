@@ -27,6 +27,12 @@
     <ClCompile Include="..\Common\Debug.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\wgs84.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Log.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HeightfieldConverterPrivate.h">
@@ -48,6 +54,12 @@
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\vecmath.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\wgs84.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Log.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>
