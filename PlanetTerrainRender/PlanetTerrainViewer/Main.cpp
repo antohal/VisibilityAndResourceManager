@@ -38,6 +38,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	CD3DStaticTerrainRenderer* pTerrainRenderer = new CD3DStaticTerrainRenderer;
 
+	pTerrainRenderer->Init(pApplication->GetGraphicsContext()->GetSystem());
+
 	pTerrainRenderer->LoadPlanet(L"PlanetViewerData//TestPlanet");
 
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pTerrainRenderer);

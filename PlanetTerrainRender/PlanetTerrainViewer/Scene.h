@@ -3,24 +3,29 @@
 #include "Camera.h"
 
 #include "C3DBaseObject.h"
+#include "VisibilityManager.h"
 
 #include <set>
 #include <list>
+#include <map>
 
 class CD3DGraphicsContext;
 
-class CD3DSceneRenderer
+class CD3DSceneRenderer : public C3DBaseObjectManager
 {
 public:
 
-	virtual void					GetObjects(std::list<C3DBaseObject*>& out_lstObjects) const = 0;
 	virtual void					Render(CD3DGraphicsContext* in_pContext) = 0;
-
+	virtual float					GetWorldRadius() const = 0;
+	virtual float					GetMinCellSize() const = 0;
 };
 
 class CD3DScene
 {
 public:
+
+	CD3DScene();
+	~CD3DScene();
 
 	void							Update(float deltaTime);
 	void							Render(CD3DGraphicsContext* in_pContext);
@@ -34,6 +39,6 @@ public:
 private:
 
 	CD3DCamera						_mainCamera;
-	std::set<CD3DSceneRenderer*>	_setRenderers;
+	std::map<CD3DSceneRenderer*, CVisibilityManager*>	_mapRenderers;
 
 };

@@ -2,29 +2,52 @@
 
 #include <string>
 #include <list>
+#include <vector>
 
 #include "Scene.h"
 
 #include "C3DBaseObject.h"
 #include "C3DBaseFaceSet.h"
 #include "C3DBaseMaterial.h"
-#include "C3DBaseManager.h"
+#include "C3DBaseObjectManager.h"
 
 #include "TerrainDataManager.h"
+
+#include "D3DX10.h"
 
 class CD3DStaticTerrainRenderer;
 class CD3DStaticTerrainMaterial;
 class CD3DStaticTerrainFaceset;
+class HeightfieldConverter;
+class CDirect3DSystem;
 
 class CD3DStaticTerrainObject : public C3DBaseObject
 {
 public:
 
-	CD3DStaticTerrainObject();
+	CD3DStaticTerrainObject(CD3DStaticTerrainRenderer* in_pOwner);
 
 	void	SetFaceset(CD3DStaticTerrainFaceset*);
 
 	//@{ C3DBaseObject
+
+	// Функция вычисления расстояния до объекта
+	virtual float GetDistance(const D3DXVECTOR3* in_pvPointFrom) const;
+
+	// Получить минимальное расстояние видимости до объекта
+	virtual float GetMinimalVisibleDistance() const;
+
+	// Получить максимальное расстояние видимости до объекта
+	virtual float GetMaximalVisibleDistance() const;
+
+	// Получить родительский объект-лод
+	virtual C3DBaseObject*	GetParentLODObject();
+
+	// Получить количество дочерних объектов-лодов
+	virtual unsigned int	GetNumChildLODObjects();
+
+	// Получить дочерний лод-объект
+	virtual C3DBaseObject*	GetChildLODObject(unsigned int id);
 
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
 	// пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
@@ -53,6 +76,12 @@ public:
 private:
 
 	CD3DStaticTerrainFaceset*				_pFaceset = nullptr;
+
+	D3DXMATRIX								_mTransform;
+	D3DXVECTOR3								_vBBoxMin;
+	D3DXVECTOR3								_vBBoxMax;
+
+	CD3DStaticTerrainRenderer*				_owner = nullptr;
 };
 
 class CD3DStaticTerrainFaceset : public C3DBaseFaceSet
@@ -67,6 +96,8 @@ public:
 	virtual C3DBaseMaterial*				GetMaterialRef() override;
 
 	virtual C3DBaseManager*					GetManager() const;
+
+	const CTerrainBlockData*				GetTerrainBlockData() const;
 
 	//@}
 
@@ -114,12 +145,14 @@ private:
 };
 
 
-class CD3DStaticTerrainRenderer : public CD3DSceneRenderer, public C3DBaseManager
+class CD3DStaticTerrainRenderer : public CD3DSceneRenderer
 {
 public:
 
 	CD3DStaticTerrainRenderer();
 	~CD3DStaticTerrainRenderer();
+
+	void			Init(CDirect3DSystem* in_pSystem);
 
 	void			LoadPlanet(const wchar_t* in_pcwszDirectory);
 
@@ -136,12 +169,24 @@ public:
 
 	//@}
 
+	HeightfieldConverter*	GetHeightfieldConverter() { return _pHeightfieldConverter; }
+
 protected:
+
+	//@{ C3DBaseObjectManager
+
+	// получить список объектов
+	virtual size_t GetObjectsCount() const override;
+	virtual C3DBaseObject*	GetObjectByIndex(size_t id) const override;
+
+	//@}
 
 	//@{ CD3DSceneRenderer
 
-	virtual void	GetObjects(std::list<C3DBaseObject*>& out_lstObjects) const;
 	virtual void	Render(CD3DGraphicsContext* in_pContext) override;
+
+	virtual float	GetWorldRadius() const;
+	virtual float	GetMinCellSize() const;
 
 	//@}
 
@@ -154,8 +199,10 @@ private:
 	CTerrainBlockData*						_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*					_pTerrainDataManager = nullptr;
 
+	HeightfieldConverter*					_pHeightfieldConverter = nullptr;
+
 	std::set<CD3DStaticTerrainMaterial*>	_setVisibleMaterials;
-	std::list<CD3DStaticTerrainObject*>		_lstTerrainObjects;
+	std::vector<CD3DStaticTerrainObject*>	_vecTerrainObjects;
 	std::list<CD3DStaticTerrainMaterial*>	_lstMaterials;
 	std::list<CD3DStaticTerrainFaceset*>	_lstFacesets;
 };

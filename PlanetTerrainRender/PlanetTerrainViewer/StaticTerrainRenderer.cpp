@@ -1,13 +1,53 @@
-#include "StaticTerrainRenderer.h"
 #include "Log.h"
+#include "HeightfieldConverter.h"
+#include "Direct3DSystem.h"
+
+#include "StaticTerrainRenderer.h"
+
 
 //
 // CD3DStaticTerrainObject
 //
 
-CD3DStaticTerrainObject::CD3DStaticTerrainObject()
+CD3DStaticTerrainObject::CD3DStaticTerrainObject(CD3DStaticTerrainRenderer* in_pOwner) : _owner(in_pOwner)
 {
 
+}
+
+// Функция вычисления расстояния до объекта
+float CD3DStaticTerrainObject::GetDistance(const D3DXVECTOR3* in_pvPointFrom) const
+{
+	return 0;
+}
+
+// Получить минимальное расстояние видимости до объекта
+float CD3DStaticTerrainObject::GetMinimalVisibleDistance() const
+{
+	return 0;
+}
+
+// Получить максимальное расстояние видимости до объекта
+float CD3DStaticTerrainObject::GetMaximalVisibleDistance() const
+{
+	return FLT_MAX;
+}
+
+// Получить родительский объект-лод
+C3DBaseObject*	CD3DStaticTerrainObject::GetParentLODObject()
+{
+	return nullptr;
+}
+
+// Получить количество дочерних объектов-лодов
+unsigned int	CD3DStaticTerrainObject::GetNumChildLODObjects()
+{
+	return 0;
+}
+
+// Получить дочерний лод-объект
+C3DBaseObject*	CD3DStaticTerrainObject::GetChildLODObject(unsigned int id)
+{
+	return nullptr;
 }
 
 C3DBaseFaceSet* CD3DStaticTerrainObject::GetFaceSetById(size_t id) const 
@@ -21,21 +61,31 @@ C3DBaseFaceSet* CD3DStaticTerrainObject::GetFaceSetById(size_t id) const
 void CD3DStaticTerrainObject::SetFaceset(CD3DStaticTerrainFaceset* in_pFaceset)
 {
 	_pFaceset = in_pFaceset;
+
+	const CTerrainBlockData* pTerrainBlockData = in_pFaceset->GetTerrainBlockData();
+
+	if (!pTerrainBlockData)
+	{
+		LogMessage("Faceset error: null terrain block data");
+		return;
+	}
+
+
+	//_owner->GetHeightfieldConverter()->ComputeTriangulationCoords()
+
 }
 
 void CD3DStaticTerrainObject::GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax)
 {
-	if (!_pFaceset)
-		return;
+	*ppBBMin = &_vBBoxMin;
+	*ppBBMax = &_vBBoxMax;
 }
 
 D3DXMATRIX* CD3DStaticTerrainObject::GetWorldTransform()
 {
-	if (!_pFaceset)
-		return nullptr;
-
-	return nullptr;
+	return &_mTransform;
 }
+
 
 //
 // CD3DStaticTerrainFaceset
@@ -68,6 +118,11 @@ void CD3DStaticTerrainFaceset::Load()
 void CD3DStaticTerrainFaceset::Unload()
 {
 
+}
+
+const CTerrainBlockData* CD3DStaticTerrainFaceset::GetTerrainBlockData() const
+{
+	return _pTerrainBlockData;
 }
 
 
@@ -115,14 +170,19 @@ void CD3DStaticTerrainMaterial::Unload()
 CD3DStaticTerrainRenderer::CD3DStaticTerrainRenderer()
 {
 	_pTerrainDataManager = new CTerrainDataManager();
+	_pHeightfieldConverter = new HeightfieldConverter();
+}
 
+void CD3DStaticTerrainRenderer::Init(CDirect3DSystem* in_pSystem)
+{
+	_pHeightfieldConverter->Init(in_pSystem->GetDevice(), in_pSystem->GetDeviceContext());
 }
 
 CD3DStaticTerrainRenderer::~CD3DStaticTerrainRenderer()
 {
 	LogMessage("Deleting objects");
 
-	for (CD3DStaticTerrainObject* pObject : _lstTerrainObjects)
+	for (CD3DStaticTerrainObject* pObject : _vecTerrainObjects)
 	{
 		delete pObject;
 	}
@@ -143,6 +203,7 @@ CD3DStaticTerrainRenderer::~CD3DStaticTerrainRenderer()
 		_pTerrainDataManager->ReleaseTerrainDataInfo(_pPlanetTerrainData);
 
 	delete _pTerrainDataManager;
+	delete _pHeightfieldConverter;
 }
 
 void CD3DStaticTerrainRenderer::LoadPlanet(const wchar_t * in_pcwszDirectory)
@@ -157,16 +218,6 @@ void CD3DStaticTerrainRenderer::LoadPlanet(const wchar_t * in_pcwszDirectory)
 void CD3DStaticTerrainRenderer::AddVisibleMaterial(CD3DStaticTerrainMaterial * in_pMaterial)
 {
 	_setVisibleMaterials.insert(in_pMaterial);
-}
-
-void CD3DStaticTerrainRenderer::GetObjects(std::list<C3DBaseObject*>& out_lstObjects) const
-{
-	out_lstObjects.clear();
-
-	for (CD3DStaticTerrainObject* pObject : _lstTerrainObjects)
-	{
-		out_lstObjects.push_back(pObject);
-	}
 }
 
 void CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -248,7 +299,7 @@ void CD3DStaticTerrainRenderer::CreateObjects()
 
 	CreateObjectsRecursive(_pPlanetTerrainData);
 
-	LogMessage("%d Objects created.", _lstTerrainObjects.size());
+	LogMessage("%d Objects created.", _vecTerrainObjects.size());
 }
 
 void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockData* in_pData)
@@ -266,7 +317,7 @@ void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockData* 
 
 void CD3DStaticTerrainRenderer::CreateObject(const CTerrainBlockData* in_pData)
 {
-	CD3DStaticTerrainObject* pObject = new CD3DStaticTerrainObject;
+	CD3DStaticTerrainObject* pObject = new CD3DStaticTerrainObject(this);
 
 	CD3DStaticTerrainMaterial* pMaterial = new CD3DStaticTerrainMaterial(this, in_pData->GetTextureFileName());
 
@@ -276,5 +327,25 @@ void CD3DStaticTerrainRenderer::CreateObject(const CTerrainBlockData* in_pData)
 
 	_lstMaterials.push_back(pMaterial);
 	_lstFacesets.push_back(pFaceset);
-	_lstTerrainObjects.push_back(pObject);
+	_vecTerrainObjects.push_back(pObject);
+}
+
+size_t CD3DStaticTerrainRenderer::GetObjectsCount() const
+{
+	return _vecTerrainObjects.size();
+}
+
+C3DBaseObject*	CD3DStaticTerrainRenderer::GetObjectByIndex(size_t id) const
+{
+	return _vecTerrainObjects[id];
+}
+
+float CD3DStaticTerrainRenderer::GetWorldRadius() const
+{
+	return 7000000.f;
+}
+
+float CD3DStaticTerrainRenderer::GetMinCellSize() const
+{
+	return 100.f;
 }
