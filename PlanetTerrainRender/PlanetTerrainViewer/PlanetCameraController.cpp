@@ -45,6 +45,33 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 		_pTextBlock->UpdateFormattedTextLine(_uiLatLongHeightParam, _coordinates._lattitude * R2D, _coordinates._longitude * R2D, _coordinates._height);
 		_pTextBlock->UpdateFormattedTextLine(_uiAzElParam, _coordinates._azimuth * R2D, _coordinates._elevation * R2D);
 	}
+
+	vm::Vector3df vCameraPos = vm::Vector3df(
+			_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude),
+			_coordinates._height*cos(_coordinates._lattitude)*sin(_coordinates._longitude),
+			_coordinates._height*sin(_coordinates._lattitude)
+		);
+
+	vm::Vector3df vVertical = vm::normalize(vCameraPos);
+	vm::Vector3df vEast = vm::normalize(vm::cross(vm::Vector3df(0, 0, 1), vVertical));
+	vm::Vector3df vNorth = vm::normalize(vm::cross(vVertical, vEast));
+	vm::Vector3df vWest = -vEast;
+
+	double elevation = _coordinates._elevation - M_PI*0.5;
+
+	vm::Vector3df vCameraLocalDir = vm::normalize(vm::Vector3df(
+			cos(elevation)*cos(_coordinates._azimuth),
+			cos(elevation)*sin(_coordinates._azimuth),
+			sin(elevation)
+		));
+
+	vm::Vector3df vCameraLocalLeft = vm::normalize(vm::cross(vm::Vector3df(0, 0, 1), vCameraLocalDir));
+	vm::Vector3df vCameraLocalUp = vm::normalize(vm::cross(vCameraLocalDir, vCameraLocalLeft));
+
+	vm::Vector3df vCameraGlobalDir = vNorth * vCameraLocalDir[0] + vWest * vCameraLocalDir[1] + vVertical * vCameraLocalDir[2];
+	vm::Vector3df vCameraGlobalUp = vNorth * vCameraLocalUp[0] + vWest * vCameraLocalUp[1] + vVertical * vCameraLocalUp[2];
+
+	in_pCamera->Set(vCameraPos, vCameraGlobalUp, vCameraGlobalDir);
 }
 
 void CPlanetCameraController::CreateDebugTextBlock()

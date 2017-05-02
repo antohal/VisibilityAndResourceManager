@@ -4,8 +4,6 @@
 #include "GraphicsContext.h"
 
 const bool VSYNC_ENABLED = false;
-const float SCREEN_DEPTH = 1000.0f;
-const float SCREEN_NEAR = 0.1f;
 
 CD3DGraphicsContext::CD3DGraphicsContext()
 {
@@ -17,7 +15,7 @@ CD3DGraphicsContext::~CD3DGraphicsContext()
 	delete _pScene;
 }
 
-bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int in_uiScreenHeight, HWND in_Hwnd, bool in_bFullscreen)
+bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int in_uiScreenHeight, float zNear, float zFar, HWND in_Hwnd, bool in_bFullscreen)
 {
 	bool result;
 
@@ -30,7 +28,7 @@ bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int
 	}
 
 	// Initialize the Direct3D object.
-	result = _pD3DSystem->Initialize(in_uiScreenWidth, in_uiScreenHeight, VSYNC_ENABLED, in_Hwnd, in_bFullscreen, SCREEN_DEPTH, SCREEN_NEAR);
+	result = _pD3DSystem->Initialize(in_uiScreenWidth, in_uiScreenHeight, VSYNC_ENABLED, in_Hwnd, in_bFullscreen, zFar, zNear);
 	if(!result)
 	{
 		MessageBox(in_Hwnd, L"Could not initialize Direct3D.", L"Error", MB_OK);
@@ -88,7 +86,7 @@ bool CD3DGraphicsContext::Frame()
 
 	_prevFrameTime = thisFrameTime;
 
-	_pScene->Update((float)deltaTime);
+	_pScene->Update(this, (float)deltaTime);
 
 	Render();
 

@@ -200,13 +200,98 @@ struct CResourceManager::SResourceManagerPrivate
 
 		const D3DXMATRIX& mProjection = _viewProjection.mProjection;
 
-		_predictor._cameraParams.verticalFov = static_cast<float>(D2R) * 2.f * atanf(1.f / mProjection(1, 1));
+		/*_predictor._cameraParams.verticalFov = static_cast<float>(D2R) * 2.f * atanf(1.f / mProjection(1, 1));
 
 		float coeff = mProjection(1, 1) * sinf(0.5f * static_cast<float>(D2R) * _predictor._cameraParams.verticalFov) / mProjection(0, 0);
 		_predictor._cameraParams.horizontalFov = static_cast<float>(D2R) * 2.f * asinf(coeff);
 
 		_predictor._cameraParams.farPlane = mProjection(3, 2) / (1 - mProjection(2, 2));
-		_predictor._cameraParams.nearPlane = _predictor._cameraParams.farPlane * (1 - 1 / mProjection(2, 2));
+		_predictor._cameraParams.nearPlane = _predictor._cameraParams.farPlane * (1 - 1 / mProjection(2, 2));*/
+
+		D3DXVECTOR3 vCubeEdges[8];
+		D3DXVECTOR3 vViewSpaceCubeEdges[8];
+		Vector3f vViewSpaceFrustumPoints[8];
+
+		D3DXMATRIX md3dProj = mProjection;
+		D3DXMATRIX mInvProjection;
+
+		FLOAT fDet = 0;
+
+		float fNearPlane = 99999.f;
+		float fFarPlane = 0;
+
+		if (D3DXMatrixInverse(&mInvProjection, &fDet, &md3dProj) != NULL)
+		{
+
+			vCubeEdges[0] = D3DXVECTOR3(1, 1, 0);
+			vCubeEdges[1] = D3DXVECTOR3(1, -1, 0);
+			vCubeEdges[2] = D3DXVECTOR3(-1, -1, 0);
+			vCubeEdges[3] = D3DXVECTOR3(-1, 1, 0);
+
+			vCubeEdges[4] = D3DXVECTOR3(1, 1, 1);
+			vCubeEdges[5] = D3DXVECTOR3(1, -1, 1);
+			vCubeEdges[6] = D3DXVECTOR3(-1, -1, 1);
+			vCubeEdges[7] = D3DXVECTOR3(-1, 1, 1);
+
+			for (int i = 0; i < 8; i++)
+			{
+				D3DXVec3TransformCoord(&vViewSpaceCubeEdges[i], &vCubeEdges[i], &mInvProjection);
+
+				if (fFarPlane < vViewSpaceCubeEdges[i].z)
+					fFarPlane = vViewSpaceCubeEdges[i].z;
+
+				if (fNearPlane > vViewSpaceCubeEdges[i].z)
+					fNearPlane = vViewSpaceCubeEdges[i].z;
+
+				vViewSpaceFrustumPoints[i] = Vector3f(vViewSpaceCubeEdges[i].x, vViewSpaceCubeEdges[i].y, vViewSpaceCubeEdges[i].z);
+			}
+
+
+			D3DXVECTOR3 vXZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
+			D3DXVECTOR3 vXZBase2 = vViewSpaceCubeEdges[7] - vViewSpaceCubeEdges[3];
+
+			Vector2f vHorizontalBase1(vXZBase1.x, vXZBase1.z);
+			Vector2f vHorizontalBase2(vXZBase2.x, vXZBase2.z);
+
+			float fCosHor = DotProduct(Normalize(vHorizontalBase1), Normalize(vHorizontalBase2));
+			float fHorizontalFOVDeg = acosf(fCosHor)*R2D;
+
+
+			D3DXVECTOR3 vYZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
+			D3DXVECTOR3 vYZBase2 = vViewSpaceCubeEdges[5] - vViewSpaceCubeEdges[1];
+
+			Vector2f vVerticalBase1(vYZBase1.y, vYZBase1.z);
+			Vector2f vVerticalBase2(vYZBase2.y, vYZBase2.z);
+
+			float fCosVer = DotProduct(Normalize(vVerticalBase1), Normalize(vVerticalBase2));
+			float fVerticalFOVDeg = acosf(fCosVer)*R2D;
+
+			if (vViewSpaceFrustumPoints[0].z > vViewSpaceFrustumPoints[4].z)
+			{
+				std::swap(vViewSpaceFrustumPoints[0], vViewSpaceFrustumPoints[4]);
+				std::swap(vViewSpaceFrustumPoints[1], vViewSpaceFrustumPoints[5]);
+				std::swap(vViewSpaceFrustumPoints[2], vViewSpaceFrustumPoints[6]);
+				std::swap(vViewSpaceFrustumPoints[3], vViewSpaceFrustumPoints[7]);
+			}
+
+			static bool bLog = false;
+
+			if (!bLog)
+			{
+
+				for (int i = 0; i < 8; i++)
+					LogMessage("CVisibilityManager: Frustm point[%d]: %f, %f, %f", i, vViewSpaceFrustumPoints[i].x, vViewSpaceFrustumPoints[i].y, vViewSpaceFrustumPoints[i].z);
+
+				bLog = true;
+			}
+
+			
+			_predictor._cameraParams.verticalFov = fVerticalFOVDeg*D2R;
+			_predictor._cameraParams.horizontalFov = fHorizontalFOVDeg*D2R;
+
+			_predictor._cameraParams.farPlane = fFarPlane;
+			_predictor._cameraParams.nearPlane = fNearPlane;
+		}
 	}
 
 	void predictMovement(float deltaTime, std::vector<CollectObjectsData>& out_vecCollectObjectsData)
@@ -408,15 +493,6 @@ CResourceManager::~CResourceManager()
 	delete _private;
 }
 
-void CResourceManager::Init(C3DBaseObjectManager* objectManager)
-{
-	_private->_objectManager = objectManager;
-
-	//SetupDebugParameters();
-
-	LogMessage("CResourceManager: inited OK.");
-}
-
 void CResourceManager::SetupDebugParameters()
 {
 	SetPredictionFOV(45, 45);
@@ -488,6 +564,21 @@ void CResourceManager::AddVisibilityManager(CVisibilityManager* visibilityManage
 	LogMessage("CResourceManager: added visibility manager %d", reinterpret_cast<UINT_PTR>(visibilityManager));
 }
 
+void CResourceManager::RemoveVisibilityManager(CVisibilityManager* in_pVisibilityManager)
+{
+	for (auto it = _private->_visibilityManagers.begin(); it != _private->_visibilityManagers.end(); it++)
+	{
+		if (*it == in_pVisibilityManager)
+		{
+			LogMessage("CResourceManager: removed visibility manager %d", reinterpret_cast<UINT_PTR>(in_pVisibilityManager));
+		}
+		else
+			it++;
+	}
+
+	LogMessage("CResourceManager::RemoveVisibilityManager cannot find such visibility manager %d", reinterpret_cast<UINT_PTR>(in_pVisibilityManager));
+}
+
 CollectObjectsData::CollectObjectsData(const Vector3D<float>& pos, const Vector3D<float>& dir, const Vector3D<float>& up,
 	float nearPlane, float farPlane, float horizontalFov, float verticalFov)
 {
@@ -527,7 +618,9 @@ void CResourceManager::Update(float deltaTime)
 
 		std::vector<CollectObjectsData> vecCollectObjectsData;
 		_private->predictMovement( deltaTime, vecCollectObjectsData);
-		(*_private->_visibilityManagers.begin())->GetPrivateInterface()->MarkPotentiallyVisibleObjects(vecCollectObjectsData);
+
+		for (CVisibilityManager* pVisMan : _private->_visibilityManagers)
+			pVisMan->GetPrivateInterface()->MarkPotentiallyVisibleObjects(vecCollectObjectsData);
 	}
 
 	map<C3DBaseObject*, float>& objectVisibilityTimers = _private->_objectVisibilityTimers;

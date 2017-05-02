@@ -12,8 +12,10 @@
 #include "C3DBaseObjectManager.h"
 
 #include "TerrainDataManager.h"
+#include "HeightfieldConverter.h"
 
 #include "D3DX10.h"
+#include <d3d11.h>
 
 class CD3DStaticTerrainRenderer;
 class CD3DStaticTerrainMaterial;
@@ -88,7 +90,7 @@ class CD3DStaticTerrainFaceset : public C3DBaseFaceSet
 {
 public:
 
-	CD3DStaticTerrainFaceset(CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial* in_pMaterial, const CTerrainBlockData* in_pTerrainBlockData);
+	CD3DStaticTerrainFaceset(CD3DStaticTerrainRenderer* in_pOwner, CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial* in_pMaterial, const CTerrainBlockData* in_pTerrainBlockData);
 
 	//@{ C3DBaseFaceSet
 
@@ -101,14 +103,31 @@ public:
 
 	//@}
 
+	const STriangulation&					GetTriangulation() const;
+	STriangulation&							GetTriangulation();
+
 	void	Load();
 	void	Unload();
 
+	void	SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext);
+	unsigned int GetIndexCount() const;
+
+protected:
+
+	void	ComputeTriangulationCoords();
+
 private:
+
+	SHeightfield							_heightfield;
+	STriangulation							_triangulation;
 
 	CD3DStaticTerrainMaterial*				_pMaterialRef = nullptr;
 	CD3DStaticTerrainObject*				_pTerrainObject = nullptr;
 	const CTerrainBlockData*				_pTerrainBlockData = nullptr;
+
+	CD3DStaticTerrainRenderer*				_owner = nullptr;
+
+	friend class CD3DStaticTerrainObject;
 };
 
 class CD3DStaticTerrainMaterial : public C3DBaseMaterial
@@ -142,6 +161,8 @@ private:
 	std::wstring							_wsTextureFileName;
 
 	std::set<CD3DStaticTerrainFaceset*>		_setVisibleFacesets;
+
+	ID3D11ShaderResourceView*				_pTextureSRV = nullptr;
 };
 
 
@@ -155,6 +176,8 @@ public:
 	void			Init(CDirect3DSystem* in_pSystem);
 
 	void			LoadPlanet(const wchar_t* in_pcwszDirectory);
+
+	void			SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
 
 	void			AddVisibleMaterial(CD3DStaticTerrainMaterial*);
 
@@ -190,11 +213,18 @@ protected:
 
 	//@}
 
+	void			DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
+
 private:
 
 	void			CreateObjects();
 	void			CreateObjectsRecursive(const CTerrainBlockData* in_pData);
 	void			CreateObject(const CTerrainBlockData* in_pData);
+
+	bool			InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
+	void			OutputShaderErrorMessage(ID3D10Blob* errorMessage, WCHAR* shaderFilename);
+	bool			SetShaderParameters(ID3D11DeviceContext* deviceContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
+	void			FinalizeShader();
 
 	CTerrainBlockData*						_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*					_pTerrainDataManager = nullptr;
@@ -205,4 +235,34 @@ private:
 	std::vector<CD3DStaticTerrainObject*>	_vecTerrainObjects;
 	std::list<CD3DStaticTerrainMaterial*>	_lstMaterials;
 	std::list<CD3DStaticTerrainFaceset*>	_lstFacesets;
+
+	vm::Vector3df							_vLightDirection = vm::Vector3df(-1, -1, 0);
+	vm::Vector3df							_vLightDiffuse = vm::Vector3df(1, 1, 1);
+
+	//@{ Rendering fields
+
+	struct MatrixBufferType
+	{
+		D3DXMATRIX view;
+		D3DXMATRIX projection;
+	};
+
+	struct LightBufferType
+	{
+		D3DXVECTOR4 diffuseColor;
+		D3DXVECTOR3 lightDirection;
+		float padding;  // Added extra padding so structure is a multiple of 16 for CreateBuffer function requirements.
+	};
+
+	ID3D11VertexShader*						_pVertexShader = nullptr;
+	ID3D11PixelShader*						_pPixelShader = nullptr;
+	ID3D11InputLayout*						_pInputLayout = nullptr;
+	ID3D11SamplerState*						_pSampleState = nullptr;
+	ID3D11Buffer*							_pMatrixBuffer = nullptr;
+	ID3D11Buffer*							_pLightBuffer = nullptr;
+
+	//@}
+
+	friend class CD3DStaticTerrainMaterial;
+	friend class CD3DStaticTerrainFaceset;
 };

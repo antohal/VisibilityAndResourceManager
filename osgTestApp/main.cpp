@@ -285,7 +285,6 @@ void initVisibilityAndResourceManagers()
 	g_visibilityManager = new CVisibilityManager(&ObjectManager::Instance(), g_worldRadius, g_minCellSize);
 	g_resourceManager = new CResourceManager();
 
-	g_resourceManager->Init(&ObjectManager::Instance());
 	g_resourceManager->AddVisibilityManager(g_visibilityManager);
 
 	g_DebugDraw = new CameraDebugDraw;

@@ -118,6 +118,12 @@ public:
             v[i] = in_tInit;
     }
 
+	explicit Vector(const Type in_aV[N])
+	{
+		for (size_t i = 0; i < N; ++i)
+			v[i] = in_aV[i];
+	}
+
     //usability constructors
     Vector (const std::vector<Type>& in_vecValues)
     {

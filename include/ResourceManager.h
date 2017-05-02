@@ -30,9 +30,6 @@ public:
 	CResourceManager();
 	~CResourceManager();
 
-	// инициализировать, указав MeshTree
-	void Init(C3DBaseObjectManager*);
-
 	// ”становить отладочные параметры: SetPredictionFOV(45, 45), SetInvisibleUnloadTime(0)
 	void SetupDebugParameters();
 
@@ -69,6 +66,8 @@ public:
 	// добавить VisibilityManager в обработку. Ќеобходимо чтобы в этот момент in_pVisibilityManager был полностью инициализирован
 	// [вызываетс€ один раз во врем€ инициализации]
 	void AddVisibilityManager(CVisibilityManager* in_pVisibilityManager);
+
+	void RemoveVisibilityManager(CVisibilityManager* in_pVisibilityManager);
 
 	// ќбновить состо€ние ресурсов 
 	// [можно вызывать в отдельном потоке, не прив€зыва€сь к циклу рендера, но в одном потоке с прив€занными VisibilityManager]

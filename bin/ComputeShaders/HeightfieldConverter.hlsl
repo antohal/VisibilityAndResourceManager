@@ -101,19 +101,22 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
 
-	double scaledHeight = fWorldScale * height;
+	double scaledHeight = fWorldScale * height * fHeightScale;
 	
 	double3 vVertex = vSurfacePoint + scaledHeight * vSurfaceNormal;
 
 	// local coords
 
-	double3 vDelta = vVertex - vMiddlePoint;
+	/*double3 vDelta = vVertex - vMiddlePoint;
 
 	double xCoord = dot(vDelta, vNorth);
 	double yCoord = dot(vDelta, vMiddleNormal);
 	double zCoord = dot(vDelta, vEast);
 
-	return float3(xCoord, yCoord, zCoord);
+	return float3(xCoord, yCoord, zCoord);*/
+
+	// global coords
+	return vVertex;
 }
 
 [numthreads(1, 1, 1)]

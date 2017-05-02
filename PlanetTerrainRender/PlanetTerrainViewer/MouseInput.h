@@ -31,7 +31,7 @@ public:
 
 private:
 
-	vm::Vector2df			_vLastFrameDelta = vm::Vector2df(0);
+	vm::Vector2df			_vLastFrameDelta = vm::Vector2df(0.0);
 	POINT					_CursorPos;
 
 	bool					_abButtonStates[Button::NUM_BUTTONS];

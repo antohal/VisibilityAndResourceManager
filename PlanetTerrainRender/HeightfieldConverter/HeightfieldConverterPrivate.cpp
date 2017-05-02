@@ -130,6 +130,9 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseTriangulation(STr
 
 	triangulation->pIndexBuffer = nullptr;
 	triangulation->pVertexBuffer = nullptr;
+
+	triangulation->nIndexCount = 0;
+	triangulation->nVertexCount = 0;
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseHeightfield(SHeightfield* heightfield)

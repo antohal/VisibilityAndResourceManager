@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "d2d1.lib")
 
-static const float g_FieldOfView = (float)D3DX_PI / 4.0f;
+static const float g_FieldOfView = (float)D3DX_PI / 3.0f;
 
 
 CDirect3DSystem::CDirect3DSystem()
@@ -366,10 +366,14 @@ void CDirect3DSystem::ReleaseResources()
 	_pTextRenderer->ReleaseResources();
 }
 
-
-const D3DXMATRIX& CDirect3DSystem::GetProjectionMatrix() const
+D3DXMATRIX* CDirect3DSystem::GetProjectionMatrix()
 {
-	return _mProjectionMatrix;
+	return &_mProjectionMatrix;
+}
+
+const D3DXMATRIX* CDirect3DSystem::GetProjectionMatrix() const
+{
+	return &_mProjectionMatrix;
 }
 
 void CDirect3DSystem::Shutdown()

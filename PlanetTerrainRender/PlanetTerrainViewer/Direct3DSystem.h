@@ -51,7 +51,8 @@ public:
 
 	void								GetVideoCardInfo(std::string& out_strDesc, unsigned int& out_uiMemory);
 
-	const D3DXMATRIX&					GetProjectionMatrix() const;
+	D3DXMATRIX*							GetProjectionMatrix();
+	const D3DXMATRIX*					GetProjectionMatrix() const;
 
 private:
 

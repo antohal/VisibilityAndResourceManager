@@ -13,7 +13,7 @@ public:
 	CD3DGraphicsContext();
 	~CD3DGraphicsContext();
 
-	bool					Initialize(unsigned int in_uiWidth, unsigned int in_uiHeight, HWND in_Hwnd, bool in_bFullscreen);
+	bool					Initialize(unsigned int in_uiWidth, unsigned int in_uiHeight, float zNear, float zFar, HWND in_Hwnd, bool in_bFullscreen);
 	
 	void					Shutdown();
 	bool					Frame();

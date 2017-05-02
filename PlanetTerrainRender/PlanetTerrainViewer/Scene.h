@@ -4,6 +4,7 @@
 
 #include "C3DBaseObject.h"
 #include "VisibilityManager.h"
+#include "ResourceManager.h"
 
 #include <set>
 #include <list>
@@ -27,7 +28,7 @@ public:
 	CD3DScene();
 	~CD3DScene();
 
-	void							Update(float deltaTime);
+	void							Update(CD3DGraphicsContext* in_pContext, float deltaTime);
 	void							Render(CD3DGraphicsContext* in_pContext);
 
 	CD3DCamera*						GetMainCamera();
@@ -36,9 +37,16 @@ public:
 	void							RegisterRenderer(CD3DSceneRenderer* in_pRenderer);
 	void							UnregisterRenderer(CD3DSceneRenderer* in_pRenderer);
 
+	void							CreateDebugTextBlock();
+	void							ShowDebugTextBlock(bool in_bShow);
+
 private:
 
 	CD3DCamera						_mainCamera;
+
+	CResourceManager*				_pResourceManager = nullptr;
+	CDirect2DTextBlock*				_pTextBlock = nullptr;
+
 	std::map<CD3DSceneRenderer*, CVisibilityManager*>	_mapRenderers;
 
 };

@@ -75,12 +75,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\bin\</OutDir>
+    <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -110,6 +112,14 @@
       <AdditionalLibraryDirectories>../../3rdParty/D3DX/lib;../../bin;../../lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainDataManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <CustomBuildStep>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+      <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
+      <Outputs>$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
+      <Message>Copying shaders</Message>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps"
+copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -147,6 +157,14 @@
       <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainDataManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdParty/D3DX/lib;../../bin;../../lib</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps"
+copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
+      <Message>Copying shaders</Message>
+      <Outputs>$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(ProjectDir)..\..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
+      <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\Log.cpp" />
@@ -172,6 +190,10 @@
     <ClInclude Include="PlanetCameraController.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="StaticTerrainRenderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SimpleTerrain.ps" />
+    <None Include="SimpleTerrain.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

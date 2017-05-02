@@ -10,7 +10,7 @@ CD3DApplication* GetApplicationHandle()
 	return g_pApplicationHandle;
 }
 
-bool CD3DApplication::Initialize(const std::wstring& in_wsApplicationName, unsigned int in_uiWidth, unsigned in_uiHeight, bool in_bFullScreen)
+bool CD3DApplication::Initialize(const std::wstring& in_wsApplicationName, unsigned int in_uiWidth, unsigned in_uiHeight, float zNear, float zFar, bool in_bFullScreen)
 {
 	_wsApplicationName = in_wsApplicationName;
 
@@ -37,7 +37,7 @@ bool CD3DApplication::Initialize(const std::wstring& in_wsApplicationName, unsig
 	_pGraphicsContext = new CD3DGraphicsContext();
 
 	// Initialize the graphics object.
-	result = _pGraphicsContext->Initialize(screenWidth, screenHeight, _Hwnd, in_bFullScreen);
+	result = _pGraphicsContext->Initialize(screenWidth, screenHeight, zNear, zFar, _Hwnd, in_bFullScreen);
 	if(!result)
 	{
 		return false;

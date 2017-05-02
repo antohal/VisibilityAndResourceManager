@@ -14,7 +14,7 @@ class CD3DApplication
 {
 public:
 
-	bool						Initialize(const std::wstring& in_wsApplicationName, unsigned int in_uiWidth, unsigned in_uiHeight, bool in_bFullScreen);
+	bool						Initialize(const std::wstring& in_wsApplicationName, unsigned int in_uiWidth, unsigned in_uiHeight, float zNear, float zFar, bool in_bFullScreen);
 	
 	void						Shutdown();
 	void						Run();

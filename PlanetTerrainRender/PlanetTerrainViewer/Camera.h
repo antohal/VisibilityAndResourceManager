@@ -3,6 +3,7 @@
 #include "vecmath.h"
 
 class CD3DCamera;
+struct D3DXMATRIX;
 
 class CD3DCameraController
 {
@@ -26,11 +27,11 @@ public:
 
 	void					Update(float deltaTime);
 
-	void					GetViewMatrix(vm::Matrix4x4df& out_ViewMatrix);
+	void					GetViewMatrix(D3DXMATRIX& out_ViewMatrix) const;
 
 private:
 
-	vm::Vector3df			_vPosition = vm::Vector3df(0);
+	vm::Vector3df			_vPosition = vm::Vector3df(0.0);
 	vm::Vector3df			_vUp = vm::Vector3df(0, 1, 0);
 	vm::Vector3df			_vDirection = vm::Vector3df(0, 0, 1);
 

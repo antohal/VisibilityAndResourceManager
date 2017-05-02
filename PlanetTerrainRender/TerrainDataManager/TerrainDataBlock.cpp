@@ -289,8 +289,8 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 				wsHeightmapPath.clear();
 			}
 
-			float fChildMinLattitude = _fMinLattitude + fDeltaLattitude*uiXX;
-			float fChildMaxLattitude = _fMinLattitude + fDeltaLattitude*uiXX + fDeltaLattitude;
+			float fChildMinLattitude = _fMinLattitude + fDeltaLattitude*uiYY;
+			float fChildMaxLattitude = _fMinLattitude + fDeltaLattitude*uiYY + fDeltaLattitude;
 
 			CTerrainBlockData* pChildBlock = CTerrainBlockData::CTerrainBlockDataImplementation::CreateTerrainBlockDataInstance(_pOwner,
 				fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
