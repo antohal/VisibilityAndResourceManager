@@ -17,6 +17,8 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 	void	SetWorldScale(float in_fScale);
 
+	float	GetWorldScale() const;
+
 	void	SetHeightScale(float in_fHeightScale);
 
 	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
@@ -45,10 +47,6 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 
 	// Получить буферы вершин и индексов в памяти
 	void	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
-
-	float	GetWorldScale() const {
-		return _fScale;
-	}
 
 	float	GetHeightScale() const {
 		return _fHeightScale;

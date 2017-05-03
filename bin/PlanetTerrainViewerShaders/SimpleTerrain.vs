@@ -11,10 +11,10 @@ cbuffer MatrixBuffer
 	matrix viewMatrix;
 	matrix projectionMatrix;
 
-	double4 camPos;
+	/*double4 camPos;
 	double4 axisX;
 	double4 axisY;
-	double4 axisZ;
+	double4 axisZ;*/
 };
 
 

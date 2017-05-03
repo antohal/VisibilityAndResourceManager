@@ -30,6 +30,9 @@
     <ClCompile Include="TerrainVisibilityManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\wgs84.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\TerrainDataManager.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TerrainVisibilityManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\wgs84.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

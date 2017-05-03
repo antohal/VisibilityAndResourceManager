@@ -1,14 +1,16 @@
 #pragma once
 
 #include "TerrainDataManager.h"
+#include "vecmath.h"
 
 #include <map>
+#include <set>
 
 class CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation
 {
 public:
 
-	void Init(C3DBaseTerrainObjectManager* in_pMeshTree);
+	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale);
 
 	//@{ IVisibilityManagerPlugin
 	bool IsObjectVisible(C3DBaseObject* in_pObject) const;
@@ -17,6 +19,15 @@ public:
 
 private:
 
-	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainBlockInfo;
+	bool UpdateVisibilityRecursive(const CTerrainBlockData*, const vm::Vector3df& in_vPos);
+	void AddVisibleBlock(const CTerrainBlockData*);
 
+	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainBlockInfo;
+	std::map<const CTerrainBlockData*, C3DBaseObject*>	_mapObjects;
+
+	std::set<C3DBaseObject*> _setVisibleObjects;
+
+	const CTerrainBlockData* _pRoot = nullptr;
+
+	float	_fWorldScale = 1;
 };

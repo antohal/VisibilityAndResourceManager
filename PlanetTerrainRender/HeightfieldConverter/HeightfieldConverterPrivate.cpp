@@ -73,6 +73,11 @@ void HeightfieldConverter::HeightfieldConverterPrivate::SetWorldScale(float in_f
 	_fScale = in_fScale;
 }
 
+float HeightfieldConverter::HeightfieldConverterPrivate::GetWorldScale() const
+{
+	return _fScale;
+}
+
 void HeightfieldConverter::HeightfieldConverterPrivate::SetHeightScale(float in_fHeightScale)
 {
 	_fHeightScale = in_fHeightScale;

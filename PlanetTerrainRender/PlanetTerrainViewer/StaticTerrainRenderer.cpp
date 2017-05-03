@@ -291,12 +291,12 @@ CD3DStaticTerrainRenderer::CD3DStaticTerrainRenderer()
 	_pHeightfieldConverter = new HeightfieldConverter();
 }
 
-void CD3DStaticTerrainRenderer::Init(CDirect3DSystem* in_pSystem)
+void CD3DStaticTerrainRenderer::Init(CDirect3DSystem* in_pSystem, float in_fWorldScale)
 {
 	_pHeightfieldConverter->Init(in_pSystem->GetDevice(), in_pSystem->GetDeviceContext());
 
 	_pHeightfieldConverter->SetHeightScale(20000.0f);
-	_pHeightfieldConverter->SetWorldScale(0.01f);
+	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 
 	InitializeShader(in_pSystem->GetDevice(), L"PlanetTerrainViewerShaders\\SimpleTerrain.vs", L"PlanetTerrainViewerShaders\\SimpleTerrain.ps");
 }
@@ -359,6 +359,11 @@ const CTerrainBlockData* CD3DStaticTerrainRenderer::GetTerrainDataForObject(C3DB
 		return nullptr;
 
 	return it->second;
+}
+
+const CTerrainBlockData* CD3DStaticTerrainRenderer::GetRootTerrainData() const
+{
+	return _pPlanetTerrainData;
 }
 
 void CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)

@@ -56,7 +56,11 @@ class C3DBaseTerrainObjectManager : public C3DBaseObjectManager
 {
 public:
 
+	// получить данные блока по объекту
 	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const = 0;
+
+	// получить указатель на корневой блок [с корневым узлом не должно быть связано никаких объектов, он служит как хранилище]
+	virtual const CTerrainBlockData* GetRootTerrainData() const = 0;
 };
 
 class TERRAINDATAMANAGER_API CTerrainVisibilityManager : public IVisibilityManagerPlugin
@@ -66,7 +70,7 @@ public:
 	CTerrainVisibilityManager();
 	~CTerrainVisibilityManager();
 
-	void	Init(C3DBaseTerrainObjectManager* in_pMeshTree);
+	void	Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale);
 
 	//@{ IVisibilityManagerPlugin
 	virtual bool IsObjectVisible(C3DBaseObject* in_pObject) const override;

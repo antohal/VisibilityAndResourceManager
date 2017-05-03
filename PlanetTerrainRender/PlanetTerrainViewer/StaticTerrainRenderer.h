@@ -173,7 +173,7 @@ public:
 	CD3DStaticTerrainRenderer();
 	~CD3DStaticTerrainRenderer();
 
-	void			Init(CDirect3DSystem* in_pSystem);
+	void			Init(CDirect3DSystem* in_pSystem, float in_fWorldScale);
 
 	void			LoadPlanet(const wchar_t* in_pcwszDirectory);
 
@@ -183,6 +183,7 @@ public:
 
 	//@{ C3DBaseTerrainObjectManager
 	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
+	virtual const CTerrainBlockData* GetRootTerrainData() const override;
 	//@}
 
 	//@{ C3DBaseManager

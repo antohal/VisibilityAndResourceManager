@@ -144,6 +144,11 @@ bool CD3DApplication::Frame()
 
 	_pMouseInput->Frame();
 
+	for (CD3DAppHandler* in_pHandler : _setAppHandlers)
+	{
+		in_pHandler->OnFrame();
+	}
+
 	// Do the frame processing for the graphics object.
 	if (!_pGraphicsContext->Frame())
 	{
@@ -163,6 +168,12 @@ LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wP
 		{
 			// If a key is pressed send it to the input object so it can record that state.
 			_pKeyboardInput->KeyDown((unsigned int)wParam);
+
+			for (CD3DAppHandler* in_pHandler : _setAppHandlers)
+			{
+				in_pHandler->OnKeyDown((unsigned int)wParam);
+			}
+
 			return 0;
 		}
 
@@ -171,6 +182,12 @@ LRESULT CALLBACK CD3DApplication::MessageHandler(HWND hwnd, UINT umsg, WPARAM wP
 		{
 			// If a key is released then send it to the input object so it can unset the state for that key.
 			_pKeyboardInput->KeyUp((unsigned int)wParam);
+
+			for (CD3DAppHandler* in_pHandler : _setAppHandlers)
+			{
+				in_pHandler->OnKeyUp((unsigned int)wParam);
+			}
+
 			return 0;
 		}
 
@@ -396,4 +413,14 @@ CMouseInput * CD3DApplication::GetMouseInput()
 const CMouseInput * CD3DApplication::GetMouseInput() const
 {
 	return _pMouseInput;
+}
+
+void CD3DApplication::InstallAppHandler(CD3DAppHandler* in_pFrameHandler)
+{
+	_setAppHandlers.insert(in_pFrameHandler);
+}
+
+void CD3DApplication::UninstallAppHandler(CD3DAppHandler* in_pFrameHandler)
+{
+	_setAppHandlers.erase(in_pFrameHandler);
 }

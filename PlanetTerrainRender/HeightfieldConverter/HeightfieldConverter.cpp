@@ -66,6 +66,11 @@ void HeightfieldConverter::SetWorldScale(float in_fScale)
 	_private->SetWorldScale(in_fScale);
 }
 
+float HeightfieldConverter::GetWorldScale() const
+{
+	return _private->GetWorldScale();
+}
+
 // —читать данные карты высот из текстуры
 void HeightfieldConverter::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield)
 {

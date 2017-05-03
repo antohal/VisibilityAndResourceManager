@@ -31,11 +31,16 @@ public:
 	void				HideDebugTextBlock();
 	void				DeleteDebugTextBlock();
 
+	void				SetWorldScale(float in_fScale) { _fWorldScale = in_fScale; }
+	void				SetMaxHeight(double in_dfMaxHeight) { _dfMaxHeight = in_dfMaxHeight; }
+
 	//@{ CD3DCameraController
 	virtual void		Update(CD3DCamera* in_pCamera, float deltaTime) override;
 	//@}
 
 private:
+
+	void				MoveHeight(float deltaTime, int wheelDelta);
 
 	Coordinates			_coordinates;
 
@@ -43,4 +48,7 @@ private:
 
 	UINT				_uiLatLongHeightParam = -1;
 	UINT				_uiAzElParam = -1;
+
+	float				_fWorldScale = 1;
+	double				_dfMaxHeight = 50000000.0;
 };

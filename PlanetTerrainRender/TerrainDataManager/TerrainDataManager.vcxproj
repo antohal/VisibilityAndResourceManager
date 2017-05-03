@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="..\Common\StlUtil.cpp" />
+    <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
     <ClCompile Include="TerrainVisibilityManager.cpp" />
@@ -159,6 +160,7 @@
   <ItemGroup>
     <ClInclude Include="..\Common\Log.h" />
     <ClInclude Include="..\Common\StlUtil.h" />
+    <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\TerrainDataManager.h" />
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />

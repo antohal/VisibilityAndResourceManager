@@ -44,6 +44,9 @@ public:
 	void								CreateResources();
 	void								ReleaseResources();
 
+	void								SetWireframe(bool in_bWireframe);
+	bool								IsWireframe() const { return _bWireframe; }
+
 	ID3D11Device*						GetDevice();
 	ID3D11DeviceContext*				GetDeviceContext();
 
@@ -59,6 +62,8 @@ private:
 	bool								_bVsyncEnabled = false;
 	unsigned int						_uiVideoCardMemory = 0;
 	char								_pcszVideoCardDescription[128];
+
+	bool								_bWireframe = false;
 	
 	CComPtr<IDXGISwapChain>				_ptrSwapChain;
 	CComPtr<ID3D11Device>				_ptrDevice;
@@ -67,7 +72,9 @@ private:
 	CComPtr<ID3D11Texture2D>			_ptrDepthStencilBuffer;
 	CComPtr<ID3D11DepthStencilState>	_ptrDepthStencilState;
 	CComPtr<ID3D11DepthStencilView>		_ptrDepthStencilView;
-	CComPtr<ID3D11RasterizerState>		_ptrRasterState;
+	
+	CComPtr<ID3D11RasterizerState>		_ptrRasterStateSolid;
+	CComPtr<ID3D11RasterizerState>		_ptrRasterStateWire;
 
 	CComPtr<ID2D1Factory>				_ptrD2dFactory;
 

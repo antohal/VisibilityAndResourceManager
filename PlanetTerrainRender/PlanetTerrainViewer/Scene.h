@@ -35,6 +35,8 @@ public:
 	void							RegisterObjectManager(C3DBaseObjectManager* in_pManager);
 	void							UnregisterObjectManager(C3DBaseObjectManager* in_pManager);
 
+	void							InstallVisibilityPlugin(C3DBaseObjectManager*, IVisibilityManagerPlugin*);
+
 	void							RegisterRenderer(CD3DSceneRenderer* in_pRenderer);
 	void							UnregisterRenderer(CD3DSceneRenderer* in_pRenderer);
 

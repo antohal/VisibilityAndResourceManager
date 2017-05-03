@@ -29,7 +29,7 @@ void CKeyboardInput::KeyUp(unsigned int input)
 }
 
 
-bool CKeyboardInput::IsKeyDown(unsigned int key)
+bool CKeyboardInput::IsKeyDown(unsigned int key) const
 {
 	// Return what state the key is in (pressed/not pressed).
 	return _keys[key];

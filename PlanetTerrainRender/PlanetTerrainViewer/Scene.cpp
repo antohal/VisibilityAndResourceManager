@@ -99,6 +99,19 @@ void CD3DScene::RegisterObjectManager(C3DBaseObjectManager* in_pManager)
 	_mapManagers[in_pManager] = pVisibilityManager;
 }
 
+void CD3DScene::InstallVisibilityPlugin(C3DBaseObjectManager* pObjectManager, IVisibilityManagerPlugin* pPlugin)
+{
+	CVisibilityManager* pVisibilityManager = _mapManagers[pObjectManager];
+
+	if (!pVisibilityManager)
+	{
+		LogMessage("Error adding visibility plugin");
+		return;
+	}
+
+	pVisibilityManager->InstallPlugin(pPlugin);
+}
+
 void CD3DScene::UnregisterObjectManager(C3DBaseObjectManager* in_pManager)
 {
 	

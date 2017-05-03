@@ -4,11 +4,21 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <set>
 #include <string>
 
 class CKeyboardInput;
 class CD3DGraphicsContext;
 class CMouseInput;
+
+class CD3DAppHandler
+{
+public:
+
+	virtual void				OnFrame() {};
+	virtual void				OnKeyDown(unsigned int in_wKey) {};
+	virtual void				OnKeyUp(unsigned int in_wKey) {};
+};
 
 class CD3DApplication
 {
@@ -34,6 +44,9 @@ public:
 	CMouseInput*				GetMouseInput();
 	const CMouseInput*			GetMouseInput() const;
 
+	void						InstallAppHandler(CD3DAppHandler* in_pFrameHandler);
+	void						UninstallAppHandler(CD3DAppHandler* in_pFrameHandler);
+
 private:
 	
 	bool						Frame();
@@ -53,6 +66,8 @@ private:
 	CKeyboardInput*				_pKeyboardInput = nullptr;
 	CMouseInput*				_pMouseInput = nullptr;
 	CD3DGraphicsContext*		_pGraphicsContext = nullptr;
+
+	std::set<CD3DAppHandler*>	_setAppHandlers;
 };
 
 static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

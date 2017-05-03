@@ -97,6 +97,9 @@ public:
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 	void	SetWorldScale(float in_fScale);
 
+	// получить глобальный масштаб
+	float	GetWorldScale() const;
+
 	// Задать множитель высоты, считываемых из текстур карт высот
 	void	SetHeightScale(float in_fHeightScale);
 

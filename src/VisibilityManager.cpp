@@ -1168,11 +1168,28 @@ void	CVisibilityManager::VisibilityManagerPrivate::MarkPotentiallyVisibleObjects
 {
 	for (const CollectObjectsData& collectData : in_vecCloud)
 	{
+		for (IVisibilityManagerPlugin* plugin : _setPlugins)
+			plugin->UpdateObjectsVisibility(FromVec3(collectData.GetPos()), FromVec3(_Camera.GetDir()), FromVec3(_Camera.GetUp()), &_mProjection);
+
 		IGridIterator& GI = _ptrOkTree->GetIterator(collectData.GetBoundBox(), &collectData.GetFrustum());
 
 		for (; !GI.IsEnd(); GI.Next())
 		{
 			CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
+
+			bool bPluginVisible = true;
+
+			for (IVisibilityManagerPlugin* plugin : _setPlugins)
+			{
+				if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+				{
+					bPluginVisible = false;
+					break;
+				}
+			}
+
+			if (!bPluginVisible)
+				continue;
 
 			if (pInternalObject->_bAlwaysVisible)
 				continue;
