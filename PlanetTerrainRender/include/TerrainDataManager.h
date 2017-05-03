@@ -1,5 +1,9 @@
 #pragma once
 
+#include "C3DBaseObject.h"
+#include "C3DBaseObjectManager.h"
+#include "VisibilityManager.h"
+
 #ifndef TERRAINDATAMANAGER_EXPORTS
 #define TERRAINDATAMANAGER_API __declspec(dllimport)
 #else
@@ -45,6 +49,34 @@ private:
 	CTerrainBlockDataImplementation*	_implementation = nullptr;
 
 	friend class CTerrainDataManager;
+};
+
+// базовый менеджер объектов поверхности Земли
+class C3DBaseTerrainObjectManager : public C3DBaseObjectManager
+{
+public:
+
+	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const = 0;
+};
+
+class TERRAINDATAMANAGER_API CTerrainVisibilityManager : public IVisibilityManagerPlugin
+{
+public:
+
+	CTerrainVisibilityManager();
+	~CTerrainVisibilityManager();
+
+	void	Init(C3DBaseTerrainObjectManager* in_pMeshTree);
+
+	//@{ IVisibilityManagerPlugin
+	virtual bool IsObjectVisible(C3DBaseObject* in_pObject) const override;
+	virtual void UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection) override;
+	//@}
+
+private:
+
+	class CTerrainVisibilityManagerImplementation;
+	CTerrainVisibilityManagerImplementation*	_implementation;
 };
 
 class TERRAINDATAMANAGER_API CTerrainDataManager

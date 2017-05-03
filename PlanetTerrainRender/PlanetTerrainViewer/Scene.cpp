@@ -14,7 +14,7 @@ CD3DScene::CD3DScene()
 
 CD3DScene::~CD3DScene()
 {
-	for (auto it = _mapRenderers.begin(); it != _mapRenderers.end(); it++)
+	for (auto it = _mapManagers.begin(); it != _mapManagers.end(); it++)
 		delete it->second;
 
 	delete _pResourceManager;
@@ -42,7 +42,7 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 
 	_pResourceManager->Update(deltaTime);
 
-	for (auto it = _mapRenderers.begin(); it != _mapRenderers.end(); it++)
+	for (auto it = _mapManagers.begin(); it != _mapManagers.end(); it++)
 	{
 		CVisibilityManager* pVisMan = it->second;
 
@@ -54,9 +54,9 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 
 void CD3DScene::Render(CD3DGraphicsContext* in_pContext)
 {
-	for (auto it = _mapRenderers.begin(); it != _mapRenderers.end(); it++)
+	for (auto it = _setRenderers.begin(); it != _setRenderers.end(); it++)
 	{
-		it->first->Render(in_pContext);
+		(*it)->Render(in_pContext);
 	}
 }
 
@@ -72,30 +72,37 @@ const CD3DCamera*	 CD3DScene::GetMainCamera() const
 
 void CD3DScene::RegisterRenderer(CD3DSceneRenderer * in_pRenderer)
 {
-	//_setRenderers.insert(in_pRenderer);
-
-	if (_mapRenderers.find(in_pRenderer) != _mapRenderers.end())
-	{
-		LogMessage("Error adding renderer");
-	}
-
-	CVisibilityManager* pVisibilityManager = new CVisibilityManager(in_pRenderer, in_pRenderer->GetWorldRadius(), in_pRenderer->GetMinCellSize());
-
-	_pResourceManager->AddVisibilityManager(pVisibilityManager);
-
-	_mapRenderers[in_pRenderer] = pVisibilityManager;
+	_setRenderers.insert(in_pRenderer);
 }
 
 void CD3DScene::UnregisterRenderer(CD3DSceneRenderer * in_pRenderer)
 {
-	//_setRenderers.erase(in_pRenderer);
-
-	if (_mapRenderers.find(in_pRenderer) == _mapRenderers.end())
+	if (_setRenderers.find(in_pRenderer) == _setRenderers.end())
 	{
 		LogMessage("Error removing renderer: no such renderer");
 	}
 
-	CVisibilityManager* pVisibilityManager = _mapRenderers[in_pRenderer];
+	_setRenderers.erase(in_pRenderer);
+}
+
+void CD3DScene::RegisterObjectManager(C3DBaseObjectManager* in_pManager)
+{
+	if (_mapManagers.find(in_pManager) != _mapManagers.end())
+	{
+		LogMessage("Error adding renderer");
+	}
+
+	CVisibilityManager* pVisibilityManager = new CVisibilityManager(in_pManager, GetWorldRadius(), GetMinCellSize());
+
+	_pResourceManager->AddVisibilityManager(pVisibilityManager);
+
+	_mapManagers[in_pManager] = pVisibilityManager;
+}
+
+void CD3DScene::UnregisterObjectManager(C3DBaseObjectManager* in_pManager)
+{
+	
+	CVisibilityManager* pVisibilityManager = _mapManagers[in_pManager];
 
 	_pResourceManager->RemoveVisibilityManager(pVisibilityManager);
 
@@ -121,4 +128,24 @@ void CD3DScene::ShowDebugTextBlock(bool in_bShow)
 	}
 
 	_pTextBlock->SetVisible(in_bShow);
+}
+
+float CD3DScene::GetWorldRadius() const
+{
+	return _fWorldRadius;
+}
+
+void CD3DScene::SetWorldRadius(float in_fRadius)
+{
+	_fWorldRadius = in_fRadius;
+}
+
+void CD3DScene::SetMinCellSize(float in_fMinCellSize)
+{
+	_fMinCellSize = in_fMinCellSize;
+}
+
+float CD3DScene::GetMinCellSize() const
+{
+	return _fMinCellSize;
 }

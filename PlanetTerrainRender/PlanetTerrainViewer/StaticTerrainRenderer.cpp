@@ -296,6 +296,7 @@ void CD3DStaticTerrainRenderer::Init(CDirect3DSystem* in_pSystem)
 	_pHeightfieldConverter->Init(in_pSystem->GetDevice(), in_pSystem->GetDeviceContext());
 
 	_pHeightfieldConverter->SetHeightScale(20000.0f);
+	_pHeightfieldConverter->SetWorldScale(0.01f);
 
 	InitializeShader(in_pSystem->GetDevice(), L"PlanetTerrainViewerShaders\\SimpleTerrain.vs", L"PlanetTerrainViewerShaders\\SimpleTerrain.ps");
 }
@@ -350,13 +351,23 @@ void CD3DStaticTerrainRenderer::AddVisibleMaterial(CD3DStaticTerrainMaterial * i
 	_setVisibleMaterials.insert(in_pMaterial);
 }
 
+const CTerrainBlockData* CD3DStaticTerrainRenderer::GetTerrainDataForObject(C3DBaseObject* pObject) const
+{
+	auto it = _mapTerrainDataBlocks.find(pObject);
+
+	if (it == _mapTerrainDataBlocks.end())
+		return nullptr;
+
+	return it->second;
+}
+
 void CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 {
 	D3DXMATRIX mViewMatrix;
 
 	in_pContext->GetScene()->GetMainCamera()->GetViewMatrix(mViewMatrix);
 
-	SetShaderParameters(in_pContext->GetSystem()->GetDeviceContext(), mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
+	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
 
 	for (CD3DStaticTerrainMaterial* pMaterial : _setVisibleMaterials)
 	{
@@ -458,6 +469,8 @@ void CD3DStaticTerrainRenderer::CreateObject(const CTerrainBlockData* in_pData)
 
 	pObject->SetFaceset(pFaceset);
 
+	_mapTerrainDataBlocks[pObject] = in_pData;
+
 	_lstMaterials.push_back(pMaterial);
 	_lstFacesets.push_back(pFaceset);
 	_vecTerrainObjects.push_back(pObject);
@@ -475,7 +488,7 @@ C3DBaseObject*	CD3DStaticTerrainRenderer::GetObjectByIndex(size_t id) const
 
 float CD3DStaticTerrainRenderer::GetWorldRadius() const
 {
-	return 40000000.f;
+	return 20000000.f;
 }
 
 float CD3DStaticTerrainRenderer::GetMinCellSize() const
@@ -743,7 +756,7 @@ void CD3DStaticTerrainRenderer::FinalizeShader()
 	}
 }
 
-bool CD3DStaticTerrainRenderer::SetShaderParameters(ID3D11DeviceContext* deviceContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
+bool CD3DStaticTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -763,7 +776,7 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(ID3D11DeviceContext* deviceC
 		return false;
 
 	// Lock the constant buffer so it can be written to.
-	result = deviceContext->Map(_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = in_pContext->GetSystem()->GetDeviceContext()->Map(_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
@@ -776,20 +789,32 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(ID3D11DeviceContext* deviceC
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
+	vm::Vector3df p = in_pContext->GetScene()->GetMainCamera()->GetPos();
+	dataPtr->vCamPos = vm::Vector4df(p[0], p[1], p[2], 1.0);
+
+	vm::Vector3df d = in_pContext->GetScene()->GetMainCamera()->GetDir();
+	dataPtr->vAxisX = vm::Vector4df(p[0], p[1], p[2], 1.0);
+
+	vm::Vector3df u = in_pContext->GetScene()->GetMainCamera()->GetUp();
+	dataPtr->vAxisZ = vm::Vector4df(u[0], u[1], u[2], 1.0);
+
+	vm::Vector3df l = vm::cross(u, d);
+	dataPtr->vAxisY = vm::Vector4df(l[0], l[1], l[2], 1.0);
+
 	// Unlock the constant buffer.
-	deviceContext->Unmap(_pMatrixBuffer, 0);
+	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pMatrixBuffer, 0);
 
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
 	// Now set the constant buffer in the vertex shader with the updated values.
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &_pMatrixBuffer);
+	in_pContext->GetSystem()->GetDeviceContext()->VSSetConstantBuffers(bufferNumber, 1, &_pMatrixBuffer);
 
 	if (!_pLightBuffer)
 		return false;
 
 	// Lock the light constant buffer so it can be written to.
-	result = deviceContext->Map(_pLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = in_pContext->GetSystem()->GetDeviceContext()->Map(_pLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
@@ -804,13 +829,13 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(ID3D11DeviceContext* deviceC
 	dataPtr2->padding = 0.0f;
 
 	// Unlock the constant buffer.
-	deviceContext->Unmap(_pLightBuffer, 0);
+	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pLightBuffer, 0);
 
 	// Set the position of the light constant buffer in the pixel shader.
 	bufferNumber = 0;
 
 	// Finally set the light constant buffer in the pixel shader with the updated values.
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &_pLightBuffer);
+	in_pContext->GetSystem()->GetDeviceContext()->PSSetConstantBuffers(bufferNumber, 1, &_pLightBuffer);
 
 	return true;
 }

@@ -105,7 +105,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;TERRAINDATAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../3rdParty/D3DX/include;../include;../Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../3rdParty/D3DX/include;../../include;../include;../Common</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;TERRAINDATAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../3rdParty/D3DX/include;../include;../Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../3rdParty/D3DX/include;../../include;../include;../Common</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,6 +154,7 @@
     <ClCompile Include="..\Common\StlUtil.cpp" />
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
+    <ClCompile Include="TerrainVisibilityManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Log.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="..\include\TerrainDataManager.h" />
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />
+    <ClInclude Include="TerrainVisibilityManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

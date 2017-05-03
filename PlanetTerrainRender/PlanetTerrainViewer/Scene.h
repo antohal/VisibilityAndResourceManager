@@ -12,13 +12,11 @@
 
 class CD3DGraphicsContext;
 
-class CD3DSceneRenderer : public C3DBaseObjectManager
+class CD3DSceneRenderer
 {
 public:
 
 	virtual void					Render(CD3DGraphicsContext* in_pContext) = 0;
-	virtual float					GetWorldRadius() const = 0;
-	virtual float					GetMinCellSize() const = 0;
 };
 
 class CD3DScene
@@ -34,11 +32,20 @@ public:
 	CD3DCamera*						GetMainCamera();
 	const CD3DCamera*				GetMainCamera() const;
 
+	void							RegisterObjectManager(C3DBaseObjectManager* in_pManager);
+	void							UnregisterObjectManager(C3DBaseObjectManager* in_pManager);
+
 	void							RegisterRenderer(CD3DSceneRenderer* in_pRenderer);
 	void							UnregisterRenderer(CD3DSceneRenderer* in_pRenderer);
 
 	void							CreateDebugTextBlock();
 	void							ShowDebugTextBlock(bool in_bShow);
+
+	float							GetWorldRadius() const;
+	void							SetWorldRadius(float in_fRadius);
+
+	void							SetMinCellSize(float in_fMinCellSize);
+	float							GetMinCellSize() const;
 
 private:
 
@@ -47,6 +54,9 @@ private:
 	CResourceManager*				_pResourceManager = nullptr;
 	CDirect2DTextBlock*				_pTextBlock = nullptr;
 
-	std::map<CD3DSceneRenderer*, CVisibilityManager*>	_mapRenderers;
+	float							_fWorldRadius = 1000000;
+	float							_fMinCellSize = 100;
 
+	std::map<C3DBaseObjectManager*, CVisibilityManager*>	_mapManagers;
+	std::set<CD3DSceneRenderer*>	_setRenderers;
 };

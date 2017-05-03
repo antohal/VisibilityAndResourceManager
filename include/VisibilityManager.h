@@ -67,6 +67,17 @@ struct OrientedBox
 
 class IVisibilityManagerPrivateInterface;
 
+// Плагин для менеджера видимости.
+// Может использоваться для реализации дополнительных проверок видимости, отсекающих изначальный набор видимых объектов
+// Видимость по плагинам проверяется впервую очередь, затем идет проверка стандартная
+class IVisibilityManagerPlugin
+{
+public:
+
+	virtual bool IsObjectVisible(C3DBaseObject* in_pObject) const = 0;
+	virtual void UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection) = 0;
+};
+
 class VISIBILITYMANAGER_API CVisibilityManager
 {
 public:
@@ -141,6 +152,13 @@ public:
 
 	// Выключить лог в файл
 	void DisableLog();
+
+
+	// Установить плагин
+	void InstallPlugin(IVisibilityManagerPlugin*);
+
+	// Удалить плагин
+	void UninstallPlugin(IVisibilityManagerPlugin*);
 
 protected:
 

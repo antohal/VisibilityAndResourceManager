@@ -1,5 +1,7 @@
 #pragma once
 
+#include "C3DBaseManager.h"
+
 // базовый класс менеджера объектов
 class C3DBaseObjectManager : public C3DBaseManager
 {

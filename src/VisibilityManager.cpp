@@ -234,6 +234,8 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 
 	unsigned int							_uiEyeID = 0;
 
+	std::set<IVisibilityManagerPlugin*>		_setPlugins;
+
 	struct SObjectAddRequest
 	{
 		C3DBaseObject*	_Object;
@@ -256,6 +258,15 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 
 	// IVisibilityManagerPrivateInterface
 	virtual void	MarkPotentiallyVisibleObjects(const std::vector<CollectObjectsData>& in_vecCloud) override;
+	void InstallPlugin(IVisibilityManagerPlugin * p)
+	{
+		_setPlugins.insert(p);
+	}
+
+	void UninstallPlugin(IVisibilityManagerPlugin * p)
+	{
+		_setPlugins.erase(p);
+	}
 };
 
 // ¬ключить лог в файл [параметр по умолчанию TRUE]
@@ -268,6 +279,16 @@ void CVisibilityManager::EnableLog(bool enable/* = true*/)
 void CVisibilityManager::DisableLog()
 {
 	LogEnable(false);
+}
+
+void CVisibilityManager::InstallPlugin(IVisibilityManagerPlugin * p)
+{
+	_private->InstallPlugin(p);
+}
+
+void CVisibilityManager::UninstallPlugin(IVisibilityManagerPlugin * p)
+{
+	_private->UninstallPlugin(p);
 }
 
 bool CVisibilityManager::VisibilityManagerPrivate::GetTransformedBoundBox (C3DBaseObject* in_pObj, CBoundBox<float>& out_BBox)
@@ -747,6 +768,10 @@ void CVisibilityManager::SetCamera (const Vector3& in_vPos, const Vector3& in_vD
 		_private->_asetVisibleTextures[i].clear();
 		_private->_amapTexturePriority[i].clear();
 	}
+
+	D3DXMATRIX mProj;
+	if (D3DXMatrixPerspectiveFovLH(&mProj, in_fVerticalFOV*D2R, in_fHorizontalFOV / in_fVerticalFOV, in_fNearPlane, in_fFarPlane))
+		_private->_mProjection = mProj;
 }
 
 void CVisibilityManager::SetOrthoCamera (const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, const Vector3& in_vSizes)
@@ -949,12 +974,28 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 	_private->_fNearClipPlane = 999999.f;
 	_private->_fFarClipPlane = -999999.f;
 
+	for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
+		plugin->UpdateObjectsVisibility(FromVec3(_private->_Camera.GetPos()), FromVec3(_private->_Camera.GetDir()), FromVec3(_private->_Camera.GetUp()), &_private->_mProjection);
 
 	for(; !GI.IsEnd(); GI.Next())
 	{
 		CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
 
 		if (pInternalObject->_bAlwaysVisible)
+			continue;
+
+		bool bPluginVisible = true;
+
+		for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
+		{
+			if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+			{
+				bPluginVisible = false;
+				break;
+			}
+		}
+
+		if (!bPluginVisible)
 			continue;
 
 		if (!_private->IsObjectInCamera(GI, pInternalObject))

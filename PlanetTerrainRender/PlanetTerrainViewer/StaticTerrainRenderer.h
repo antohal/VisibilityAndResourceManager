@@ -166,7 +166,7 @@ private:
 };
 
 
-class CD3DStaticTerrainRenderer : public CD3DSceneRenderer
+class CD3DStaticTerrainRenderer : public C3DBaseTerrainObjectManager, public CD3DSceneRenderer
 {
 public:
 
@@ -181,14 +181,17 @@ public:
 
 	void			AddVisibleMaterial(CD3DStaticTerrainMaterial*);
 
+	//@{ C3DBaseTerrainObjectManager
+	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
+	//@}
 
 	//@{ C3DBaseManager
 
 	// Запросить загрузку ресурса
-	virtual void RequestLoadResource(C3DBaseResource* in_pResource);
+	virtual void RequestLoadResource(C3DBaseResource* in_pResource) override;
 
 	// запросить выгрузку ресурса
-	virtual void RequestUnloadResource(C3DBaseResource* in_pResource);
+	virtual void RequestUnloadResource(C3DBaseResource* in_pResource) override;
 
 	//@}
 
@@ -223,7 +226,7 @@ private:
 
 	bool			InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
 	void			OutputShaderErrorMessage(ID3D10Blob* errorMessage, WCHAR* shaderFilename);
-	bool			SetShaderParameters(ID3D11DeviceContext* deviceContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
+	bool			SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
 	void			FinalizeShader();
 
 	CTerrainBlockData*						_pPlanetTerrainData = nullptr;
@@ -235,6 +238,7 @@ private:
 	std::vector<CD3DStaticTerrainObject*>	_vecTerrainObjects;
 	std::list<CD3DStaticTerrainMaterial*>	_lstMaterials;
 	std::list<CD3DStaticTerrainFaceset*>	_lstFacesets;
+	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainDataBlocks;
 
 	vm::Vector3df							_vLightDirection = vm::Vector3df(-1, -1, 0);
 	vm::Vector3df							_vLightDiffuse = vm::Vector3df(1, 1, 1);
@@ -245,6 +249,11 @@ private:
 	{
 		D3DXMATRIX view;
 		D3DXMATRIX projection;
+
+		vm::Vector4df	vCamPos;
+		vm::Vector4df	vAxisX;
+		vm::Vector4df	vAxisY;
+		vm::Vector4df	vAxisZ;
 	};
 
 	struct LightBufferType

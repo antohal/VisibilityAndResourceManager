@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, 10.f, 20000000.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, 10.f, 10000.f, false))
 	{
 		delete pApplication;
 
@@ -29,7 +29,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CPlanetCameraController* pPlanetCameraController = new CPlanetCameraController();
 	pPlanetCameraController->CreateDebugTextBlock();
 
-	pPlanetCameraController->SetCoordinates(CPlanetCameraController::Coordinates(0, 0, 10000000.f, 0, 0));
+	pPlanetCameraController->SetCoordinates(CPlanetCameraController::Coordinates(D2R*20, D2R*20, 10000.f, 0, 0));
 
 	pApplication->GetGraphicsContext()->GetScene()->GetMainCamera()->SetController(pPlanetCameraController);
 	
@@ -45,6 +45,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainRenderer->LoadPlanet(L"PlanetViewerData//SimplePlanet");
 
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pTerrainRenderer);
+
+	pApplication->GetGraphicsContext()->GetScene()->SetWorldRadius(20000.f);
+	pApplication->GetGraphicsContext()->GetScene()->SetMinCellSize(1.f);
+
+	pApplication->GetGraphicsContext()->GetScene()->RegisterObjectManager(pTerrainRenderer);
 
 	pApplication->GetGraphicsContext()->GetScene()->CreateDebugTextBlock();
 	pApplication->GetGraphicsContext()->GetScene()->ShowDebugTextBlock(true);

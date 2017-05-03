@@ -296,6 +296,15 @@ void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeig
 	*out_pTriangulation = task._triangulation;
 }
 
+void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float latti, float minH, float maxH)
+{
+	vm::Vector3df vPoint = GetWGS84SurfacePoint(longi, latti);
+	vm::Vector3df vNormal = GetWGS84SurfaceNormal(longi, latti);
+
+	out_BB.update(vPoint + vNormal*minH);
+	out_BB.update(vPoint + vNormal*maxH);
+}
+
 void DirectComputeHeightfieldConverter::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
 {
 	double middleLattitude = (in_Coords.fMinLattitude + in_Coords.fMaxLattitude)*0.5;
@@ -319,31 +328,16 @@ void DirectComputeHeightfieldConverter::ComputeTriangulationCoords(const SHeight
 	vBoundBox.update(vMiddlePoint + vNormal*dfMinHeight);
 	vBoundBox.update(vMiddlePoint + vNormal*dfMaxHeight);
 
-	vBoundBox.update(
-		GetWGS84SurfacePoint(in_Coords.fMinLongitude, in_Coords.fMinLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMinLongitude, in_Coords.fMinLattitude)*dfMinHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
 
-	vBoundBox.update(
-		GetWGS84SurfacePoint(in_Coords.fMinLongitude, in_Coords.fMinLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMinLongitude, in_Coords.fMinLattitude)*dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
 
-	vBoundBox.update(
-		GetWGS84SurfacePoint(in_Coords.fMaxLongitude, in_Coords.fMinLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMaxLongitude, in_Coords.fMinLattitude)*dfMinHeight);
-	vBoundBox.update(GetWGS84SurfacePoint(in_Coords.fMaxLongitude, in_Coords.fMinLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMaxLongitude, in_Coords.fMinLattitude)*dfMaxHeight);
-
-	vBoundBox.update(
-		GetWGS84SurfacePoint(in_Coords.fMinLongitude, in_Coords.fMaxLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMinLongitude, in_Coords.fMaxLattitude)*dfMinHeight);
-	vBoundBox.update(
-		GetWGS84SurfacePoint(in_Coords.fMinLongitude, in_Coords.fMaxLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMinLongitude, in_Coords.fMaxLattitude)*dfMaxHeight);
-
-	vBoundBox.update(GetWGS84SurfacePoint(in_Coords.fMaxLongitude, in_Coords.fMaxLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMaxLongitude, in_Coords.fMaxLattitude) *dfMinHeight);
-	vBoundBox.update(GetWGS84SurfacePoint(in_Coords.fMaxLongitude, in_Coords.fMaxLattitude)
-		+ GetWGS84SurfaceNormal(in_Coords.fMaxLongitude, in_Coords.fMaxLattitude)*dfMaxHeight);
 
 	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vBoundBoxMaximum, &vBoundBox._vMax[0], 3 * sizeof(double));

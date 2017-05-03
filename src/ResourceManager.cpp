@@ -330,8 +330,8 @@ struct CResourceManager::SResourceManagerPrivate
 
 		vm::Quaterniondf qCameraOrientation(mMatrixTransform);
 
-		float horizontalFovDeg = _predictor._cameraParams.horizontalFov;
-		float verticalFovDeg = _predictor._cameraParams.verticalFov;
+		float horizontalFovDeg = _predictor._cameraParams.horizontalFov * R2D;
+		float verticalFovDeg = _predictor._cameraParams.verticalFov * R2D;
 
 		if (_horizontalFovDeg > 0)
 			horizontalFovDeg = _horizontalFovDeg;
@@ -407,8 +407,10 @@ struct CResourceManager::SResourceManagerPrivate
 			Vector3D<float> vPredictedDir((float)_predictor._predictedDir[0], (float)_predictor._predictedDir[1], (float)_predictor._predictedDir[2]);
 			Vector3D<float> vPredictedUp((float)mCameraOrient[2][0], (float)mCameraOrient[2][1], (float)mCameraOrient[2][2]);
 
-			out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vPredictedDir, vPredictedUp, _predictor._cameraParams.nearPlane, _predictor._cameraParams.farPlane,
-				horizontalFovDeg, verticalFovDeg));
+			if (!IsEqualVector3D(vPredictedPos, vNormalPos) || !IsEqualVector3D(vPredictedDir, vNormalDir) || !IsEqualVector3D(vPredictedUp, vNormalUp))
+				out_vecCollectObjectsData.push_back(CollectObjectsData(vPredictedPos, vPredictedDir, vPredictedUp, _predictor._cameraParams.nearPlane, 
+					_predictor._cameraParams.farPlane,
+					horizontalFovDeg, verticalFovDeg));
 
 
 			//@}

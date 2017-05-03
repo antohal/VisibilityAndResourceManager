@@ -12,28 +12,6 @@ class RESOURCEMANAGER_API C3DBaseObject : public C3DBaseResource
 {
 public:
 
-	//@{ Функции для работы с ЛОДами
-
-	// Функция вычисления расстояния до объекта
-	virtual float GetDistance(const D3DXVECTOR3* in_pvPointFrom) const { return 0; };
-
-	// Получить минимальное расстояние видимости до объекта
-	virtual float GetMinimalVisibleDistance() const { return 0; };
-
-	// Получить максимальное расстояние видимости до объекта
-	virtual float GetMaximalVisibleDistance() const { return FLT_MAX; };
-
-	// Получить родительский объект-лод
-	virtual C3DBaseObject*	GetParentLODObject() { return nullptr; }
-
-	// Получить количество дочерних объектов-лодов
-	virtual unsigned int	GetNumChildLODObjects() const { return 0; }
-
-	// Получить дочерний лод-объект
-	virtual C3DBaseObject*	GetChildLODObject(unsigned int id) { return 0; }
-
-	//@}
-
 	// тип ресурса здесь известен.
 	virtual E3DResourceType	GetType() const { return C3DRESOURCE_OBJECT; }
 
@@ -68,6 +46,8 @@ public:
 
 		return nullptr;
 	}
+
+	virtual bool	IsVisibleTo(const D3DXVECTOR3* in_vPoint) const { return true; }
 
 
 protected:
