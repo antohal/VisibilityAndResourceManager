@@ -104,3 +104,20 @@ private:
 
 	friend class CTerrainBlockData::CTerrainBlockDataImplementation;
 };
+
+
+class CTerrainManagerClient
+{
+public:
+
+	virtual size_t	CreateObject(CTerrainBlockData*) = 0;
+	virtual void	DeleteObject(size_t ID) = 0;
+
+	virtual void	ObjectBecomeVisible(size_t ID) = 0;
+	virtual void	ObjectBecomeInvisible(size_t ID) = 0;
+};
+
+class CTerrainManager
+{
+	// тут будет все
+};

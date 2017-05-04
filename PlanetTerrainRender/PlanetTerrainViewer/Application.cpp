@@ -14,7 +14,8 @@ bool CD3DApplication::Initialize(const std::wstring& in_wsApplicationName, unsig
 {
 	_wsApplicationName = in_wsApplicationName;
 
-
+	_uiWidth = in_uiWidth;
+	_uiHeight = in_uiHeight;
 
 	int screenWidth, screenHeight;
 	bool result;

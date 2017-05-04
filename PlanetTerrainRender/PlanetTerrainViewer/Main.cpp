@@ -53,7 +53,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1920, 1080, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, true))
 	{
 		delete pApplication;
 

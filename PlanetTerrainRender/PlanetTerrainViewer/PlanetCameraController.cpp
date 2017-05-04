@@ -135,11 +135,11 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 		coeff = vm::lerp((_coordinates._height - heightMin) / (heightMax - heightMin), coeffMin, coeffMax);
 	}
 
-	if (wheelDelta > 10)
-		wheelDelta = 10;
+	if (wheelDelta > 50)
+		wheelDelta = 50;
 
-	if (wheelDelta < -10)
-		wheelDelta = -10;
+	if (wheelDelta < -50)
+		wheelDelta = -50;
 
 	_coordinates._height += wheelDelta * deltaTime * coeff;
 
