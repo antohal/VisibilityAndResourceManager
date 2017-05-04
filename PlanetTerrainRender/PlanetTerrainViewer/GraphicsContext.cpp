@@ -41,6 +41,7 @@ bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int
 		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 14.f);
 
 	_uiFpsParam = _pTextBlock->AddParameter(L"FPS");
+	_uiPrimsParam = _pTextBlock->AddParameter(L"Количество примитивов");
 
 
 	return true;
@@ -49,6 +50,11 @@ bool CD3DGraphicsContext::Initialize(unsigned int in_uiScreenWidth, unsigned int
 
 void CD3DGraphicsContext::Shutdown()
 {
+	if (_pScene)
+	{
+		_pScene->Shutdown();
+	}
+
 	// Release the D3D object.
 	if(_pD3DSystem)
 	{
@@ -83,6 +89,7 @@ bool CD3DGraphicsContext::Frame()
 	double fps = 1.0 / deltaTime;
 
 	_pTextBlock->SetParameterValue(_uiFpsParam, (float)fps);
+	_pTextBlock->SetParameterValue(_uiPrimsParam, _pScene->GetRenderedPrimitives());
 
 	_prevFrameTime = thisFrameTime;
 

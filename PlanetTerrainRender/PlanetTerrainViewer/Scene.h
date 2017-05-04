@@ -16,7 +16,8 @@ class CD3DSceneRenderer
 {
 public:
 
-	virtual void					Render(CD3DGraphicsContext* in_pContext) = 0;
+	// return num primitives
+	virtual int						Render(CD3DGraphicsContext* in_pContext) = 0;
 };
 
 class CD3DScene
@@ -25,6 +26,8 @@ public:
 
 	CD3DScene();
 	~CD3DScene();
+
+	void							Shutdown();
 
 	void							Update(CD3DGraphicsContext* in_pContext, float deltaTime);
 	void							Render(CD3DGraphicsContext* in_pContext);
@@ -49,6 +52,8 @@ public:
 	void							SetMinCellSize(float in_fMinCellSize);
 	float							GetMinCellSize() const;
 
+	int								GetRenderedPrimitives() const { return _nRenderedPrimitives; }
+
 private:
 
 	CD3DCamera						_mainCamera;
@@ -56,8 +61,15 @@ private:
 	CResourceManager*				_pResourceManager = nullptr;
 	CDirect2DTextBlock*				_pTextBlock = nullptr;
 
+	CDirect2DTextBlock*				_pLogTextBlock = nullptr;
+
 	float							_fWorldRadius = 1000000;
 	float							_fMinCellSize = 100;
+
+	int								_nRenderedPrimitives = 0;
+	int								_nNumVisibleObjects = 0;
+
+	UINT							_uiVisibleObjectsParam = -1;
 
 	std::map<C3DBaseObjectManager*, CVisibilityManager*>	_mapManagers;
 	std::set<CD3DSceneRenderer*>	_setRenderers;

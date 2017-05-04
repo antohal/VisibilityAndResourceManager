@@ -142,7 +142,7 @@ void CD3DStaticTerrainFaceset::Load()
 		LogMessage("Error: null terrain block data or no terrain object");
 	}
 
-	LogMessage("Loading faceset");
+	LogMessage("Loading faceset. Triangulating heightmap '%ls'", _pTerrainBlockData->GetHeightmapFileName());
 
 	_heightfield.ID = 0;
 
@@ -158,7 +158,7 @@ void CD3DStaticTerrainFaceset::Unload()
 		LogMessage("Error: null terrain block data or no terrain object");
 	}
 
-	LogMessage("UnLoading faceset");
+	LogMessage("UnLoading faceset.");
 
 	_owner->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
 }
@@ -233,8 +233,10 @@ CD3DStaticTerrainMaterial::CD3DStaticTerrainMaterial(CD3DStaticTerrainRenderer *
 {
 }
 
-void CD3DStaticTerrainMaterial::Render(CD3DGraphicsContext * in_pContext)
+int CD3DStaticTerrainMaterial::Render(CD3DGraphicsContext * in_pContext)
 {
+	int numPrimitives = 0;
+
 	for (CD3DStaticTerrainFaceset* faceset : _setVisibleFacesets)
 	{
 		if (faceset->GetIndexCount() == 0)
@@ -242,9 +244,13 @@ void CD3DStaticTerrainMaterial::Render(CD3DGraphicsContext * in_pContext)
 
 		faceset->SetIndexAndVertexBuffers(in_pContext);
 		_pOwner->DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), _pTextureSRV, faceset->GetIndexCount());
+
+		numPrimitives += faceset->GetIndexCount() / 3;
 	}
 
 	_setVisibleFacesets.clear();
+
+	return numPrimitives;
 }
 
 C3DBaseManager* CD3DStaticTerrainMaterial::GetManager() const
@@ -264,6 +270,8 @@ void CD3DStaticTerrainMaterial::Load()
 	if (_wsTextureFileName.empty())
 		return;
 
+	LogMessage("Loading texture '%ls'", _wsTextureFileName.c_str());
+
 	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &_pTextureSRV, NULL);
 	if (FAILED(result))
 	{
@@ -279,6 +287,8 @@ void CD3DStaticTerrainMaterial::Unload()
 		_pTextureSRV->Release();
 		_pTextureSRV = nullptr;
 	}
+
+	LogMessage("Unloading texture '%ls'", _wsTextureFileName.c_str());
 }
 
 //
@@ -366,7 +376,7 @@ const CTerrainBlockData* CD3DStaticTerrainRenderer::GetRootTerrainData() const
 	return _pPlanetTerrainData;
 }
 
-void CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
+int CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 {
 	D3DXMATRIX mViewMatrix;
 
@@ -374,14 +384,18 @@ void CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
 
+	int numPrims = 0;
+
 	for (CD3DStaticTerrainMaterial* pMaterial : _setVisibleMaterials)
 	{
-		pMaterial->Render(in_pContext);
+		numPrims += pMaterial->Render(in_pContext);
 	}
 
 	// TODO: end render, cleanup shaders
 
 	_setVisibleMaterials.clear();
+
+	return numPrims;
 }
 
 void CD3DStaticTerrainRenderer::RequestLoadResource(C3DBaseResource * in_pResource)
@@ -418,7 +432,7 @@ void CD3DStaticTerrainRenderer::RequestUnloadResource(C3DBaseResource * in_pReso
 		{
 			if (CD3DStaticTerrainFaceset* pFaceset = dynamic_cast<CD3DStaticTerrainFaceset*>(in_pResource))
 			{
-				pFaceset->Load();
+				pFaceset->Unload();
 			}
 		}
 		return;
@@ -427,7 +441,7 @@ void CD3DStaticTerrainRenderer::RequestUnloadResource(C3DBaseResource * in_pReso
 		{
 			if (CD3DStaticTerrainMaterial* pMaterial = dynamic_cast<CD3DStaticTerrainMaterial*>(in_pResource))
 			{
-				pMaterial->Load();
+				pMaterial->Unload();
 			}
 		}
 		return;
@@ -831,7 +845,7 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pCon
 	// Copy the lighting variables into the constant buffer.
 	dataPtr2->diffuseColor = diffuseColor;
 	dataPtr2->lightDirection = lightDirection;
-	dataPtr2->padding = 0.0f;
+	dataPtr2->mode = _RenderingMode;
 
 	// Unlock the constant buffer.
 	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pLightBuffer, 0);

@@ -10,9 +10,13 @@
 
 const float g_fWorldScale = 0.001f;
 
-class CAppHandler : public CD3DAppHandler
+class CMyAppHandler : public CD3DAppHandler
 {
 public:
+
+	CMyAppHandler(CD3DStaticTerrainRenderer* in_pTerrainRenderer)
+		: _TerrainRenderer(in_pTerrainRenderer)
+	{}
 	
 
 	virtual void OnKeyDown(unsigned int in_wKey) 
@@ -22,8 +26,22 @@ public:
 			bool bWireframe = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->IsWireframe();
 			GetApplicationHandle()->GetGraphicsContext()->GetSystem()->SetWireframe(!bWireframe);
 		}
+
+		if (in_wKey == VK_F2)
+		{
+			_TerrainRenderer->SetRenderingMode(CD3DStaticTerrainRenderer::STANDARD);
+		}
+
+		if (in_wKey == VK_F3)
+		{
+			_TerrainRenderer->SetRenderingMode(CD3DStaticTerrainRenderer::SHOW_NORMALS);
+		}
 	}
 
+
+private:
+
+	CD3DStaticTerrainRenderer*	_TerrainRenderer = nullptr;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
@@ -40,12 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 		delete pApplication;
 
 		return -1;
-	}
-
-	CAppHandler* pAppHandler = new CAppHandler;
-
-	pApplication->InstallAppHandler(pAppHandler);
-	
+	}	
 
 	//@{ Prepare camera controller
 
@@ -85,6 +98,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainVisibilityManager->Init(pTerrainRenderer, g_fWorldScale);
 
 	pApplication->GetGraphicsContext()->GetScene()->InstallVisibilityPlugin(pTerrainRenderer, pTerrainVisibilityManager);
+
+
+	CMyAppHandler* pAppHandler = new CMyAppHandler(pTerrainRenderer);
+
+	pApplication->InstallAppHandler(pAppHandler);
+
 
 	//@}
 

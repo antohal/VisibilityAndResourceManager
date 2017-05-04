@@ -19,7 +19,7 @@ double AngularDistance(double a1, double a2)
 
 	vm::Vector3df v = vm::cross(v1, v2);
 
-	if (v[2] < 0)
+	if (v[2] > 0)
 		angle = -angle;
 
 	return angle;
@@ -40,7 +40,7 @@ double GetDistance(const CTerrainBlockData* in_pTerrainBlock, const vm::Vector3d
 
 
 	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
-	double dfMidAngle = 0.5*(dfMaxLat - dfMinLat + dfMaxLong - dfMinLong);
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
 	out_Diameter = dfMidAngle * vm::length(vRefPoint);
 
 	if (dfLat >= dfMinLat && dfLat <= dfMaxLat && dfLong >= dfMinLong && dfLong <= dfMaxLong)
@@ -181,96 +181,72 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateO
 	if (!_pRoot)
 		return;
 
-	/*for (unsigned int i = 0; i < _pRoot->GetChildBlockDataCount(); i++)
-		UpdateVisibilityRecursive(_pRoot->GetChildBlockData(i), vPos);*/
-
-	UpdateVisibilityRecursive(_pRoot, vPos);
+	for (unsigned int i = 0; i < _pRoot->GetChildBlockDataCount(); i++)
+		UpdateVisibilityRecursive(_pRoot->GetChildBlockData(i), vPos);
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateVisibilityRecursive(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateVisibilityRecursive(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos)
 {
-	// true возвращаем только в том случае, если действительно объект стал видимым
+	if (!IsSomeChildVisible(pTerrainBlock, in_vPos))
+	{
+		bool bIsFar = IsFar(pTerrainBlock, in_vPos);
 
+		// Самый верхний лод или достаточно близко
+		if (!bIsFar || pTerrainBlock->GetParentBlockData() == _pRoot)
+			AddVisibleBlock(pTerrainBlock);
+
+		// Если лод далеко, но какая-то соседская веточка видна, то добавить на видимость
+		if (bIsFar)
+		{
+			unsigned int uiNeightbourCount = pTerrainBlock->GetParentBlockData()->GetChildBlockDataCount();
+
+			for (unsigned int i = 0; i < uiNeightbourCount; i++)
+			{
+				const CTerrainBlockData* pNeighbour = pTerrainBlock->GetParentBlockData()->GetChildBlockData(i);
+
+				if (pNeighbour == pTerrainBlock)
+					continue;
+
+				if (!IsFar(pNeighbour, in_vPos) || IsSomeChildVisible(pNeighbour, in_vPos))
+				{
+					AddVisibleBlock(pTerrainBlock);
+					break;
+				}
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
+		UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockData(i), in_vPos);
+}
+
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsFar(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos) const
+{
 	const double k_dfDistCoeff = 0.5;
 
 	double diameter = 0;
 	double distance = 0;
-	
-	if (pTerrainBlock->GetParentBlockData())
-	{
-		distance = GetDistance(pTerrainBlock, in_vPos, diameter);
 
-		// Если расстояние больше дистанции видимости, то лод не видим
-		if (distance > k_dfDistCoeff * diameter)
-			return false;
-	}
+	distance = GetDistance(pTerrainBlock, in_vPos, diameter);
 
-	bool bSomeChildVisible = false;
+	return distance > k_dfDistCoeff * diameter;
+}
+
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsSomeChildVisible(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos) const
+{
 
 	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
 	{
-		if (UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockData(i), in_vPos))
-			bSomeChildVisible = true;
-	}
+		const CTerrainBlockData* pChild = pTerrainBlock->GetChildBlockData(i);
 
-	if (!bSomeChildVisible)
-	{
-		AddVisibleBlock(pTerrainBlock);
+		if(!IsFar(pChild, in_vPos))
+			return true;
 
-		return true;
-	}
-	else
-	{
-
-		for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
-			AddVisibleBlock(pTerrainBlock->GetChildBlockData(i));
-
+		if (IsSomeChildVisible(pChild, in_vPos))
+			return true;
 	}
 
 	return false;
-
-	//bool bSomeChildVisible = false;
-	//static std::vector<const CTerrainBlockData*> vecInvisibleChilds;
-	//vecInvisibleChilds.resize(0);
-	//for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
-	//{
-	//	if (UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockData(i), in_vPos))
-	//		bSomeChildVisible = true;
-	//	else
-	//		vecInvisibleChilds.push_back(pTerrainBlock->GetChildBlockData(i));
-	//}
-
-	//// если никакая из дочерних ветвей не видима, значит видимы мы сами
-	//if (!bSomeChildVisible)
-	//{
-	//	if (pTerrainBlock->GetParentBlockData())
-	//		AddVisibleBlock(pTerrainBlock);
-	//	else
-	//	{
-	//		// если корневой блок - добавляем чилдов
-	//		for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
-	//			AddVisibleBlock(pTerrainBlock->GetChildBlockData(i));
-	//	}
-	//
-	//	/*if (pTerrainBlock->GetParentBlockData())
-	//	{
-	//		for (unsigned int i = 0; i < pTerrainBlock->GetParentBlockData()->GetChildBlockDataCount(); i++)
-	//		{
-
-	//		}
-	//	}*/
-
-	//	return true;
-	//}
-	//else
-	//{
-	//	for (const CTerrainBlockData* pInvisChildBlock : vecInvisibleChilds)
-	//	{
-	//		AddVisibleBlock(pInvisChildBlock);
-	//	}
-	//}
-
-	//return bSomeChildVisible;
 }
 
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::AddVisibleBlock(const CTerrainBlockData* pBlock)

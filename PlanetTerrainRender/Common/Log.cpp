@@ -6,6 +6,7 @@
 static bool g_enabled = false;
 static bool g_inited = false;
 static FILE* g_fp = NULL;
+static std::function<void(const std::string&)> g_Handler;
 
 class CFileCloser
 {
@@ -57,4 +58,27 @@ void LogMessage (const char* strFmt, ...)
 	vprintf(strFmt, ap);
 	printf("\n");
     va_end(ap);
+
+	if (g_Handler)
+	{
+		va_start(ap, strFmt);
+
+		static char buff[512];
+
+		vsnprintf_s<512>(buff, sizeof(buff), strFmt, ap);
+
+		g_Handler(std::string(buff));
+
+		va_end(ap);
+	}
+}
+
+void AddLogHandler(const std::function<void(const std::string&)>& handler)
+{
+	g_Handler = handler;
+}
+
+void RemoveLogHandler()
+{
+	g_Handler = std::function<void(const std::string&)>();
 }

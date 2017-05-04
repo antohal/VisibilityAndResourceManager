@@ -19,8 +19,10 @@ public:
 
 private:
 
-	bool UpdateVisibilityRecursive(const CTerrainBlockData*, const vm::Vector3df& in_vPos);
+	void UpdateVisibilityRecursive(const CTerrainBlockData*, const vm::Vector3df& in_vPos);
 	void AddVisibleBlock(const CTerrainBlockData*);
+	bool IsFar(const CTerrainBlockData*, const vm::Vector3df& in_vPos) const;
+	bool IsSomeChildVisible(const CTerrainBlockData*, const vm::Vector3df& in_vPos) const;
 
 	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainBlockInfo;
 	std::map<const CTerrainBlockData*, C3DBaseObject*>	_mapObjects;

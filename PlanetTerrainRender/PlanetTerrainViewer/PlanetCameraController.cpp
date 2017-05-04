@@ -63,9 +63,13 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 
 	if (pMouseInput->GetButtonState(CMouseInput::BUTTON_RIGHT))
 	{
+		vm::Vector2df vMouseDelta = pMouseInput->GetLastFrameDelta();
 
-		double dfAzDelta = pMouseInput->GetLastFrameDelta()[0] * deltaTime;
-		double dfElDelta = pMouseInput->GetLastFrameDelta()[1] * deltaTime;
+		if (vm::length(vMouseDelta) > 20)
+			vMouseDelta = vm::normalize(vMouseDelta) * 20;
+
+		double dfAzDelta = vMouseDelta[0] * deltaTime;
+		double dfElDelta = vMouseDelta[1] * deltaTime;
 
 		_coordinates._azimuth += dfAzDelta;
 		_coordinates._elevation += dfElDelta;
@@ -130,6 +134,12 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 	{
 		coeff = vm::lerp((_coordinates._height - heightMin) / (heightMax - heightMin), coeffMin, coeffMax);
 	}
+
+	if (wheelDelta > 10)
+		wheelDelta = 10;
+
+	if (wheelDelta < -10)
+		wheelDelta = -10;
 
 	_coordinates._height += wheelDelta * deltaTime * coeff;
 

@@ -20,6 +20,12 @@ CD3DScene::~CD3DScene()
 	delete _pResourceManager;
 }
 
+
+void CD3DScene::Shutdown()
+{
+	RemoveLogHandler();
+}
+
 void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 {
 	_mainCamera.Update(deltaTime);
@@ -42,6 +48,8 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 
 	_pResourceManager->Update(deltaTime);
 
+	_nNumVisibleObjects = 0;
+
 	for (auto it = _mapManagers.begin(); it != _mapManagers.end(); it++)
 	{
 		CVisibilityManager* pVisMan = it->second;
@@ -49,14 +57,23 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 		pVisMan->SetViewProjection(vPos, vDir, vUp, in_pContext->GetSystem()->GetProjectionMatrix());
 
 		pVisMan->UpdateVisibleObjectsSet();
+
+		_nNumVisibleObjects += pVisMan->GetVisibleObjectsCount();
+	}
+
+	if (_pTextBlock)
+	{
+		_pTextBlock->SetParameterValue(_uiVisibleObjectsParam, _nNumVisibleObjects);
 	}
 }
 
 void CD3DScene::Render(CD3DGraphicsContext* in_pContext)
 {
+	_nRenderedPrimitives = 0;
+
 	for (auto it = _setRenderers.begin(); it != _setRenderers.end(); it++)
 	{
-		(*it)->Render(in_pContext);
+		_nRenderedPrimitives += (*it)->Render(in_pContext);
 	}
 }
 
@@ -129,7 +146,22 @@ void CD3DScene::CreateDebugTextBlock()
 	_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(750, 250, 1000, 700), D2D1::ColorF(0.1f, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
 		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 12.f);
 
+	_uiVisibleObjectsParam = _pTextBlock->AddParameter(L"Количество видимых объектов");
+
 	_pResourceManager->EnableDebugTextRender(_pTextBlock);
+
+
+	_pLogTextBlock = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetTextRenderer()->CreateTextBlock();
+
+	_pLogTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(350, 10, 1000, 200), D2D1::ColorF(0.1f, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
+		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 12.f);
+
+	_pLogTextBlock->SetMaximumTextLines(10);
+
+	AddLogHandler([this](const std::string& str)
+	{
+		_pLogTextBlock->AddTextLine(str.c_str());
+	});
 }
 
 void CD3DScene::ShowDebugTextBlock(bool in_bShow)
@@ -141,6 +173,9 @@ void CD3DScene::ShowDebugTextBlock(bool in_bShow)
 	}
 
 	_pTextBlock->SetVisible(in_bShow);
+
+	if (_pLogTextBlock)
+		_pLogTextBlock->SetVisible(in_bShow);
 }
 
 float CD3DScene::GetWorldRadius() const

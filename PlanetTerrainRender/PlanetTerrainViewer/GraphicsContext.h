@@ -36,6 +36,7 @@ private:
 	CD3DScene*				_pScene = nullptr;
 
 	UINT					_uiFpsParam = -1;
+	UINT					_uiPrimsParam = -1;
 
 	bool					_bResourcesCreated = false;
 

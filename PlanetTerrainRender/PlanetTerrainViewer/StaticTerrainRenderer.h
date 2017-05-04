@@ -136,7 +136,7 @@ public:
 
 	CD3DStaticTerrainMaterial(CD3DStaticTerrainRenderer* in_pOwner, const std::wstring& in_wsFileName);
 
-	void	Render(CD3DGraphicsContext* in_pContext);
+	int	Render(CD3DGraphicsContext* in_pContext);
 
 	// Функция используется в процессе рендеринга [для взаимодействия процесса рендера с Visman]
 	virtual void	AddVisibleFaceSet(C3DBaseFaceSet*, unsigned int in_uiEyeId) override;
@@ -166,9 +166,16 @@ private:
 };
 
 
+
 class CD3DStaticTerrainRenderer : public C3DBaseTerrainObjectManager, public CD3DSceneRenderer
 {
 public:
+
+	enum PSRenderingMode
+	{
+		STANDARD = 0,
+		SHOW_NORMALS,
+	};
 
 	CD3DStaticTerrainRenderer();
 	~CD3DStaticTerrainRenderer();
@@ -180,6 +187,9 @@ public:
 	void			SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
 
 	void			AddVisibleMaterial(CD3DStaticTerrainMaterial*);
+
+	void			SetRenderingMode(PSRenderingMode mode) { _RenderingMode = mode; }
+	PSRenderingMode	GetRenderingMode() const { return _RenderingMode; }
 
 	//@{ C3DBaseTerrainObjectManager
 	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
@@ -210,7 +220,7 @@ protected:
 
 	//@{ CD3DSceneRenderer
 
-	virtual void	Render(CD3DGraphicsContext* in_pContext) override;
+	virtual int		Render(CD3DGraphicsContext* in_pContext) override;
 
 	virtual float	GetWorldRadius() const;
 	virtual float	GetMinCellSize() const;
@@ -244,6 +254,8 @@ private:
 	vm::Vector3df							_vLightDirection = vm::Vector3df(-1, -1, 0);
 	vm::Vector3df							_vLightDiffuse = vm::Vector3df(1, 1, 1);
 
+	PSRenderingMode							_RenderingMode = STANDARD;
+
 	//@{ Rendering fields
 
 	struct MatrixBufferType
@@ -261,7 +273,7 @@ private:
 	{
 		D3DXVECTOR4 diffuseColor;
 		D3DXVECTOR3 lightDirection;
-		float padding;  // Added extra padding so structure is a multiple of 16 for CreateBuffer function requirements.
+		unsigned int mode;  // Added extra padding so structure is a multiple of 16 for CreateBuffer function requirements.
 	};
 
 	ID3D11VertexShader*						_pVertexShader = nullptr;
