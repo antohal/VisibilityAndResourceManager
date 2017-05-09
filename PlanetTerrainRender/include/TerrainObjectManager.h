@@ -35,6 +35,9 @@ class TERRAINOBJECTMANAGER_API CTerrainObjectManager
 {
 public:
 
+	CTerrainObjectManager();
+	~CTerrainObjectManager();
+
 	void Init(CTerrainObjectCreator* in_pObjectCreator, const wchar_t* in_pcwszPlanetDirectory);
 
 	CResourceManager* GetResourceManager();

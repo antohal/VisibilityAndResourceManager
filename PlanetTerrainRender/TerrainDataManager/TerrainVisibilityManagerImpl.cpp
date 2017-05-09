@@ -1,8 +1,38 @@
-#include "TerrainVisibilityManager.h"
+#include "TerrainVisibilityManagerImpl.h"
 #include "Log.h"
 #include "wgs84.h"
 
 #include <algorithm>
+
+
+CTerrainVisibilityManager::CTerrainVisibilityManager()
+{
+	_implementation = new CTerrainVisibilityManagerImpl;
+}
+
+CTerrainVisibilityManager::~CTerrainVisibilityManager()
+{
+	delete _implementation;
+}
+
+void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale)
+{
+	_implementation->Init(in_pMeshTree, in_fWorldScale);
+}
+
+//@{ IVisibilityManagerPlugin
+bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject* in_pObject) const
+{
+	return _implementation->IsObjectVisible(in_pObject);
+}
+
+void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
+{
+	_implementation->UpdateObjectsVisibility(in_vPos, in_vDir, in_vUp, in_pmProjection);
+}
+//@}
+
+
 
 double AngularDistance(double a1, double a2)
 {
@@ -125,7 +155,7 @@ double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3d
 	return vecDists.front();
 }
 
-void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale)
 {
 	_fWorldScale = in_fWorldScale;
 
@@ -142,12 +172,12 @@ void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager * in_pMeshTree,
 	}
 }
 
-bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject * in_pObject) const
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsObjectVisible(C3DBaseObject * in_pObject) const
 {
 	return _setVisibleObjects.find(in_pObject) != _setVisibleObjects.end();
 }
 
-void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
 {
 	_setVisibleObjects.clear();
 
@@ -160,7 +190,7 @@ void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, 
 		UpdateVisibilityRecursive(_pRoot->GetChildBlockDesc(i), vPos);
 }
 
-void CTerrainVisibilityManager::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
 {
 	if (!IsSomeChildVisible(pTerrainBlock, in_vPos))
 	{
@@ -195,7 +225,7 @@ void CTerrainVisibilityManager::UpdateVisibilityRecursive(const CTerrainBlockDes
 		UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockDesc(i), in_vPos);
 }
 
-bool CTerrainVisibilityManager::IsFar(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsFar(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
 {
 	const double k_dfDistCoeff = 0.5;
 
@@ -207,7 +237,7 @@ bool CTerrainVisibilityManager::IsFar(const CTerrainBlockDesc* pTerrainBlock, co
 	return distance > k_dfDistCoeff * diameter;
 }
 
-bool CTerrainVisibilityManager::IsSomeChildVisible(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsSomeChildVisible(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
 {
 
 	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
@@ -224,7 +254,7 @@ bool CTerrainVisibilityManager::IsSomeChildVisible(const CTerrainBlockDesc* pTer
 	return false;
 }
 
-void CTerrainVisibilityManager::AddVisibleBlock(const CTerrainBlockDesc* pBlock)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock)
 {
 	_setVisibleObjects.insert(_mapObjects[pBlock]);
 }

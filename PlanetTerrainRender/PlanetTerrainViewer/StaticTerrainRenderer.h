@@ -10,6 +10,7 @@
 #include "C3DBaseFaceSet.h"
 #include "C3DBaseMaterial.h"
 #include "C3DBaseObjectManager.h"
+#include "TerrainVisibilityManager.h"
 
 #include "TerrainDataManager.h"
 #include "HeightfieldConverter.h"

@@ -431,14 +431,14 @@ void CD3DStaticTerrainRenderer::CreateObjects()
 
 void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockDesc* in_pData)
 {
-	if (in_pData->GetParentBlockData())
+	if (in_pData->GetParentBlockDesc())
 	{
 		CreateObject(in_pData);
 	}
 
-	for (unsigned int i = 0; i < in_pData->GetChildBlockDataCount(); i++)
+	for (unsigned int i = 0; i < in_pData->GetChildBlockDescCount(); i++)
 	{
-		CreateObjectsRecursive(in_pData->GetChildBlockData(i));
+		CreateObjectsRecursive(in_pData->GetChildBlockDesc(i));
 	}
 }
 

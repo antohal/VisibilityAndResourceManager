@@ -12,6 +12,12 @@
 #include <set>
 
 
+#ifndef TERRAINMANAGER_EXPORTS
+#define TERRAINVISIBILITYMANAGER_API __declspec(dllimport)
+#else
+#define TERRAINVISIBILITYMANAGER_API __declspec(dllexport)
+#endif
+
 // базовый менеджер объектов поверхности Земли
 class C3DBaseTerrainObjectManager : public C3DBaseObjectManager
 {
@@ -24,9 +30,12 @@ public:
 	virtual const CTerrainBlockDesc* GetRootTerrainData() const = 0;
 };
 
-class CTerrainVisibilityManager : public IVisibilityManagerPlugin
+class TERRAINVISIBILITYMANAGER_API CTerrainVisibilityManager : public IVisibilityManagerPlugin
 {
 public:
+
+	CTerrainVisibilityManager();
+	~CTerrainVisibilityManager();
 
 	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale);
 
@@ -37,17 +46,6 @@ public:
 
 private:
 
-	void UpdateVisibilityRecursive(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos);
-	void AddVisibleBlock(const CTerrainBlockDesc*);
-	bool IsFar(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos) const;
-	bool IsSomeChildVisible(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos) const;
-
-	std::map<C3DBaseObject*, const CTerrainBlockDesc*>	_mapTerrainBlockInfo;
-	std::map<const CTerrainBlockDesc*, C3DBaseObject*>	_mapObjects;
-
-	std::set<C3DBaseObject*> _setVisibleObjects;
-
-	const CTerrainBlockDesc* _pRoot = nullptr;
-
-	float	_fWorldScale = 1;
+	class CTerrainVisibilityManagerImpl;
+	CTerrainVisibilityManagerImpl*	_implementation = nullptr;
 };
