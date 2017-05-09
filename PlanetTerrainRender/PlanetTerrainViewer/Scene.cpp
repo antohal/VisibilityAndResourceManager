@@ -143,7 +143,7 @@ void CD3DScene::CreateDebugTextBlock()
 {
 	_pTextBlock = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetTextRenderer()->CreateTextBlock();
 
-	_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(750, 250, 1000, 700), D2D1::ColorF(0.1f, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
+	_pTextBlock->Init(D2D1::ColorF(D2D1::ColorF::LimeGreen), D2D1::RectF(10, 450, 350, 900), D2D1::ColorF(0.1f, 0.2f, 0.6f, 0.2f), D2D1::ColorF(D2D1::ColorF::Red), 4, 4,
 		"Consolas", DWRITE_FONT_WEIGHT_NORMAL, 12.f);
 
 	_uiVisibleObjectsParam = _pTextBlock->AddParameter(L"Количество видимых объектов");

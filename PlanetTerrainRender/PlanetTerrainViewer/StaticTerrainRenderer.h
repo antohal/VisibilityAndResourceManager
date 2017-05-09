@@ -33,24 +33,6 @@ public:
 
 	//@{ C3DBaseObject
 
-	// Функция вычисления расстояния до объекта
-	virtual float GetDistance(const D3DXVECTOR3* in_pvPointFrom) const;
-
-	// Получить минимальное расстояние видимости до объекта
-	virtual float GetMinimalVisibleDistance() const;
-
-	// Получить максимальное расстояние видимости до объекта
-	virtual float GetMaximalVisibleDistance() const;
-
-	// Получить родительский объект-лод
-	virtual C3DBaseObject*	GetParentLODObject();
-
-	// Получить количество дочерних объектов-лодов
-	virtual unsigned int	GetNumChildLODObjects();
-
-	// Получить дочерний лод-объект
-	virtual C3DBaseObject*	GetChildLODObject(unsigned int id);
-
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
 	// пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
 	virtual void							GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax) override;

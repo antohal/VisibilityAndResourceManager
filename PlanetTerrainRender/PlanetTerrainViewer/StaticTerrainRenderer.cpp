@@ -20,42 +20,6 @@ CD3DStaticTerrainObject::CD3DStaticTerrainObject(CD3DStaticTerrainRenderer* in_p
 
 }
 
-// Функция вычисления расстояния до объекта
-float CD3DStaticTerrainObject::GetDistance(const D3DXVECTOR3* in_pvPointFrom) const
-{
-	return 0;
-}
-
-// Получить минимальное расстояние видимости до объекта
-float CD3DStaticTerrainObject::GetMinimalVisibleDistance() const
-{
-	return 0;
-}
-
-// Получить максимальное расстояние видимости до объекта
-float CD3DStaticTerrainObject::GetMaximalVisibleDistance() const
-{
-	return FLT_MAX;
-}
-
-// Получить родительский объект-лод
-C3DBaseObject*	CD3DStaticTerrainObject::GetParentLODObject()
-{
-	return nullptr;
-}
-
-// Получить количество дочерних объектов-лодов
-unsigned int	CD3DStaticTerrainObject::GetNumChildLODObjects()
-{
-	return 0;
-}
-
-// Получить дочерний лод-объект
-C3DBaseObject*	CD3DStaticTerrainObject::GetChildLODObject(unsigned int id)
-{
-	return nullptr;
-}
-
 C3DBaseFaceSet* CD3DStaticTerrainObject::GetFaceSetById(size_t id) const 
 { 
 	if (id == 0) 
