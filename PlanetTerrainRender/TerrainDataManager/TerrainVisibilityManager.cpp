@@ -26,7 +26,7 @@ double AngularDistance(double a1, double a2)
 }
 
 // ‘ункци€ вычислени€ рассто€ни€ между блоком и точкой
-double GetDistance(const CTerrainBlockData* in_pTerrainBlock, const vm::Vector3df& in_vPos, double& out_Diameter)
+double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos, double& out_Diameter)
 {
 	double dfLong, dfLat, dfHeight, dfLen;
 	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
@@ -125,32 +125,7 @@ double GetDistance(const CTerrainBlockData* in_pTerrainBlock, const vm::Vector3d
 	return vecDists.front();
 }
 
-CTerrainVisibilityManager::CTerrainVisibilityManager()
-{
-	_implementation = new CTerrainVisibilityManagerImplementation();
-}
-
-CTerrainVisibilityManager::~CTerrainVisibilityManager()
-{
-	delete _implementation;
-}
-
-void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale)
-{
-	_implementation->Init(in_pMeshTree, in_fWorldScale);
-}
-
-bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject* in_pObject) const
-{
-	return _implementation->IsObjectVisible(in_pObject);
-}
-
-void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
-{
-	_implementation->UpdateObjectsVisibility(in_vPos, in_vDir, in_vUp, in_pmProjection);
-}
-
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale)
+void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale)
 {
 	_fWorldScale = in_fWorldScale;
 
@@ -159,7 +134,7 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::Init(C3
 	for (size_t i = 0; i < in_pMeshTree->GetObjectsCount(); i++)
 	{
 		C3DBaseObject* pObj = in_pMeshTree->GetObjectByIndex(i);
-		if (const CTerrainBlockData* pBlockData = in_pMeshTree->GetTerrainDataForObject(pObj))
+		if (const CTerrainBlockDesc* pBlockData = in_pMeshTree->GetTerrainDataForObject(pObj))
 		{
 			_mapTerrainBlockInfo[pObj] = pBlockData;
 			_mapObjects[pBlockData] = pObj;
@@ -167,12 +142,12 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::Init(C3
 	}
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsObjectVisible(C3DBaseObject * in_pObject) const
+bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject * in_pObject) const
 {
 	return _setVisibleObjects.find(in_pObject) != _setVisibleObjects.end();
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
+void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
 {
 	_setVisibleObjects.clear();
 
@@ -181,28 +156,28 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateO
 	if (!_pRoot)
 		return;
 
-	for (unsigned int i = 0; i < _pRoot->GetChildBlockDataCount(); i++)
-		UpdateVisibilityRecursive(_pRoot->GetChildBlockData(i), vPos);
+	for (unsigned int i = 0; i < _pRoot->GetChildBlockDescCount(); i++)
+		UpdateVisibilityRecursive(_pRoot->GetChildBlockDesc(i), vPos);
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateVisibilityRecursive(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos)
+void CTerrainVisibilityManager::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
 {
 	if (!IsSomeChildVisible(pTerrainBlock, in_vPos))
 	{
 		bool bIsFar = IsFar(pTerrainBlock, in_vPos);
 
 		// —амый верхний лод или достаточно близко
-		if (!bIsFar || pTerrainBlock->GetParentBlockData() == _pRoot)
+		if (!bIsFar || pTerrainBlock->GetParentBlockDesc() == _pRoot)
 			AddVisibleBlock(pTerrainBlock);
 
 		// ≈сли лод далеко, но кака€-то соседска€ веточка видна, то добавить на видимость
 		if (bIsFar)
 		{
-			unsigned int uiNeightbourCount = pTerrainBlock->GetParentBlockData()->GetChildBlockDataCount();
+			unsigned int uiNeightbourCount = pTerrainBlock->GetParentBlockDesc()->GetChildBlockDescCount();
 
 			for (unsigned int i = 0; i < uiNeightbourCount; i++)
 			{
-				const CTerrainBlockData* pNeighbour = pTerrainBlock->GetParentBlockData()->GetChildBlockData(i);
+				const CTerrainBlockDesc* pNeighbour = pTerrainBlock->GetParentBlockDesc()->GetChildBlockDesc(i);
 
 				if (pNeighbour == pTerrainBlock)
 					continue;
@@ -216,11 +191,11 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::UpdateV
 		}
 	}
 
-	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
-		UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockData(i), in_vPos);
+	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
+		UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockDesc(i), in_vPos);
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsFar(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos) const
+bool CTerrainVisibilityManager::IsFar(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
 {
 	const double k_dfDistCoeff = 0.5;
 
@@ -232,12 +207,12 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsFar(c
 	return distance > k_dfDistCoeff * diameter;
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsSomeChildVisible(const CTerrainBlockData* pTerrainBlock, const vm::Vector3df& in_vPos) const
+bool CTerrainVisibilityManager::IsSomeChildVisible(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
 {
 
-	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDataCount(); i++)
+	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
 	{
-		const CTerrainBlockData* pChild = pTerrainBlock->GetChildBlockData(i);
+		const CTerrainBlockDesc* pChild = pTerrainBlock->GetChildBlockDesc(i);
 
 		if(!IsFar(pChild, in_vPos))
 			return true;
@@ -249,7 +224,7 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::IsSomeC
 	return false;
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation::AddVisibleBlock(const CTerrainBlockData* pBlock)
+void CTerrainVisibilityManager::AddVisibleBlock(const CTerrainBlockDesc* pBlock)
 {
 	_setVisibleObjects.insert(_mapObjects[pBlock]);
 }

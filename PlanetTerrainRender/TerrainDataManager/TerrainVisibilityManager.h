@@ -1,12 +1,30 @@
 #pragma once
 
 #include "TerrainDataManager.h"
+
+#include "C3DBaseObject.h"
+#include "C3DBaseObjectManager.h"
+
+#include "VisibilityManager.h"
 #include "vecmath.h"
 
 #include <map>
 #include <set>
 
-class CTerrainVisibilityManager::CTerrainVisibilityManagerImplementation
+
+// базовый менеджер объектов поверхности Земли
+class C3DBaseTerrainObjectManager : public C3DBaseObjectManager
+{
+public:
+
+	// получить данные блока по объекту
+	virtual const CTerrainBlockDesc* GetTerrainDataForObject(C3DBaseObject* pObject) const = 0;
+
+	// получить указатель на корневой блок [с корневым узлом не должно быть связано никаких объектов, он служит как хранилище]
+	virtual const CTerrainBlockDesc* GetRootTerrainData() const = 0;
+};
+
+class CTerrainVisibilityManager : public IVisibilityManagerPlugin
 {
 public:
 
@@ -19,17 +37,17 @@ public:
 
 private:
 
-	void UpdateVisibilityRecursive(const CTerrainBlockData*, const vm::Vector3df& in_vPos);
-	void AddVisibleBlock(const CTerrainBlockData*);
-	bool IsFar(const CTerrainBlockData*, const vm::Vector3df& in_vPos) const;
-	bool IsSomeChildVisible(const CTerrainBlockData*, const vm::Vector3df& in_vPos) const;
+	void UpdateVisibilityRecursive(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos);
+	void AddVisibleBlock(const CTerrainBlockDesc*);
+	bool IsFar(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos) const;
+	bool IsSomeChildVisible(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos) const;
 
-	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainBlockInfo;
-	std::map<const CTerrainBlockData*, C3DBaseObject*>	_mapObjects;
+	std::map<C3DBaseObject*, const CTerrainBlockDesc*>	_mapTerrainBlockInfo;
+	std::map<const CTerrainBlockDesc*, C3DBaseObject*>	_mapObjects;
 
 	std::set<C3DBaseObject*> _setVisibleObjects;
 
-	const CTerrainBlockData* _pRoot = nullptr;
+	const CTerrainBlockDesc* _pRoot = nullptr;
 
 	float	_fWorldScale = 1;
 };

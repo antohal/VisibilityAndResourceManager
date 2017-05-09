@@ -90,7 +90,7 @@ class CD3DStaticTerrainFaceset : public C3DBaseFaceSet
 {
 public:
 
-	CD3DStaticTerrainFaceset(CD3DStaticTerrainRenderer* in_pOwner, CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial* in_pMaterial, const CTerrainBlockData* in_pTerrainBlockData);
+	CD3DStaticTerrainFaceset(CD3DStaticTerrainRenderer* in_pOwner, CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial* in_pMaterial, const CTerrainBlockDesc* in_pTerrainBlockData);
 
 	//@{ C3DBaseFaceSet
 
@@ -99,7 +99,7 @@ public:
 
 	virtual C3DBaseManager*					GetManager() const;
 
-	const CTerrainBlockData*				GetTerrainBlockData() const;
+	const CTerrainBlockDesc*				GetTerrainBlockData() const;
 
 	//@}
 
@@ -123,7 +123,7 @@ private:
 
 	CD3DStaticTerrainMaterial*				_pMaterialRef = nullptr;
 	CD3DStaticTerrainObject*				_pTerrainObject = nullptr;
-	const CTerrainBlockData*				_pTerrainBlockData = nullptr;
+	const CTerrainBlockDesc*				_pTerrainBlockData = nullptr;
 
 	CD3DStaticTerrainRenderer*				_owner = nullptr;
 
@@ -192,8 +192,8 @@ public:
 	PSRenderingMode	GetRenderingMode() const { return _RenderingMode; }
 
 	//@{ C3DBaseTerrainObjectManager
-	virtual const CTerrainBlockData* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
-	virtual const CTerrainBlockData* GetRootTerrainData() const override;
+	virtual const CTerrainBlockDesc* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
+	virtual const CTerrainBlockDesc* GetRootTerrainData() const override;
 	//@}
 
 	//@{ C3DBaseManager
@@ -232,15 +232,15 @@ protected:
 private:
 
 	void			CreateObjects();
-	void			CreateObjectsRecursive(const CTerrainBlockData* in_pData);
-	void			CreateObject(const CTerrainBlockData* in_pData);
+	void			CreateObjectsRecursive(const CTerrainBlockDesc* in_pData);
+	void			CreateObject(const CTerrainBlockDesc* in_pData);
 
 	bool			InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
 	void			OutputShaderErrorMessage(ID3D10Blob* errorMessage, WCHAR* shaderFilename);
 	bool			SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
 	void			FinalizeShader();
 
-	CTerrainBlockData*						_pPlanetTerrainData = nullptr;
+	CTerrainBlockDesc*						_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*					_pTerrainDataManager = nullptr;
 
 	HeightfieldConverter*					_pHeightfieldConverter = nullptr;
@@ -249,7 +249,7 @@ private:
 	std::vector<CD3DStaticTerrainObject*>	_vecTerrainObjects;
 	std::list<CD3DStaticTerrainMaterial*>	_lstMaterials;
 	std::list<CD3DStaticTerrainFaceset*>	_lstFacesets;
-	std::map<C3DBaseObject*, const CTerrainBlockData*>	_mapTerrainDataBlocks;
+	std::map<C3DBaseObject*, const CTerrainBlockDesc*>	_mapTerrainDataBlocks;
 
 	vm::Vector3df							_vLightDirection = vm::Vector3df(-1, -1, 0);
 	vm::Vector3df							_vLightDiffuse = vm::Vector3df(1, 1, 1);

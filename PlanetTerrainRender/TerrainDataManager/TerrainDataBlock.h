@@ -8,16 +8,16 @@
 
 #include <atlbase.h>
 
-class CTerrainBlockData::CTerrainBlockDataImplementation
+class CTerrainBlockDesc::CTerrainBlockDescImplementation
 {
 public:
 
-	CTerrainBlockDataImplementation(CTerrainBlockData* in_pHolder);
-	~CTerrainBlockDataImplementation();
+	CTerrainBlockDescImplementation(CTerrainBlockDesc* in_pHolder);
+	~CTerrainBlockDescImplementation();
 
 	// инициализация
 	void									Init(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner, float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude,
-		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockData* in_pParent);
+		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockDesc* in_pParent);
 
 	//@{ получить минимальные значения по долготе и широте
 	float									GetMinimumLattitude() const;
@@ -34,21 +34,21 @@ public:
 	const wchar_t*							GetHeightmapFileName() const;
 
 	// получить указатель на родительский блок (возвращает null, если является корневым)
-	const CTerrainBlockData*				GetParentBlockData() const;
+	const CTerrainBlockDesc*				GetParentBlockData() const;
 
 	// получить количество дочерних блоков
 	unsigned int							GetChildBlockDataCount() const;
 
 	// получить указатель на дочерний блок
-	const CTerrainBlockData*				GetChildBlockData(unsigned int id) const;
+	const CTerrainBlockDesc*				GetChildBlockData(unsigned int id) const;
 
 	// загрузить дочерние блоки из указанной директории
 	void									LoadChildsFromDirectory(const std::wstring& in_wsDirectory);
 
 	// создание экземпляра [статическая]
-	static CTerrainBlockData*				CreateTerrainBlockDataInstance(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
+	static CTerrainBlockDesc*				CreateTerrainBlockDataInstance(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
 		float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude, const std::wstring& in_wsTextureFileName, 
-		const std::wstring& in_wsHeightmapFileName, CTerrainBlockData* in_pParent);
+		const std::wstring& in_wsHeightmapFileName, CTerrainBlockDesc* in_pParent);
 
 private:
 
@@ -61,9 +61,9 @@ private:
 	std::wstring							_wsTextureFileName;
 	std::wstring							_wsHeightmapFileName;
 
-	CTerrainBlockData*						_pParentBlock = nullptr;
-	std::vector<CTerrainBlockData*>			_vecChildBlocks;
+	CTerrainBlockDesc*						_pParentBlock = nullptr;
+	std::vector<CTerrainBlockDesc*>			_vecChildBlocks;
 
 	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
-	CTerrainBlockData*						_pHolder = nullptr;
+	CTerrainBlockDesc*						_pHolder = nullptr;
 };

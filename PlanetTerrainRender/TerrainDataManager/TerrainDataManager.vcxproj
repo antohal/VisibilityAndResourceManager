@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TerrainDataManager</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>TerrainManager</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -103,7 +104,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;TERRAINDATAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;TERRAINMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../3rdParty/D3DX/include;../../include;../include;../Common</AdditionalIncludeDirectories>
     </ClCompile>
@@ -155,6 +156,7 @@
     <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
+    <ClCompile Include="TerrainObjectManagerImpl.cpp" />
     <ClCompile Include="TerrainVisibilityManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,8 +164,10 @@
     <ClInclude Include="..\Common\StlUtil.h" />
     <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\TerrainDataManager.h" />
+    <ClInclude Include="..\include\TerrainObjectManager.h" />
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />
+    <ClInclude Include="TerrainObjectManagerImpl.h" />
     <ClInclude Include="TerrainVisibilityManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

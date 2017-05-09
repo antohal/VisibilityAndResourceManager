@@ -22,13 +22,13 @@ CTerrainDataManager::~CTerrainDataManager()
 }
 
 // «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-bool CTerrainDataManager::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockData** out_ppRootDataBlock)
+bool CTerrainDataManager::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock)
 {
 	return _implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock);
 }
 
 // ќсвободить загруженное описание данных
-void CTerrainDataManager::ReleaseTerrainDataInfo(CTerrainBlockData* in_pTerrainDataBlock)
+void CTerrainDataManager::ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock)
 {
 	_implementation->ReleaseTerrainDataInfo(in_pTerrainDataBlock);
 }
@@ -49,9 +49,9 @@ CTerrainDataManager::CTerrainDataManagerImplementation::~CTerrainDataManagerImpl
 
 
 // «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockData** out_ppRootDataBlock)
+bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock)
 {
-	CTerrainBlockData* pRootBlock = CTerrainBlockData::CTerrainBlockDataImplementation::CreateTerrainBlockDataInstance(this,
+	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
 		-static_cast<float>(M_PI*0.5), static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI), std::wstring(), std::wstring(), nullptr);
 
 	pRootBlock->_implementation->LoadChildsFromDirectory(in_pcwszDirectoryName);
@@ -61,7 +61,7 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 }
 
 // ќсвободить загруженное описание данных
-void CTerrainDataManager::CTerrainDataManagerImplementation::ReleaseTerrainDataInfo(CTerrainBlockData* in_pTerrainDataBlock)
+void CTerrainDataManager::CTerrainDataManagerImplementation::ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock)
 {
 	delete in_pTerrainDataBlock;
 }

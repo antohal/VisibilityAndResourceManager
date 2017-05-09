@@ -6,64 +6,64 @@
 #include "Log.h"
 #include "StlUtil.h"
 
-CTerrainBlockData::CTerrainBlockData()
+CTerrainBlockDesc::CTerrainBlockDesc()
 {
-	_implementation = new CTerrainBlockDataImplementation(this);
+	_implementation = new CTerrainBlockDescImplementation(this);
 }
 
-CTerrainBlockData::~CTerrainBlockData()
+CTerrainBlockDesc::~CTerrainBlockDesc()
 {
 	delete _implementation;
 }
 
 //@{ получить минимальные значения по долготе и широте
-float CTerrainBlockData::GetMinimumLattitude() const
+float CTerrainBlockDesc::GetMinimumLattitude() const
 {
 	return _implementation->GetMinimumLattitude();
 }
 
-float CTerrainBlockData::GetMaximumLattitude() const
+float CTerrainBlockDesc::GetMaximumLattitude() const
 {
 	return _implementation->GetMaximumLattitude();
 }
 
-float CTerrainBlockData::GetMinimumLongitude() const
+float CTerrainBlockDesc::GetMinimumLongitude() const
 {
 	return _implementation->GetMinimumLongitude();
 }
 
-float CTerrainBlockData::GetMaximumLongitude() const
+float CTerrainBlockDesc::GetMaximumLongitude() const
 {
 	return _implementation->GetMaximumLongitude();
 }
 //@}
 
 // получить имя файла текстуры
-const wchar_t* CTerrainBlockData::GetTextureFileName() const
+const wchar_t* CTerrainBlockDesc::GetTextureFileName() const
 {
 	return _implementation->GetTextureFileName();
 }
 
 // получить имя файла карты высот
-const wchar_t* CTerrainBlockData::GetHeightmapFileName() const
+const wchar_t* CTerrainBlockDesc::GetHeightmapFileName() const
 {
 	return _implementation->GetHeightmapFileName();
 }
 
 // получить указатель на родительский блок (возвращает null, если является корневым)
-const CTerrainBlockData* CTerrainBlockData::GetParentBlockData() const
+const CTerrainBlockDesc* CTerrainBlockDesc::GetParentBlockDesc() const
 {
 	return _implementation->GetParentBlockData();
 }
 
 // получить количество дочерних блоков
-unsigned int CTerrainBlockData::GetChildBlockDataCount() const
+unsigned int CTerrainBlockDesc::GetChildBlockDescCount() const
 {
 	return _implementation->GetChildBlockDataCount();
 }
 
 // получить указатель на дочерний блок
-const CTerrainBlockData* CTerrainBlockData::GetChildBlockData(unsigned int id) const
+const CTerrainBlockDesc* CTerrainBlockDesc::GetChildBlockDesc(unsigned int id) const
 {
 	return _implementation->GetChildBlockData(id);
 }
@@ -72,26 +72,26 @@ const CTerrainBlockData* CTerrainBlockData::GetChildBlockData(unsigned int id) c
 
 
 //
-// CTerrainBlockData::CTerrainBlockDataImplementation
+// CTerrainBlockDesc::CTerrainBlockDescImplementation
 //
 
-CTerrainBlockData::CTerrainBlockDataImplementation::CTerrainBlockDataImplementation(CTerrainBlockData* in_pHolder)
+CTerrainBlockDesc::CTerrainBlockDescImplementation::CTerrainBlockDescImplementation(CTerrainBlockDesc* in_pHolder)
 	:	_pHolder(in_pHolder)
 {
 
 }
 
-CTerrainBlockData::CTerrainBlockDataImplementation::~CTerrainBlockDataImplementation()
+CTerrainBlockDesc::CTerrainBlockDescImplementation::~CTerrainBlockDescImplementation()
 {
-	for (CTerrainBlockData* pChildBlock : _vecChildBlocks)
+	for (CTerrainBlockDesc* pChildBlock : _vecChildBlocks)
 	{
 		delete pChildBlock;
 	}
 }
 
 // инициализация
-void CTerrainBlockData::CTerrainBlockDataImplementation::Init(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner, float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude,
-	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockData* in_pParent)
+void CTerrainBlockDesc::CTerrainBlockDescImplementation::Init(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner, float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude,
+	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockDesc* in_pParent)
 {
 	_pOwner = in_pOwner;
 
@@ -109,59 +109,59 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::Init(CTerrainDataManage
 }
 
 //@{ получить минимальные значения по долготе и широте
-float CTerrainBlockData::CTerrainBlockDataImplementation::GetMinimumLattitude() const
+float CTerrainBlockDesc::CTerrainBlockDescImplementation::GetMinimumLattitude() const
 {
 	return _fMinLattitude;
 }
 
-float CTerrainBlockData::CTerrainBlockDataImplementation::GetMaximumLattitude() const
+float CTerrainBlockDesc::CTerrainBlockDescImplementation::GetMaximumLattitude() const
 {
 	return _fMaxLattitude;
 }
 
-float CTerrainBlockData::CTerrainBlockDataImplementation::GetMinimumLongitude() const
+float CTerrainBlockDesc::CTerrainBlockDescImplementation::GetMinimumLongitude() const
 {
 	return _fMinLongitude;
 }
 
-float CTerrainBlockData::CTerrainBlockDataImplementation::GetMaximumLongitude() const
+float CTerrainBlockDesc::CTerrainBlockDescImplementation::GetMaximumLongitude() const
 {
 	return _fMaxLongitude;
 }
 //@}
 
 // получить имя файла текстуры
-const wchar_t* CTerrainBlockData::CTerrainBlockDataImplementation::GetTextureFileName() const
+const wchar_t* CTerrainBlockDesc::CTerrainBlockDescImplementation::GetTextureFileName() const
 {
 	return _wsTextureFileName.c_str();
 }
 
 // получить имя файла карты высот
-const wchar_t* CTerrainBlockData::CTerrainBlockDataImplementation::GetHeightmapFileName() const
+const wchar_t* CTerrainBlockDesc::CTerrainBlockDescImplementation::GetHeightmapFileName() const
 {
 	return _wsHeightmapFileName.c_str();
 }
 
 // получить указатель на родительский блок (возвращает null, если является корневым)
-const CTerrainBlockData* CTerrainBlockData::CTerrainBlockDataImplementation::GetParentBlockData() const
+const CTerrainBlockDesc* CTerrainBlockDesc::CTerrainBlockDescImplementation::GetParentBlockData() const
 {
 	return _pParentBlock;
 }
 
 // получить количество дочерних блоков
-unsigned int CTerrainBlockData::CTerrainBlockDataImplementation::GetChildBlockDataCount() const
+unsigned int CTerrainBlockDesc::CTerrainBlockDescImplementation::GetChildBlockDataCount() const
 {
 	return static_cast<unsigned int>(_vecChildBlocks.size());
 }
 
 // получить указатель на дочерний блок
-const CTerrainBlockData* CTerrainBlockData::CTerrainBlockDataImplementation::GetChildBlockData(unsigned int id) const
+const CTerrainBlockDesc* CTerrainBlockDesc::CTerrainBlockDescImplementation::GetChildBlockData(unsigned int id) const
 {
 	return _vecChildBlocks[id];
 }
 
 // создание экземпляра 
-/*static*/ CTerrainBlockData* CTerrainBlockData::CTerrainBlockDataImplementation::CreateTerrainBlockDataInstance(
+/*static*/ CTerrainBlockDesc* CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(
 	CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
 	float in_fMinLattitude, 
 	float in_fMaxLattitude, 
@@ -169,15 +169,15 @@ const CTerrainBlockData* CTerrainBlockData::CTerrainBlockDataImplementation::Get
 	float in_fMaxLongitude,
 	const std::wstring& in_wsTextureFileName, 
 	const std::wstring& in_wsHeightmapFileName, 
-	CTerrainBlockData* in_pParent)
+	CTerrainBlockDesc* in_pParent)
 {
-	CTerrainBlockData* pNewDataBlock = new CTerrainBlockData();
+	CTerrainBlockDesc* pNewDataBlock = new CTerrainBlockDesc();
 	pNewDataBlock->_implementation->Init(in_pOwner, in_fMinLattitude, in_fMaxLattitude, in_fMinLongitude, in_fMaxLongitude, in_wsTextureFileName, in_wsHeightmapFileName, in_pParent);
 
 	return pNewDataBlock;
 }
 
-void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory(const std::wstring& in_wsDirectory)
+void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory(const std::wstring& in_wsDirectory)
 {
 	std::wstring wsDirectory = in_wsDirectory;
 
@@ -199,7 +199,7 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 
 	if (hFind == INVALID_HANDLE_VALUE)
 	{
-		LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: Directory is empty.", wsDirectory.c_str());
+		LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: Directory is empty.", wsDirectory.c_str());
 		return;
 	}
 
@@ -218,7 +218,7 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 
 		if (vecFileNameParts.size() != 2)
 		{
-			LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: Illegal file name (%ls)", wsDirectory.c_str(), wsFileName.c_str());
+			LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: Illegal file name (%ls)", wsDirectory.c_str(), wsFileName.c_str());
 			continue;
 		}
 
@@ -229,7 +229,7 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 
 		if (vecBaseParts.size() != 3)
 		{
-			LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: Illegal file name (%ls)", wsDirectory.c_str(), wsFileName.c_str());
+			LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: Illegal file name (%ls)", wsDirectory.c_str(), wsFileName.c_str());
 			continue;
 		}
 
@@ -247,14 +247,14 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 	DWORD dwError = GetLastError();
 	if (dwError != ERROR_NO_MORE_FILES)
 	{
-		LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: FindFirstFile/FindNextFile", wsDirectory.c_str());
+		LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: FindFirstFile/FindNextFile", wsDirectory.c_str());
 	}
 
 	FindClose(hFind);
 
 	if (uiCountX == 0 || uiCountY == 0)
 	{
-		LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: directory contents are illegal");
+		LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: directory contents are illegal");
 		return;
 	}
 
@@ -279,20 +279,20 @@ void CTerrainBlockData::CTerrainBlockDataImplementation::LoadChildsFromDirectory
 
 			if (!PathFileExistsW(wsTexturePath.c_str()))
 			{
-				LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: texture file (%ls) does not exist!", wsDirectory.c_str(), wsTextureFileName.c_str());
+				LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: texture file (%ls) does not exist!", wsDirectory.c_str(), wsTextureFileName.c_str());
 				wsTexturePath.clear();
 			}
 
 			if (!PathFileExistsW(wsHeightmapPath.c_str()))
 			{
-				LogMessage("CTerrainBlockData::LoadChildsFromDirectory('%ls'), ERROR: heightmap file (%ls) does not exist!", wsDirectory.c_str(), wsHeightmapFileName.c_str());
+				LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: heightmap file (%ls) does not exist!", wsDirectory.c_str(), wsHeightmapFileName.c_str());
 				wsHeightmapPath.clear();
 			}
 
 			float fChildMinLattitude = _fMinLattitude + fDeltaLattitude*uiYY;
 			float fChildMaxLattitude = _fMinLattitude + fDeltaLattitude*uiYY + fDeltaLattitude;
 
-			CTerrainBlockData* pChildBlock = CTerrainBlockData::CTerrainBlockDataImplementation::CreateTerrainBlockDataInstance(_pOwner,
+			CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
 				fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
 
 			_vecChildBlocks.push_back(pChildBlock);

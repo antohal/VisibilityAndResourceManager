@@ -116,7 +116,7 @@ D3DXMATRIX* CD3DStaticTerrainObject::GetWorldTransform()
 // CD3DStaticTerrainFaceset
 //
 
-CD3DStaticTerrainFaceset::CD3DStaticTerrainFaceset(CD3DStaticTerrainRenderer* in_pOwner, CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial * in_pMaterial, const CTerrainBlockData* in_pTerrainBlockData)
+CD3DStaticTerrainFaceset::CD3DStaticTerrainFaceset(CD3DStaticTerrainRenderer* in_pOwner, CD3DStaticTerrainObject* in_pObject, CD3DStaticTerrainMaterial * in_pMaterial, const CTerrainBlockDesc* in_pTerrainBlockData)
 	: _owner(in_pOwner), _pTerrainObject(in_pObject), _pMaterialRef(in_pMaterial), _pTerrainBlockData(in_pTerrainBlockData)
 {
 }
@@ -188,7 +188,7 @@ STriangulation& CD3DStaticTerrainFaceset::GetTriangulation()
 	return _triangulation;
 }
 
-const CTerrainBlockData* CD3DStaticTerrainFaceset::GetTerrainBlockData() const
+const CTerrainBlockDesc* CD3DStaticTerrainFaceset::GetTerrainBlockData() const
 {
 	return _pTerrainBlockData;
 }
@@ -361,7 +361,7 @@ void CD3DStaticTerrainRenderer::AddVisibleMaterial(CD3DStaticTerrainMaterial * i
 	_setVisibleMaterials.insert(in_pMaterial);
 }
 
-const CTerrainBlockData* CD3DStaticTerrainRenderer::GetTerrainDataForObject(C3DBaseObject* pObject) const
+const CTerrainBlockDesc* CD3DStaticTerrainRenderer::GetTerrainDataForObject(C3DBaseObject* pObject) const
 {
 	auto it = _mapTerrainDataBlocks.find(pObject);
 
@@ -371,7 +371,7 @@ const CTerrainBlockData* CD3DStaticTerrainRenderer::GetTerrainDataForObject(C3DB
 	return it->second;
 }
 
-const CTerrainBlockData* CD3DStaticTerrainRenderer::GetRootTerrainData() const
+const CTerrainBlockDesc* CD3DStaticTerrainRenderer::GetRootTerrainData() const
 {
 	return _pPlanetTerrainData;
 }
@@ -465,7 +465,7 @@ void CD3DStaticTerrainRenderer::CreateObjects()
 	LogMessage("%d Objects created.", _vecTerrainObjects.size());
 }
 
-void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockData* in_pData)
+void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockDesc* in_pData)
 {
 	if (in_pData->GetParentBlockData())
 	{
@@ -478,7 +478,7 @@ void CD3DStaticTerrainRenderer::CreateObjectsRecursive(const CTerrainBlockData* 
 	}
 }
 
-void CD3DStaticTerrainRenderer::CreateObject(const CTerrainBlockData* in_pData)
+void CD3DStaticTerrainRenderer::CreateObject(const CTerrainBlockDesc* in_pData)
 {
 	CD3DStaticTerrainObject* pObject = new CD3DStaticTerrainObject(this);
 
