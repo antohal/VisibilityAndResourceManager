@@ -164,7 +164,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	float3 vUpperVertex = vVertexPos;
 	float3 vLowerVertex = vVertexPos;
 	
-	if (ix > 1)
+	if (ix >= 1)
 	{
 		float leftVertexHeight = GetVertexHeight(ix - 1, iy);
 		vLeftVertex = GetVertexPos(ix - 1, iy, leftVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
@@ -176,7 +176,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 		vRightVertex = GetVertexPos(ix + 1, iy, rightVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
-	if (iy > 1)
+	if (iy >= 1)
 	{
 		float upperVertexHeight = GetVertexHeight(ix, iy - 1);
 		vUpperVertex = GetVertexPos(ix, iy - 1, upperVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
