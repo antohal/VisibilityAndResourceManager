@@ -47,9 +47,6 @@ public:
 		return nullptr;
 	}
 
-	virtual bool	IsVisibleTo(const D3DXVECTOR3* in_vPoint) const { return true; }
-
-
 protected:
 
 	// Ёта функци€ внутренн€€, вызываетс€ внутри VisibilityManager в момент, когда объект становитс€ потенциально видимым.

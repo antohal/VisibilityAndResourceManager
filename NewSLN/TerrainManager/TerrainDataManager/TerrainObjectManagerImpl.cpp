@@ -10,9 +10,9 @@ CTerrainObjectManager::~CTerrainObjectManager()
 	delete _implementation;
 }
 
-void CTerrainObjectManager::Init(CTerrainObjectCreator* in_pObjectCreator, const wchar_t* in_pcwszPlanetDirectory)
+void CTerrainObjectManager::Init(const wchar_t* in_pcwszPlanetDirectory)
 {
-	_implementation->Init(in_pObjectCreator, in_pcwszPlanetDirectory);
+	_implementation->Init(in_pcwszPlanetDirectory);
 }
 
 CResourceManager* CTerrainObjectManager::GetResourceManager()
@@ -30,22 +30,12 @@ void CTerrainObjectManager::Update(float in_fDeltaTime)
 	_implementation->Update(in_fDeltaTime);
 }
 
-size_t CTerrainObjectManager::GetVisibleTerrainObjectCount() const
-{
-	return _implementation->GetVisibleTerrainObjectCount();
-}
-
-size_t CTerrainObjectManager::GetVisibleObjectID(size_t index) const
-{
-	return _implementation->GetVisibleObjectID(index);
-}
-
 
 //
 // CTerrainObjectManager::CTerrainObjectManagerImpl
 //
 
-void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(CTerrainObjectCreator* in_pObjectCreator, const wchar_t* in_pcwszPlanetDirectory)
+void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(const wchar_t* in_pcwszPlanetDirectory)
 {
 
 }

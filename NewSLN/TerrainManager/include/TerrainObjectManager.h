@@ -14,6 +14,8 @@ typedef struct _D3DMATRIX D3DMATRIX;
 
 class CResourceManager;
 
+typedef size_t TerrainObjectID;
+
 class CTerrainObjectCreator
 {
 public:
@@ -38,17 +40,44 @@ public:
 	CTerrainObjectManager();
 	~CTerrainObjectManager();
 
-	void Init(CTerrainObjectCreator* in_pObjectCreator, const wchar_t* in_pcwszPlanetDirectory);
-
-	CResourceManager* GetResourceManager();
+	// инициализация. Параметр - имя дериктории, где лежат данные Земли
+	void Init(const wchar_t* in_pcwszPlanetDirectory);
 
 	void SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection);
 
+	// В момент вызова этой функции формируется 4 списка: 
+	// объекты, которые нужно создать
+	// объекты, которые стали видимыми
+	// объекты, которые стали невидимыми
+	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
-	size_t GetVisibleTerrainObjectCount() const;
+	// Получить количество новых объектов
+	size_t GetNewObjectsCount() const;
 
-	size_t GetVisibleObjectID(size_t index) const;
+	// Получить идентификатор нового объекта Земли по индексу
+	TerrainObjectID	GetNewObjectID(size_t index) const;
+
+	//Получить описание объекта Земли по идентификатору
+	const CTerrainBlockDesc*	GetTerrainObjectDesc(TerrainObjectID ID) const;
+
+	// Получить количество новых видимых объектов террейна
+	size_t GetNewVisibleObjectsCount() const;
+
+	// получить идентификатор нового видимого объекта террейна по индексу
+	TerrainObjectID GetNewVisibleObjectID(size_t index) const;
+
+
+	size_t GetNewInvisibleObjectsCount() const;
+
+	TerrainObjectID GetNewInvisibleObjectID(size_t index);
+
+	size_t GetObjectsToDeleteCount() const;
+
+	TerrainObjectID GetObjectToDeleteID(size_t index) const;
+
+	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
+	CResourceManager* GetResourceManager();
 
 private:
 

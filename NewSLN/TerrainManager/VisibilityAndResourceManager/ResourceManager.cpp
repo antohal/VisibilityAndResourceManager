@@ -286,8 +286,8 @@ struct CResourceManager::SResourceManagerPrivate
 			}
 
 			
-			_predictor._cameraParams.verticalFov = fVerticalFOVDeg*D2R;
-			_predictor._cameraParams.horizontalFov = fHorizontalFOVDeg*D2R;
+			_predictor._cameraParams.verticalFov = fVerticalFOVDeg;
+			_predictor._cameraParams.horizontalFov = fHorizontalFOVDeg;
 
 			_predictor._cameraParams.farPlane = fFarPlane;
 			_predictor._cameraParams.nearPlane = fNearPlane;
@@ -330,8 +330,8 @@ struct CResourceManager::SResourceManagerPrivate
 
 		vm::Quaterniondf qCameraOrientation(mMatrixTransform);
 
-		float horizontalFovDeg = _predictor._cameraParams.horizontalFov * R2D;
-		float verticalFovDeg = _predictor._cameraParams.verticalFov * R2D;
+		float horizontalFovDeg = _predictor._cameraParams.horizontalFov ;
+		float verticalFovDeg = _predictor._cameraParams.verticalFov ;
 
 		if (_horizontalFovDeg > 0)
 			horizontalFovDeg = _horizontalFovDeg;

@@ -1,6 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugISO|Win32">
+      <Configuration>DebugISO</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugISO|x64">
+      <Configuration>DebugISO</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -31,6 +39,12 @@
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -39,6 +53,12 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
@@ -59,10 +79,16 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -72,9 +98,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\</OutDir>
+    <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)\..\..\..\..\ISO</OutDir>
     <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,9 +117,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
-    <OutDir>..\bin\</OutDir>
+    <OutDir>$(ProjectDir)\..\bin</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -120,6 +167,30 @@
       <Message>Copying shaders</Message>
       <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps"
 copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../3rdParty/D3DX/include;../include;../Common</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
+      <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuildStep>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+      <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
+      <Outputs>$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
+      <Message>Copying shaders</Message>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps"
+copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -159,10 +230,10 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\bin\PlanetTerrainViewerSha
       <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
-      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps"
-copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps"
+copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
       <Message>Copying shaders</Message>
-      <Outputs>$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(ProjectDir)..\bin\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
+      <Outputs>$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
       <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuildStep>

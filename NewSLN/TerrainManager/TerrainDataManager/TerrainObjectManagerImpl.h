@@ -10,7 +10,7 @@ class CTerrainObjectManager::CTerrainObjectManagerImpl
 {
 public:
 
-	void Init(CTerrainObjectCreator* in_pObjectCreator, const wchar_t* in_pcwszPlanetDirectory);
+	void Init(const wchar_t* in_pcwszPlanetDirectory);
 
 	CResourceManager* GetResourceManager();
 
