@@ -132,6 +132,12 @@ public:
 	virtual size_t	GetTexturesCount() const override { return 0; }
 	virtual C3DBaseTexture*	GetTextureById(size_t id) const override { return nullptr; }
 
+	// получить количество текстур по типу
+	virtual size_t	GetTexturesCountByType(ETextureType) const { return 0; };
+
+	// получить текстуру по типу и номеру
+	virtual C3DBaseTexture* GetTextureByTypeAndId(ETextureType in_Type, size_t id) const { return nullptr; };
+
 	virtual C3DBaseManager*					GetManager() const;
 
 	void	Load();

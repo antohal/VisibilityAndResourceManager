@@ -181,7 +181,7 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\bin\PlanetTerrainViewerSha
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;$(ProjectDir)\..\..\..\..\ISO</AdditionalLibraryDirectories>
       <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>

@@ -159,7 +159,6 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 			{
 				if (C3DBaseMaterial* pMaterial = faceset->GetMaterialRef())
 				{
-					
 					for (size_t iTexture = 0; iTexture < pMaterial->GetTexturesCount(); iTexture++)
 					{
 						C3DBaseTexture* texture = pMaterial->GetTextureById(iTexture);
@@ -167,10 +166,23 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 						if (!texture)
 							continue;
 
-						std::vector<C3DBaseTexture*>& vecTexturesByType = _vecTextures[texture->GetTextureType()];
+						_setTextures.insert(texture);
+					}
 
-						if (std::find(vecTexturesByType.begin(), vecTexturesByType.end(), texture) == vecTexturesByType.end())
-							vecTexturesByType.push_back(texture);
+					for (size_t iType = 0; iType < TEXTURE_TYPE_COUNT; iType++)
+					{
+						ETextureType eTexType = static_cast<ETextureType>(iType);
+						size_t iTexCount = pMaterial->GetTexturesCountByType(eTexType);
+
+						for (size_t iTexture = 0; iTexture < iTexCount; iTexture++)
+						{
+							C3DBaseTexture* texture = pMaterial->GetTextureByTypeAndId(eTexType, iTexture);
+
+							if (!texture)
+								continue;
+
+							_setTextures.insert(texture);
+						}
 					}
 				}
 			}
@@ -192,7 +204,7 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 		Vector3f				_vOriginalBBoxSize = Vector3f(0, 0, 0);
 
 		bool					_bMinimalSizeCheckEnabled;
-		std::vector<C3DBaseTexture*>	_vecTextures[TEXTURE_TYPE_COUNT];
+		std::set<C3DBaseTexture*>	_setTextures;
 		std::vector<C3DBaseFaceSet*>	_vecFaceSets;
 
 		Matrix3x3f				_mInvTransform;
@@ -202,8 +214,8 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	CCamera									_Camera;
 
 	std::set<C3DBaseObject*>				_setAlwaysVisibleObjects;
-	std::set<C3DBaseTexture*>				_asetVisibleTextures[TEXTURE_TYPE_COUNT];
-	std::map<C3DBaseTexture*, float>		_amapTexturePriority[TEXTURE_TYPE_COUNT];
+	std::set<C3DBaseTexture*>				_setVisibleTextures;
+	std::map<C3DBaseTexture*, float>		_mapTexturePriority;
 	std::vector<C3DBaseObject*>				_vecVisibleObjects;
 	
 #ifndef USE_OPENCL	
@@ -267,6 +279,8 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	{
 		_setPlugins.erase(p);
 	}
+
+	void	UpdateTextureVisibilityForObject(SObject* in_pObject);
 };
 
 // Включить лог в файл [параметр по умолчанию TRUE]
@@ -358,7 +372,7 @@ bool CVisibilityManager::VisibilityManagerPrivate::GetTransformedBoundBox (C3DBa
 CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, float in_fWorldRadius, float in_fMinCellSize)
 {
 	LogInit("visman.log");
-	LogEnable(true);
+	//LogEnable(true);
 
 #ifdef USE_OPENCL
 	if (! g_ptrTaskManager.get())
@@ -379,7 +393,6 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 	D3DXVECTOR3 vMaxWorld(in_fWorldRadius, in_fWorldRadius, in_fWorldRadius);
 
 	std::vector<C3DBaseObject*> vecObjects;
-//	in_pMeshTree->GetObjectList(vMinWorld, vMaxWorld, vecObjects);
 	vecObjects.resize(in_pMeshTree->GetObjectsCount());
 
 	for (size_t i = 0; i < vecObjects.size(); i++)
@@ -424,7 +437,7 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 			SetObject(object, BoundBox(Vector3(BBox.m_vMin.x, BBox.m_vMin.y, BBox.m_vMin.z), Vector3(BBox.m_vMax.x, BBox.m_vMax.y, BBox.m_vMax.z)), 0);
 	}
 
-	LogMessage("CVisibilityManager: created. Objects count: %d", (int)vecObjects.size());
+	//LogMessage("CVisibilityManager: created. Objects count: %d", (int)vecObjects.size());
 
 	//UpdateVisibleObjectsSet();
 }
@@ -488,16 +501,7 @@ float CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxMidSizeI
 
 float CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxMidSizeInPixels(const CCamera& in_Camera, const Vector2f& in_vResolution) const
 {
-	//float fBboxDiameter = _bbox.GetMidSize();
-
-	//Vector3f vDirToObject = _bbox.GetCenter() - in_Camera.GetPos();
-	//vDirToObject.Normalize();
-
 	Vector3f vSize = _bbox.GetSize();
-
-	//double a = sqrtf(vSize.x*vSize.x - vSize.x*vDirToObject.x*vSize.x*vDirToObject.x);
-	//double b = sqrtf(vSize.y*vSize.y - vSize.y*vDirToObject.y*vSize.y*vDirToObject.y);
-	//double c = sqrtf(vSize.z*vSize.z - vSize.z*vDirToObject.z*vSize.z*vDirToObject.z);
 
 	double fBboxDiameter = (vSize.x + vSize.y + vSize.z) / 3;//(a > b && a < c) || (a > c && a < b) ? a : ((b > a && b < c) || (b > c && b < a) ? b : c);
 	
@@ -548,16 +552,7 @@ float	CVisibilityManager::VisibilityManagerPrivate::SObject::GetBoundBoxAreaInPi
 	
 	Vector3f vCameraDir = _bbox.GetCenter() - in_Camera.GetPos();
 	
-	/*D3DXVECTOR3 vInputDir(vCameraDir.x, vCameraDir.y, vCameraDir.z);
-	D3DXVECTOR3 vTransformedView;
-	
-	vTransformedView.x = vInputDir.x*_mInvTransform.m[0][0] + vInputDir.y*_mInvTransform.m[1][0] + vInputDir.z*_mInvTransform.m[2][0];
-	vTransformedView.y = vInputDir.x*_mInvTransform.m[0][1] + vInputDir.y*_mInvTransform.m[1][1] + vInputDir.z*_mInvTransform.m[2][1];
-	vTransformedView.z = vInputDir.x*_mInvTransform.m[0][2] + vInputDir.y*_mInvTransform.m[1][2] + vInputDir.z*_mInvTransform.m[2][2];
-	*/
-	
 	float fDist = vCameraDir.NormalizeL();
-	
 	
 	float fDotX = fabsf(vCameraDir.x);
 	float fDotY = fabsf(vCameraDir.y);
@@ -740,11 +735,9 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 
 	_private->_vecVisibleObjects.resize(0);
 
-	for (int i = 0; i < TEXTURE_TYPE_COUNT; i++)
-	{
-		_private->_asetVisibleTextures[i].clear();
-		_private->_amapTexturePriority[i].clear();
-	}
+	_private->_setVisibleTextures.clear();
+	_private->_mapTexturePriority.clear();
+
 }
 
 void CVisibilityManager::SetCamera (const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, 
@@ -762,12 +755,8 @@ void CVisibilityManager::SetCamera (const Vector3& in_vPos, const Vector3& in_vD
 	_private->_Camera.SetPerspective(vPos, vDir, vUp, in_fHorizontalFOV, in_fVerticalFOV, in_fNearPlane, in_fFarPlane);
 
 	_private->_vecVisibleObjects.resize(0);
-	
-	for (int i = 0; i < TEXTURE_TYPE_COUNT; i++)
-	{
-		_private->_asetVisibleTextures[i].clear();
-		_private->_amapTexturePriority[i].clear();
-	}
+	_private->_setVisibleTextures.clear();
+	_private->_mapTexturePriority.clear();
 
 	D3DXMATRIX mProj;
 	if (D3DXMatrixPerspectiveFovLH(&mProj, in_fVerticalFOV*D2R, in_fHorizontalFOV / in_fVerticalFOV, in_fNearPlane, in_fFarPlane))
@@ -779,12 +768,9 @@ void CVisibilityManager::SetOrthoCamera (const Vector3& in_vPos, const Vector3& 
 	_private->_Camera.SetOrtho(ToVec3(in_vPos), ToVec3(in_vDir), ToVec3(in_vUp), ToVec3(in_vSizes));
 
 	_private->_vecVisibleObjects.resize(0);
+	_private->_setVisibleTextures.clear();
+	_private->_mapTexturePriority.clear();
 
-	for (int i = 0; i < TEXTURE_TYPE_COUNT; i++)
-	{
-		_private->_asetVisibleTextures[i].clear();
-		_private->_amapTexturePriority[i].clear();
-	}
 }
 
 void CVisibilityManager::VisibilityManagerPrivate::SetObjectInternal(C3DBaseObject* in_Object, const BoundBox& in_BBox, float in_fMaxDistance)
@@ -932,6 +918,22 @@ bool CVisibilityManager::VisibilityManagerPrivate::IsObjectInCamera(const IGridI
 	return IsObjectInFrustum(in_GI, in_pInternalObject, _Camera.GetBoundBox(), _Camera.GetFrustum(), _Camera.GetPos());
 }
 
+void CVisibilityManager::VisibilityManagerPrivate::UpdateTextureVisibilityForObject(CVisibilityManager::VisibilityManagerPrivate::SObject* in_pObject)
+{
+	const Vector2f vResolution((float)_uiScreenWidth, (float)_uiScreenHeight);
+
+	for (C3DBaseTexture* texture : in_pObject->_setTextures)
+	{
+		_setVisibleTextures.insert(texture);
+
+		float& fTexturePriority = _mapTexturePriority[texture];
+		float fDot = in_pObject->GetCameraDirectionDotProduct(_Camera, vResolution);
+
+		if (fDot > fTexturePriority)
+			fTexturePriority = fDot;
+	}
+}
+
 void CVisibilityManager::UpdateVisibleObjectsSet ()
 {
 	if (this == NULL)
@@ -952,11 +954,8 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 	if (_private->_bUpdateTextureVisibility)
 	{
-		for (int i = 0; i < TEXTURE_TYPE_COUNT; i++)
-		{
-			_private->_asetVisibleTextures[i].clear();
-			_private->_amapTexturePriority[i].clear();
-		}
+		_private->_setVisibleTextures.clear();
+		_private->_mapTexturePriority.clear();
 	}
 	
 #ifdef USE_OPENCL
@@ -1008,20 +1007,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 		if (_private->_bUpdateTextureVisibility)
 		{
-			for (int iTextureType = 0; iTextureType < TEXTURE_TYPE_COUNT; iTextureType++)
-			{
-				for (size_t iTex = 0; iTex < pInternalObject->_vecTextures[iTextureType].size(); iTex++)
-				{
-					C3DBaseTexture* texture = pInternalObject->_vecTextures[iTextureType][iTex];
-					_private->_asetVisibleTextures[iTextureType].insert(texture);
-
-					float& fTexturePriority = _private->_amapTexturePriority[iTextureType][texture];
-					float fDot = pInternalObject->GetCameraDirectionDotProduct(_private->_Camera, vResolution);
-
-					if (fDot > fTexturePriority)
-						fTexturePriority = fDot;
-				}
-			}
+			_private->UpdateTextureVisibilityForObject(pInternalObject);
 		}
 #endif
 
@@ -1041,25 +1027,10 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 			internalObject.InitTextures();
 
 #ifdef TEXTURE_VISIBILITY
-
 		if (_private->_bUpdateTextureVisibility)
 		{
-			for (int iTextureType = 0; iTextureType < TEXTURE_TYPE_COUNT; iTextureType++)
-			{
-				for (size_t iTex = 0; iTex < internalObject._vecTextures[iTextureType].size(); iTex++)
-				{
-					C3DBaseTexture* texture = internalObject._vecTextures[iTextureType][iTex];
-					_private->_asetVisibleTextures[iTextureType].insert(texture);
-
-					float& fTexturePriority = _private->_amapTexturePriority[iTextureType][texture];
-					float fDot = internalObject.GetCameraDirectionDotProduct(_private->_Camera, vResolution);
-
-					if (fDot > fTexturePriority)
-						fTexturePriority = fDot;
-				}
-			}
+			_private->UpdateTextureVisibilityForObject(&internalObject);
 		}
-
 #endif
 
 		if (internalObject._pObject)
@@ -1100,7 +1071,7 @@ C3DBaseObject* CVisibilityManager::GetVisibleObjectPtr(size_t index) const
 
 bool CVisibilityManager::IsTextureVisible(C3DBaseTexture* texture) const
 {
-	bool bRes = _private->_asetVisibleTextures[texture->GetTextureType()].find(texture) != _private->_asetVisibleTextures[texture->GetTextureType()].end();
+	bool bRes = _private->_setVisibleTextures.find(texture) != _private->_setVisibleTextures.end();
 	return bRes;
 }
 
@@ -1116,10 +1087,10 @@ void CVisibilityManager::SetEye(unsigned int in_uiEye)
 
 float CVisibilityManager::GetTexturePriority(C3DBaseTexture* texture) const
 {
-	if (_private->_asetVisibleTextures[texture->GetTextureType()].find(texture) == _private->_asetVisibleTextures[texture->GetTextureType()].end())
+	if (_private->_setVisibleTextures.find(texture) == _private->_setVisibleTextures.end())
 		return -2;
 
-	return _private->_amapTexturePriority[texture->GetTextureType()][texture];
+	return _private->_mapTexturePriority[texture];
 }
 
 // Получить текущие параметры камеры

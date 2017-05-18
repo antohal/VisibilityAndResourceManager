@@ -191,6 +191,23 @@
     <ClCompile Include="VisibilityManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\3DEngineInterface.h" />
+    <ClInclude Include="..\include\C3DBaseFaceSet.h" />
+    <ClInclude Include="..\include\C3DBaseManager.h" />
+    <ClInclude Include="..\include\C3DBaseMaterial.h" />
+    <ClInclude Include="..\include\C3DBaseMesh.h" />
+    <ClInclude Include="..\include\C3DBaseObject.h" />
+    <ClInclude Include="..\include\C3DBaseObjectManager.h" />
+    <ClInclude Include="..\include\C3DBaseResource.h" />
+    <ClInclude Include="..\include\C3DBaseTechnique.h" />
+    <ClInclude Include="..\include\C3DBaseTexture.h" />
+    <ClInclude Include="..\include\CDirect2DTextRenderer.h" />
+    <ClInclude Include="..\include\HeightfieldConverter.h" />
+    <ClInclude Include="..\include\ResourceManager.h" />
+    <ClInclude Include="..\include\ResourceManagerLink.h" />
+    <ClInclude Include="..\include\TerrainDataManager.h" />
+    <ClInclude Include="..\include\TerrainObjectManager.h" />
+    <ClInclude Include="..\include\TerrainVisibilityManager.h" />
     <ClInclude Include="..\include\VisibilityManager.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Common.h" />

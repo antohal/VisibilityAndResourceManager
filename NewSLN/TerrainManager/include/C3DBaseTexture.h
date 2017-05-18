@@ -3,7 +3,7 @@
 // Тип текстуры
 enum ETextureType
 {
-	TEXTURE_2D = 0,
+	TEXTURE_TYPE_2D = 0,
 	TEXTURE_TYPE_CUBE,
 	TEXTURE_TYPE_VOLUME,
 	TEXTURE_TYPE_FX,

@@ -458,6 +458,48 @@ struct CResourceManager::SResourceManagerPrivate
 	}
 };
 
+size_t C3DBaseMaterial::GetChildResourceCount() const
+{
+	return GetTechniquesCount() + GetTexturesCount()
+		+ GetTexturesCountByType(TEXTURE_TYPE_2D)
+		+ GetTexturesCountByType(TEXTURE_TYPE_CUBE)
+		+ GetTexturesCountByType(TEXTURE_TYPE_VOLUME)
+		+ GetTexturesCountByType(TEXTURE_TYPE_FX);
+}
+
+C3DBaseResource* C3DBaseMaterial::GetChildResourceById(size_t id) const
+{
+	if (id >= GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D) + GetTexturesCountByType(TEXTURE_TYPE_CUBE)
+		+ GetTexturesCountByType(TEXTURE_TYPE_VOLUME))
+	{
+		return GetTextureByTypeAndId(TEXTURE_TYPE_FX, id - (GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D)
+			+ GetTexturesCountByType(TEXTURE_TYPE_CUBE) + GetTexturesCountByType(TEXTURE_TYPE_VOLUME)));
+	}
+	else if (id >= GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D) + GetTexturesCountByType(TEXTURE_TYPE_CUBE))
+	{
+		return GetTextureByTypeAndId(TEXTURE_TYPE_VOLUME, id - (GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D)
+			+ GetTexturesCountByType(TEXTURE_TYPE_CUBE)));
+	}
+	else if (id >= GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D))
+	{
+		return GetTextureByTypeAndId(TEXTURE_TYPE_CUBE, id - (GetTechniquesCount() + GetTexturesCount() + GetTexturesCountByType(TEXTURE_TYPE_2D)));
+	}
+	else if (id >= GetTechniquesCount() + GetTexturesCount())
+	{
+		return GetTextureByTypeAndId(TEXTURE_TYPE_2D, id - (GetTechniquesCount() + GetTexturesCount()));
+	}
+	else if (id >= GetTechniquesCount())
+	{
+		return GetTextureById(id - GetTechniquesCount());
+	}
+	else
+	{
+		return GetTechniqueById(id);
+	}
+
+	return nullptr;
+}
+
 void C3DBaseObject::SetPotentiallyVisible()
 {
 	if (!GetResourceManager())

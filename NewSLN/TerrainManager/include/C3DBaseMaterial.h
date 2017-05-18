@@ -1,12 +1,14 @@
 #pragma once
 
+#include "ResourceManagerLink.h"
+
 #include "C3DBaseTechnique.h"
 #include "C3DBaseTexture.h"
 
 class C3DBaseFaceSet;
 
 // базовый материал
-class C3DBaseMaterial : public C3DBaseResource
+class RESOURCEMANAGER_API C3DBaseMaterial : public C3DBaseResource
 {
 public:
 
@@ -24,17 +26,15 @@ public:
 	virtual size_t	GetTexturesCount() const = 0;
 	virtual C3DBaseTexture*	GetTextureById(size_t id) const = 0;
 
-	//@{ Переопределения от C3DBaseResource (их переопределять у пользователя не обязательно)
-	virtual size_t GetChildResourceCount() const override final { return GetTechniquesCount() + GetTexturesCount(); }
-	
-	virtual C3DBaseResource* GetChildResourceById(size_t id) const override final
-	{ 
-		if (id < GetTechniquesCount())
-			return GetTechniqueById(id);
-		else if (id < GetTechniquesCount() + GetTexturesCount())
-			return GetTextureById(id - GetTechniquesCount());
+	// получить количество текстур по типу
+	virtual size_t	GetTexturesCountByType(ETextureType) const = 0;
 
-		return nullptr;
-	}
+	// получить текстуру по типу и номеру
+	virtual C3DBaseTexture* GetTextureByTypeAndId(ETextureType in_Type, size_t id) const = 0;
+
+	//@{ Переопределения от C3DBaseResource (их переопределять у пользователя не обязательно)
+	virtual size_t GetChildResourceCount() const override final;
+	
+	virtual C3DBaseResource* GetChildResourceById(size_t id) const override final;
 	//@}
 };
