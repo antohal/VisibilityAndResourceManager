@@ -16,23 +16,6 @@ class CResourceManager;
 
 typedef size_t TerrainObjectID;
 
-class CTerrainObjectCreator
-{
-public:
-
-	// Создать объект Земли по описанию блока. Вернуть идентификатор
-	virtual size_t	CreateTerrainObject(const CTerrainBlockDesc* in_pTerrainBlockDesc) = 0;
-
-	// Удалить объект Земли по идентификатору
-	virtual void	DeleteTerrainObject(size_t ID) = 0;
-
-	// Загрузить данные объекта Земли (когда он становится потенциально видимым)
-	virtual void	LoadTerrainObjectData(size_t ID) = 0;
-
-	// Выгрузить данные объекта Земли (когда он становится невидимым)
-	virtual void	UnloadTerrainObjectData(size_t ID) = 0;
-};
-
 class TERRAINOBJECTMANAGER_API CTerrainObjectManager
 {
 public:
@@ -40,8 +23,12 @@ public:
 	CTerrainObjectManager();
 	~CTerrainObjectManager();
 
-	// инициализация. Параметр - имя дериктории, где лежат данные Земли
-	void Init(const wchar_t* in_pcwszPlanetDirectory);
+	// инициализация. Параметры:
+	// in_pD3DDevice11, in_pDeviceContext - объекты Direct3D 11
+	// in_pcwszPlanetDirectory - имя дериктории, где лежат данные Земли
+	// in_fWorldScale - коэффициент масштаба мира
+	// in_fHeightScale - коэффициент масштаба высоты
+	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale);
 
 	void SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection);
 
@@ -52,29 +39,34 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
-	// Получить количество новых объектов
-	size_t GetNewObjectsCount() const;
-
-	// Получить идентификатор нового объекта Земли по индексу
-	TerrainObjectID	GetNewObjectID(size_t index) const;
-
 	//Получить описание объекта Земли по идентификатору
 	const CTerrainBlockDesc*	GetTerrainObjectDesc(TerrainObjectID ID) const;
 
-	// Получить количество новых видимых объектов террейна
+	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
+	size_t GetNewObjectsCount() const;
+	TerrainObjectID	GetNewObjectID(size_t index) const;
+	//@}
+
+	//@{ Список объектов, которые стали видимыми
 	size_t GetNewVisibleObjectsCount() const;
-
-	// получить идентификатор нового видимого объекта террейна по индексу
 	TerrainObjectID GetNewVisibleObjectID(size_t index) const;
+	//@}
 
-
+	//@{ Список объектов, которые стали невидимыми
 	size_t GetNewInvisibleObjectsCount() const;
-
 	TerrainObjectID GetNewInvisibleObjectID(size_t index);
+	//@}
 
+	//@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
 	size_t GetObjectsToDeleteCount() const;
-
 	TerrainObjectID GetObjectToDeleteID(size_t index) const;
+	//@}
+
+	//@{ Список текущих видимых объектов
+	size_t GetVisibleObjectsCount() const;
+	TerrainObjectID GetVisibleObjectID(size_t index) const;
+	//@}
+
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();

@@ -8,9 +8,6 @@
 
 CTerrainDataManager::CTerrainDataManager()
 {
-	LogInit("TerrainDataManager.log");
-	LogEnable(true);
-
 	LogMessage("CTerrainDataManager::Init OK.");
 
 	_implementation = new CTerrainDataManager::CTerrainDataManagerImplementation();
