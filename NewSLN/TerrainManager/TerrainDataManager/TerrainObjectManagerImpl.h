@@ -8,6 +8,61 @@
 #include "ResourceManager.h"
 #include "TerrainVisibilityManager.h"
 
+#include <set>
+#include <map>
+#include <mutex>
+
+class CInternalTerrainObject : public C3DBaseObject
+{
+public:
+
+	CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, const CTerrainBlockDesc* in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo);
+
+	const TerrainObjectID&	GetID() const {
+		return _ID;
+	}
+
+	const CTerrainBlockDesc*	GetDesc() const {
+		return _pBlockDesc;
+	}
+
+protected:
+
+	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
+	// пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
+	virtual void							GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax) override;
+
+	// Получить матрицу трансформации
+	virtual D3DXMATRIX*						GetWorldTransform() override;
+
+	// Функция должна возвращать: включена-ли проверка размера объекта на экране
+	virtual bool							IsMinimalSizeCheckEnabled() const override { return false; };
+
+	// Функция возврящает количество мешей данного объекта
+	virtual size_t							GetMeshesCount() const override { return 0; }
+
+	// Функция возвращает конкретный меш объекта по его идентификатору
+	virtual C3DBaseMesh*					GetMeshById(size_t id) const { return nullptr; }
+
+	// получить список фейссетов
+	virtual size_t							GetFaceSetsCount() const { return 0; }
+	virtual C3DBaseFaceSet*					GetFaceSetById(size_t id) const { return nullptr; }
+
+	virtual C3DBaseManager*					GetManager() const { return _pOwner; }
+
+
+private:
+
+	TerrainObjectID				_ID = -1;
+	const CTerrainBlockDesc*	_pBlockDesc = nullptr;
+
+	C3DBaseManager*				_pOwner = nullptr;
+
+	D3DXMATRIX					_mTransform;
+	D3DXVECTOR3					_vBBoxMin;
+	D3DXVECTOR3					_vBBoxMax;
+};
+
 
 class CTerrainObjectManager::CTerrainObjectManagerImpl : public C3DBaseTerrainObjectManager
 {
@@ -36,13 +91,13 @@ public:
 	//@}
 
 	//@{ Список объектов, которые стали видимыми
-	size_t GetNewVisibleObjectsCount() const;
-	TerrainObjectID GetNewVisibleObjectID(size_t index) const;
-	//@}
+	//size_t GetNewVisibleObjectsCount() const;
+	//TerrainObjectID GetNewVisibleObjectID(size_t index) const;
+	////@}
 
-	//@{ Список объектов, которые стали невидимыми
-	size_t GetNewInvisibleObjectsCount() const;
-	TerrainObjectID GetNewInvisibleObjectID(size_t index);
+	////@{ Список объектов, которые стали невидимыми
+	//size_t GetNewInvisibleObjectsCount() const;
+	//TerrainObjectID GetNewInvisibleObjectID(size_t index);
 	//@}
 
 	//@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
@@ -58,6 +113,8 @@ public:
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
+
+	HeightfieldConverter*	GetHeightfieldConverter();
 
 	//@{ C3DBaseObjectManager
 	// получить список объектов
@@ -93,6 +150,12 @@ private:
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
 
+	void CreateObjects();
+	void CreateObjectsRecursive(const CTerrainBlockDesc* in_pData);
+	void CreateObject(const CTerrainBlockDesc* in_pData);
+	void DestroyObjects();
+
+	//@{ Main objects
 	CResourceManager*		_pResourceManager = nullptr;
 	CVisibilityManager*		_pVisibilityManager = nullptr;
 
@@ -100,5 +163,25 @@ private:
 	CTerrainDataManager*	_pTerrainDataManager = nullptr;
 
 	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
+	//@}
 
+	//@{ Vars
+	TerrainObjectID			_idCurrentIDForNewObject = 0;
+	float					_fWorldScale = 1.f;
+	//@}
+
+	//@{ Containers
+	std::vector<CInternalTerrainObject*>				_vecObjects;
+	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
+
+	mutable std::mutex									_containersMutex;
+
+		//@{ following containers are guarded by mutex (_containersMutex)
+	std::vector<TerrainObjectID>						_vecNewObjectIDs;
+	std::vector<TerrainObjectID>						_vecObjectsToDelete;
+
+
+		//@}
+
+	//@}
 };

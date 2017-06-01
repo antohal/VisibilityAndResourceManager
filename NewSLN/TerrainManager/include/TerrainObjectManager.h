@@ -1,5 +1,7 @@
 #pragma once
 
+#include <d3d11.h>
+
 #ifndef TERRAINMANAGER_EXPORTS
 #define TERRAINOBJECTMANAGER_API __declspec(dllimport)
 #else
@@ -13,6 +15,7 @@ struct _D3DMATRIX;
 typedef struct _D3DMATRIX D3DMATRIX;
 
 class CResourceManager;
+class HeightfieldConverter;
 
 typedef size_t TerrainObjectID;
 
@@ -34,8 +37,8 @@ public:
 
 	// В момент вызова этой функции формируется 4 списка: 
 	// объекты, которые нужно создать
-	// объекты, которые стали видимыми
-	// объекты, которые стали невидимыми
+	// объекты, которые стали видимыми - нужно ли ?
+	// объекты, которые стали невидимыми - нужно ли ?
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
@@ -47,14 +50,14 @@ public:
 	TerrainObjectID	GetNewObjectID(size_t index) const;
 	//@}
 
-	//@{ Список объектов, которые стали видимыми
-	size_t GetNewVisibleObjectsCount() const;
-	TerrainObjectID GetNewVisibleObjectID(size_t index) const;
-	//@}
+	//@{ Список объектов, которые стали видимыми - вопрос насколько эта функциональность нужна, когда есть просто список видимых ?
+	//size_t GetNewVisibleObjectsCount() const;
+	//TerrainObjectID GetNewVisibleObjectID(size_t index) const;
+	////@}
 
-	//@{ Список объектов, которые стали невидимыми
-	size_t GetNewInvisibleObjectsCount() const;
-	TerrainObjectID GetNewInvisibleObjectID(size_t index);
+	////@{ Список объектов, которые стали невидимыми
+	//size_t GetNewInvisibleObjectsCount() const;
+	//TerrainObjectID GetNewInvisibleObjectID(size_t index);
 	//@}
 
 	//@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
@@ -70,6 +73,9 @@ public:
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
+
+	// получить конвертер карт высот
+	HeightfieldConverter*	GetHeightfieldConverter();
 
 private:
 

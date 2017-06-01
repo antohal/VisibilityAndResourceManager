@@ -217,7 +217,7 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	std::set<C3DBaseTexture*>				_setVisibleTextures;
 	std::map<C3DBaseTexture*, float>		_mapTexturePriority;
 	std::vector<C3DBaseObject*>				_vecVisibleObjects;
-	
+		
 #ifndef USE_OPENCL	
 	std::map<C3DBaseObject*, SObject>		_mapObjects;
 #endif

@@ -1,6 +1,42 @@
 #include "TerrainObjectManagerImpl.h"
 #include "Log.h"
 
+#include <d3dx10math.h>
+
+CInternalTerrainObject::CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, 
+	const CTerrainBlockDesc* in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo)
+	: _pOwner(in_pOwner), _ID(ID), _pBlockDesc(in_pBlockDesc)
+{
+	_vBBoxMin = D3DXVECTOR3(
+		(float)in_coordsInfo.vBoundBoxMinimum[0],
+		(float)in_coordsInfo.vBoundBoxMinimum[1],
+		(float)in_coordsInfo.vBoundBoxMinimum[2]
+	);
+
+	_vBBoxMax = D3DXVECTOR3(
+		(float)in_coordsInfo.vBoundBoxMaximum[0],
+		(float)in_coordsInfo.vBoundBoxMaximum[1],
+		(float)in_coordsInfo.vBoundBoxMaximum[2]
+	);
+
+	D3DXMatrixIdentity(&_mTransform);
+}
+
+void CInternalTerrainObject::GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax)
+{
+	*ppBBMin = &_vBBoxMin;
+	*ppBBMax = &_vBBoxMax;
+}
+
+D3DXMATRIX* CInternalTerrainObject::GetWorldTransform()
+{
+	return &_mTransform;
+}
+
+//---------------------------------------------------------------------------------------------------
+//	CInternalTerrainObject
+//---------------------------------------------------------------------------------------------------
+
 CTerrainObjectManager::CTerrainObjectManager()
 {
 	LogInit("TerrainManager.log");
@@ -51,29 +87,29 @@ TerrainObjectID	CTerrainObjectManager::GetNewObjectID(size_t index) const
 	return _implementation->GetNewObjectID(index);
 }
 //@}
-
-//@{ Список объектов, которые стали видимыми
-size_t CTerrainObjectManager::GetNewVisibleObjectsCount() const
-{
-	return _implementation->GetNewVisibleObjectsCount();
-}
-
-TerrainObjectID CTerrainObjectManager::GetNewVisibleObjectID(size_t index) const
-{
-	return _implementation->GetNewVisibleObjectID(index);
-}
-//@}
-
-//@{ Список объектов, которые стали невидимыми
-size_t CTerrainObjectManager::GetNewInvisibleObjectsCount() const
-{
-	return _implementation->GetNewInvisibleObjectsCount();
-}
-
-TerrainObjectID CTerrainObjectManager::GetNewInvisibleObjectID(size_t index)
-{
-	return _implementation->GetNewInvisibleObjectID(index);
-}
+//
+////@{ Список объектов, которые стали видимыми
+//size_t CTerrainObjectManager::GetNewVisibleObjectsCount() const
+//{
+//	return _implementation->GetNewVisibleObjectsCount();
+//}
+//
+//TerrainObjectID CTerrainObjectManager::GetNewVisibleObjectID(size_t index) const
+//{
+//	return _implementation->GetNewVisibleObjectID(index);
+//}
+////@}
+//
+////@{ Список объектов, которые стали невидимыми
+//size_t CTerrainObjectManager::GetNewInvisibleObjectsCount() const
+//{
+//	return _implementation->GetNewInvisibleObjectsCount();
+//}
+//
+//TerrainObjectID CTerrainObjectManager::GetNewInvisibleObjectID(size_t index)
+//{
+//	return _implementation->GetNewInvisibleObjectID(index);
+//}
 
 //@}
 
@@ -110,6 +146,11 @@ CResourceManager* CTerrainObjectManager::GetResourceManager()
 	return _implementation->GetResourceManager();
 }
 
+HeightfieldConverter * CTerrainObjectManager::GetHeightfieldConverter()
+{
+	return _implementation->GetHeightfieldConverter();
+}
+
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
 //		CTerrainObjectManager::CTerrainObjectManagerImpl
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -121,6 +162,8 @@ CTerrainObjectManager::CTerrainObjectManagerImpl::~CTerrainObjectManagerImpl()
 
 	if (_pVisibilityManager)
 		delete _pVisibilityManager;
+
+	DestroyObjects();
 
 	if (_pPlanetTerrainData)
 		_pTerrainDataManager->ReleaseTerrainDataInfo(_pPlanetTerrainData);
@@ -144,9 +187,13 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(ID3D11Device* in_pD3
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	_pHeightfieldConverter->SetHeightScale(in_fHeightScale);
 
+	_fWorldScale = in_fWorldScale;
+
 	LogMessage("Loading planet terrain info");
 
 	_pTerrainDataManager->LoadTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData);
+
+	CreateObjects();
 
 	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
 
@@ -175,110 +222,230 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::SetViewProjection(const D
 	vUp.y = (float)in_vDir.y;
 	vUp.z = (float)in_vDir.z;
 
+	_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 }
 
 void CTerrainObjectManager::CTerrainObjectManagerImpl::Update(float in_fDeltaTime)
 {
+	_containersMutex.lock();
 
+	_vecNewObjectIDs.clear();
+	_vecObjectsToDelete.clear();
+
+	_containersMutex.unlock();
+
+	_pVisibilityManager->UpdateVisibleObjectsSet();
 	_pResourceManager->Update(in_fDeltaTime);
 }
 
 const CTerrainBlockDesc * CTerrainObjectManager::CTerrainObjectManagerImpl::GetTerrainObjectDesc(TerrainObjectID ID) const
 {
-	return nullptr;
+	auto it = _mapId2Object.find(ID);
+
+	if (it == _mapId2Object.end())
+	{
+		LogMessage("CTerrainObjectManager::CTerrainObjectManagerImpl::GetTerrainObjectDesc: cannot find object by ID = %d", ID);
+		return nullptr;
+	}
+
+	return it->second->GetDesc();
 }
 
 size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewObjectsCount() const
 {
-	return size_t();
+	std::lock_guard<std::mutex> lock(_containersMutex);
+	
+	return _vecNewObjectIDs.size();
 }
 
 TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewObjectID(size_t index) const
 {
-	return TerrainObjectID();
+	std::lock_guard<std::mutex> lock(_containersMutex);
+
+	if (index >= _vecNewObjectIDs.size())
+	{
+		LogMessage("CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewObjectID: Illegal object id (%d), objects count = %d", index, _vecNewObjectIDs.size());
+		return -1;
+	}
+
+	return _vecNewObjectIDs[index];
 }
 
-size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewVisibleObjectsCount() const
-{
-	return size_t();
-}
-
-TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewVisibleObjectID(size_t index) const
-{
-	return TerrainObjectID();
-}
-
-size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewInvisibleObjectsCount() const
-{
-	return size_t();
-}
-
-TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewInvisibleObjectID(size_t index)
-{
-	return TerrainObjectID();
-}
+//size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewVisibleObjectsCount() const
+//{
+//	return size_t();
+//}
+//
+//TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewVisibleObjectID(size_t index) const
+//{
+//	return TerrainObjectID();
+//}
+//
+//size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewInvisibleObjectsCount() const
+//{
+//	return size_t();
+//}
+//
+//TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetNewInvisibleObjectID(size_t index)
+//{
+//	return TerrainObjectID();
+//}
 
 size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectsToDeleteCount() const
 {
-	return size_t();
+	std::lock_guard<std::mutex> lock(_containersMutex);
+
+	return _vecObjectsToDelete.size();
 }
 
 TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectToDeleteID(size_t index) const
 {
-	return TerrainObjectID();
+	std::lock_guard<std::mutex> lock(_containersMutex);
+
+	if (index >= _vecObjectsToDelete.size())
+	{
+		LogMessage("CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectToDeleteID: Illegal object id (%d), objects count = %d", index, _vecObjectsToDelete.size());
+		return -1;
+	}
+
+	return _vecObjectsToDelete[index];
 }
 
 size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetVisibleObjectsCount() const
 {
-	return size_t();
+	return _pVisibilityManager->GetVisibleObjectsCount();
 }
 
 TerrainObjectID CTerrainObjectManager::CTerrainObjectManagerImpl::GetVisibleObjectID(size_t index) const
 {
-	return TerrainObjectID();
+	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(index));
+
+	if (!pTerrainObject)
+		return -1;
+
+	return pTerrainObject->GetID();
 }
 
 CResourceManager * CTerrainObjectManager::CTerrainObjectManagerImpl::GetResourceManager()
 {
-	return nullptr;
+	return _pResourceManager;
+}
+
+HeightfieldConverter * CTerrainObjectManager::CTerrainObjectManagerImpl::GetHeightfieldConverter()
+{
+	return _pHeightfieldConverter;
 }
 
 size_t CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectsCount() const
 {
-
+	return _vecObjects.size();
 }
 
 C3DBaseObject*	CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectByIndex(size_t id) const
 {
+	if (id >= _vecObjects.size())
+	{
+		LogMessage("CTerrainObjectManager::CTerrainObjectManagerImpl::GetObjectByIndex: Illegal object id (%d), objects count = %d", id, _vecObjects.size());
+		return nullptr;
+	}
 
+	return _vecObjects[id];
 }
 
 const CTerrainBlockDesc * CTerrainObjectManager::CTerrainObjectManagerImpl::GetTerrainDataForObject(C3DBaseObject * pObject) const
 {
-	return nullptr;
+	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(pObject);
+
+	return pTerrainObject->GetDesc();
 }
 
 const CTerrainBlockDesc * CTerrainObjectManager::CTerrainObjectManagerImpl::GetRootTerrainData() const
 {
-	return nullptr;
+	return _pPlanetTerrainData;
 }
 
-void CTerrainObjectManager::CTerrainObjectManagerImpl::RequestLoadResource(C3DBaseResource *)
+void CTerrainObjectManager::CTerrainObjectManagerImpl::RequestLoadResource(C3DBaseResource* in_pResource)
 {
+	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(in_pResource);
+
+	std::lock_guard<std::mutex> lock(_containersMutex);
+	_vecNewObjectIDs.push_back(pTerrainObject->GetID());
 }
 
-void CTerrainObjectManager::CTerrainObjectManagerImpl::RequestUnloadResource(C3DBaseResource *)
+void CTerrainObjectManager::CTerrainObjectManagerImpl::RequestUnloadResource(C3DBaseResource* in_pResource)
 {
+	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(in_pResource);
+
+	std::lock_guard<std::mutex> lock(_containersMutex);
+	_vecObjectsToDelete.push_back(pTerrainObject->GetID());
 }
 
 
 float CTerrainObjectManager::CTerrainObjectManagerImpl::GetWorldRadius() const
 {
-	return 20000000.f;
+	return _fWorldScale * 20000000.f;
 }
 
 float CTerrainObjectManager::CTerrainObjectManagerImpl::GetMinCellSize() const
 {
-	return 1000.f;
+	return _fWorldScale * 1000.f;
+}
+
+void CTerrainObjectManager::CTerrainObjectManagerImpl::CreateObjects()
+{
+	if (!_pPlanetTerrainData)
+	{
+		LogMessage("Terrain data not loaded. Error.");
+		return;
+	}
+
+	LogMessage("Terrain data loaded. Creating objects.");
+
+	CreateObjectsRecursive(_pPlanetTerrainData);
+
+	LogMessage("%d Objects created.", _vecObjects.size());
+}
+
+void CTerrainObjectManager::CTerrainObjectManagerImpl::CreateObjectsRecursive(const CTerrainBlockDesc* in_pData)
+{
+	if (in_pData->GetParentBlockDesc())
+	{
+		CreateObject(in_pData);
+	}
+
+	for (unsigned int i = 0; i < in_pData->GetChildBlockDescCount(); i++)
+	{
+		CreateObjectsRecursive(in_pData->GetChildBlockDesc(i));
+	}
+}
+
+void CTerrainObjectManager::CTerrainObjectManagerImpl::CreateObject(const CTerrainBlockDesc* in_pData)
+{
+	SHeightfield::SCoordinates coords;
+
+	coords.fMinLattitude = in_pData->GetMinimumLattitude();
+	coords.fMaxLattitude = in_pData->GetMaximumLattitude();
+	coords.fMinLongitude = in_pData->GetMinimumLongitude();
+	coords.fMaxLongitude = in_pData->GetMaximumLongitude();
+
+	STriangulationCoordsInfo coordsInfo;
+	_pHeightfieldConverter->ComputeTriangulationCoords(coords, coordsInfo);
+
+	CInternalTerrainObject* pObject = new CInternalTerrainObject(static_cast<C3DBaseManager*>(this), _idCurrentIDForNewObject, in_pData, coordsInfo);
+
+	_vecObjects.push_back(pObject);
+	_mapId2Object[_idCurrentIDForNewObject] = pObject;
+
+	_idCurrentIDForNewObject++;
+}
+
+void CTerrainObjectManager::CTerrainObjectManagerImpl::DestroyObjects()
+{
+	for (CInternalTerrainObject* pObject : _vecObjects)
+	{
+		delete pObject;
+	}
+
+	_vecObjects.clear();
 }

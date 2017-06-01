@@ -4,18 +4,22 @@
 #include "TerrainDataManager.h"
 #include "PlanetCameraController.h"
 #include "GraphicsContext.h"
-#include "StaticTerrainRenderer.h"
+//#include "StaticTerrainRenderer.h"
+
+#include "SimpleTerrainRenderer.h"
+#include "TerrainObjectManager.h"
 
 #include "Log.h"
 
 const float g_fWorldScale = 0.001f;
 
+
 class CMyAppHandler : public CD3DAppHandler
 {
 public:
 
-	CMyAppHandler(CD3DStaticTerrainRenderer* in_pTerrainRenderer)
-		: _TerrainRenderer(in_pTerrainRenderer)
+	CMyAppHandler(CTerrainObjectManager* in_pTerrainObjectManager, CSimpleTerrainRenderer* in_pSimpleTerrainRenderer)
+		:_pTerrainManager(in_pTerrainObjectManager),  _pTerrainRenderer(in_pSimpleTerrainRenderer)
 	{}
 	
 
@@ -29,19 +33,20 @@ public:
 
 		if (in_wKey == VK_F2)
 		{
-			_TerrainRenderer->SetRenderingMode(CD3DStaticTerrainRenderer::STANDARD);
+			_pTerrainRenderer->SetRenderingMode(CSimpleTerrainRenderer::PSRenderingMode::STANDARD);
 		}
 
 		if (in_wKey == VK_F3)
 		{
-			_TerrainRenderer->SetRenderingMode(CD3DStaticTerrainRenderer::SHOW_NORMALS);
+			_pTerrainRenderer->SetRenderingMode(CSimpleTerrainRenderer::PSRenderingMode::SHOW_NORMALS);
 		}
 	}
 
 
 private:
 
-	CD3DStaticTerrainRenderer*	_TerrainRenderer = nullptr;
+	CTerrainObjectManager*	_pTerrainManager = nullptr;
+	CSimpleTerrainRenderer*	_pTerrainRenderer = nullptr;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
@@ -76,7 +81,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//@{ Prepare terrain rendering pipeline
 
-	CD3DStaticTerrainRenderer* pTerrainRenderer = new CD3DStaticTerrainRenderer;
+	/*CD3DStaticTerrainRenderer* pTerrainRenderer = new CD3DStaticTerrainRenderer;
 
 	pTerrainRenderer->Init(pApplication->GetGraphicsContext()->GetSystem(), g_fWorldScale);
 
@@ -87,20 +92,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pApplication->GetGraphicsContext()->GetScene()->SetWorldRadius(g_fWorldScale * 100000000.f);
 	pApplication->GetGraphicsContext()->GetScene()->SetMinCellSize(g_fWorldScale * 100.f);
 
-	pApplication->GetGraphicsContext()->GetScene()->RegisterObjectManager(pTerrainRenderer);
+	pApplication->GetGraphicsContext()->GetScene()->RegisterObjectManager(pTerrainRenderer);*/
 
 	pApplication->GetGraphicsContext()->GetScene()->CreateDebugTextBlock();
 	pApplication->GetGraphicsContext()->GetScene()->ShowDebugTextBlock(true);
 
 
-	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
+	//CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
 
-	pTerrainVisibilityManager->Init(pTerrainRenderer, g_fWorldScale);
+	//pTerrainVisibilityManager->Init(pTerrainRenderer, g_fWorldScale);
 
-	pApplication->GetGraphicsContext()->GetScene()->InstallVisibilityPlugin(pTerrainRenderer, pTerrainVisibilityManager);
+	//pApplication->GetGraphicsContext()->GetScene()->InstallVisibilityPlugin(pTerrainRenderer, pTerrainVisibilityManager);
 
 
-	CMyAppHandler* pAppHandler = new CMyAppHandler(pTerrainRenderer);
+	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
+	
+	CTerrainObjectManager* pTerrainObjectManager = new CTerrainObjectManager();
+	pTerrainObjectManager->Init(pDevice, pDeviceContext, L"PlanetViewerData//TestPlanet", g_fWorldScale, 10000.0);
+
+
+	CSimpleTerrainRenderer* pTerrainRenderer = new CSimpleTerrainRenderer();
+	pTerrainRenderer->Init();
+
+
+	CMyAppHandler* pAppHandler = new CMyAppHandler(pTerrainObjectManager, pTerrainRenderer);
 
 	pApplication->InstallAppHandler(pAppHandler);
 
@@ -118,8 +134,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	// delete objects
 
-	delete pTerrainVisibilityManager;
-	delete pTerrainRenderer;
+	//delete pTerrainVisibilityManager;
+	//delete pTerrainRenderer;
 	delete pPlanetCameraController;
 	delete pApplication;
 	delete pAppHandler;
