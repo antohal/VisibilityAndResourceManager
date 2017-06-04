@@ -7,6 +7,8 @@
 #include <set>
 #include <string>
 
+#include <chrono>
+
 class CKeyboardInput;
 class CD3DGraphicsContext;
 class CMouseInput;
@@ -15,7 +17,7 @@ class CD3DAppHandler
 {
 public:
 
-	virtual void				OnFrame() {};
+	virtual void				OnFrame(float in_fFrameTime) {};
 	virtual void				OnKeyDown(unsigned int in_wKey) {};
 	virtual void				OnKeyUp(unsigned int in_wKey) {};
 };
@@ -32,6 +34,8 @@ public:
 	bool						IsFullscreen() const;
 	unsigned int				GetWindowWidth() const;
 	unsigned int				GetWindowHeight() const;
+
+	float						LastFrameDeltaTime() const;
 
 	LRESULT CALLBACK			MessageHandler(HWND, UINT, WPARAM, LPARAM);
 
@@ -68,6 +72,9 @@ private:
 	CD3DGraphicsContext*		_pGraphicsContext = nullptr;
 
 	std::set<CD3DAppHandler*>	_setAppHandlers;
+
+	std::chrono::time_point<std::chrono::steady_clock>	_prevFrameTime;
+	float						_fLastFrameDeltaTime = 0;
 };
 
 static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

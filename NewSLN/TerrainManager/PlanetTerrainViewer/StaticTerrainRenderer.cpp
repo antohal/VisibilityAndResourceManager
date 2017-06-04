@@ -113,6 +113,28 @@ void CD3DStaticTerrainFaceset::Load()
 	_owner->GetHeightfieldConverter()->ReadHeightfieldDataFromTexture(_pTerrainBlockData->GetHeightmapFileName(), _heightfield);
 	_owner->GetHeightfieldConverter()->CreateTriangulationImmediate(&_heightfield, &_triangulation);
 	_owner->GetHeightfieldConverter()->ReleaseHeightfield(&_heightfield);
+
+	/*SVertex* pV = new SVertex[_triangulation.nVertexCount];
+	unsigned int * pI = new unsigned int[_triangulation.nIndexCount];
+	_owner->GetHeightfieldConverter()->UnmapTriangulation(&_triangulation, pV, pI);
+
+	FILE* fp = fopen("tri2.txt", "a+");
+
+	for (size_t i = 0; i < _triangulation.nVertexCount; i++)
+	{
+		fprintf(fp, "vertex = %f,%f,%f : %f,%f : %f,%f,%f\n", pV[i].position[0], pV[i].position[1], pV[i].position[2], pV[i].texture[0], pV[i].texture[1],
+			pV[i].normal[0], pV[i].normal[1], pV[i].normal[2]);
+	}
+
+	for (size_t i = 0; i < _triangulation.nIndexCount; i++)
+	{
+		fprintf(fp, "index = %d\n", pI[i]);
+	}
+
+	fclose(fp);
+
+	delete[] pV;
+	delete[] pI;*/
 }
 
 void CD3DStaticTerrainFaceset::Unload()
@@ -343,10 +365,22 @@ const CTerrainBlockDesc* CD3DStaticTerrainRenderer::GetRootTerrainData() const
 int CD3DStaticTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 {
 	D3DXMATRIX mViewMatrix;
+	ID3D11DeviceContext* deviceContext = in_pContext->GetSystem()->GetDeviceContext();
 
 	in_pContext->GetScene()->GetMainCamera()->GetViewMatrix(mViewMatrix);
 
 	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
+
+	// Set the vertex input layout.
+	deviceContext->IASetInputLayout(_pInputLayout);
+
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	deviceContext->VSSetShader(_pVertexShader, NULL, 0);
+	deviceContext->PSSetShader(_pPixelShader, NULL, 0);
+
+	// Set the sampler state in the pixel shader.
+	deviceContext->PSSetSamplers(0, 1, &_pSampleState);
+
 
 	int numPrims = 0;
 
@@ -694,6 +728,7 @@ bool CD3DStaticTerrainRenderer::InitializeShader(ID3D11Device* device, WCHAR* vs
 	return true;
 }
 
+
 void CD3DStaticTerrainRenderer::FinalizeShader()
 {
 	// Release the light constant buffer.
@@ -772,7 +807,7 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pCon
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
-	vm::Vector3df p = in_pContext->GetScene()->GetMainCamera()->GetPos();
+	/*vm::Vector3df p = in_pContext->GetScene()->GetMainCamera()->GetPos();
 	dataPtr->vCamPos = vm::Vector4df(p[0], p[1], p[2], 1.0);
 
 	vm::Vector3df d = in_pContext->GetScene()->GetMainCamera()->GetDir();
@@ -782,7 +817,7 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pCon
 	dataPtr->vAxisZ = vm::Vector4df(u[0], u[1], u[2], 1.0);
 
 	vm::Vector3df l = vm::cross(u, d);
-	dataPtr->vAxisY = vm::Vector4df(l[0], l[1], l[2], 1.0);
+	dataPtr->vAxisY = vm::Vector4df(l[0], l[1], l[2], 1.0);*/
 
 	// Unlock the constant buffer.
 	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pMatrixBuffer, 0);
@@ -826,16 +861,6 @@ bool CD3DStaticTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pCon
 
 void CD3DStaticTerrainRenderer::DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount)
 {
-	// Set the vertex input layout.
-	deviceContext->IASetInputLayout(_pInputLayout);
-
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	deviceContext->VSSetShader(_pVertexShader, NULL, 0);
-	deviceContext->PSSetShader(_pPixelShader, NULL, 0);
-
-	// Set the sampler state in the pixel shader.
-	deviceContext->PSSetSamplers(0, 1, &_pSampleState);
-
 	// Set shader texture resource in the pixel shader.
 
 	ID3D11ShaderResourceView* resourceViews[1] = { texture };

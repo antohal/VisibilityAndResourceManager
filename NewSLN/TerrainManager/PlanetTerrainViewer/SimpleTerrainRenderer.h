@@ -12,17 +12,20 @@ class CSimpleTerrainRenderObject
 {
 protected:
 
-	CSimpleTerrainRenderObject(CSimpleTerrainRenderer*, const CTerrainBlockDesc*);
+	CSimpleTerrainRenderObject(CSimpleTerrainRenderer* in_pRenderer, const CTerrainBlockDesc* in_pDesc);
+	~CSimpleTerrainRenderObject();
 
+	void SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext);
+	unsigned int GetIndexCount() const;
+
+	ID3D11ShaderResourceView* GetTextureResourceView() { return _pTextureSRV; }
 
 private:
 
 	SHeightfield					_heightfield;
 	STriangulation					_triangulation;
 
-	const CTerrainBlockDesc*		_pTerrainBlockData = nullptr;
-	
-	std::wstring					_wsTextureFileName;
+	std::wstring					_wsTextureFileName;	
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
 
 	CSimpleTerrainRenderer*			_owner = nullptr;
@@ -34,30 +37,42 @@ class CSimpleTerrainRenderer : public CD3DSceneRenderer
 {
 public:
 
-	enum class PSRenderingMode
+	enum PSRenderingMode
 	{
 		STANDARD = 0,
 		SHOW_NORMALS,
 	};
+
+	~CSimpleTerrainRenderer();
 
 	void							Init(CTerrainObjectManager* in_pTerrainObjectManager);
 
 	CSimpleTerrainRenderObject*		CreateObject(TerrainObjectID);
 	void							DeleteObject(TerrainObjectID);
 
+	void							AddObjectToRenderQueue(TerrainObjectID);
+
 	//@{ CD3DSceneRenderer
 
 	virtual int						Render(CD3DGraphicsContext* in_pContext) override;
-
+	virtual int						GetVisibleObjectsCount() const override;
 	//@}
 
 	void							SetRenderingMode(PSRenderingMode mode) { _RenderingMode = mode; }
 	PSRenderingMode					GetRenderingMode() const { return _RenderingMode; }
 
 	void							SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
-
+	
+	CTerrainObjectManager*			GetTerrainObjectManager() { return _pTerrainObjectManager; };
 
 private:
+
+	bool InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
+	void OutputShaderErrorMessage(ID3D10Blob* errorMessage, WCHAR* shaderFilename);
+	void FinalizeShader();
+
+	bool SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
+	void DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
 
 	PSRenderingMode					_RenderingMode = PSRenderingMode::STANDARD;
 
@@ -71,10 +86,10 @@ private:
 		D3DXMATRIX view;
 		D3DXMATRIX projection;
 
-		vm::Vector4df	vCamPos;
+		/*vm::Vector4df	vCamPos;
 		vm::Vector4df	vAxisX;
 		vm::Vector4df	vAxisY;
-		vm::Vector4df	vAxisZ;
+		vm::Vector4df	vAxisZ;*/
 	};
 
 	struct LightBufferType
@@ -96,4 +111,7 @@ private:
 	CTerrainObjectManager*			_pTerrainObjectManager = nullptr;
 
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
+
+	int								_visibleObjsCount = 0;
+	std::list<TerrainObjectID>		_lstRenderQueue;
 };

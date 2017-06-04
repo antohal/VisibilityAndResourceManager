@@ -61,6 +61,9 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 		_nNumVisibleObjects += pVisMan->GetVisibleObjectsCount();
 	}
 
+	for (auto renderer : _setRenderers)
+		_nNumVisibleObjects += renderer->GetVisibleObjectsCount();
+
 	if (_pTextBlock)
 	{
 		_pTextBlock->SetParameterValue(_uiVisibleObjectsParam, _nNumVisibleObjects);
@@ -148,7 +151,7 @@ void CD3DScene::CreateDebugTextBlock()
 
 	_uiVisibleObjectsParam = _pTextBlock->AddParameter(L"Количество видимых объектов");
 
-	_pResourceManager->EnableDebugTextRender(_pTextBlock);
+	//_pResourceManager->EnableDebugTextRender(_pTextBlock);
 
 
 	_pLogTextBlock = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetTextRenderer()->CreateTextBlock();

@@ -143,8 +143,8 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 
 	_coordinates._height += wheelDelta * deltaTime * coeff;
 
-	if (_coordinates._height > _fWorldScale * _dfMaxHeight)
-		_coordinates._height = _fWorldScale * _dfMaxHeight;
+	if (_coordinates._height > _dfMaxHeight)
+		_coordinates._height = _dfMaxHeight;
 
 	if (_coordinates._height < 0)
 		_coordinates._height = 0;

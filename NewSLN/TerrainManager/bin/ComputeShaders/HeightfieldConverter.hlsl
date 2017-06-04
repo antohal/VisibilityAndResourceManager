@@ -195,9 +195,9 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	float3 nld = cross(vLeftVertex - vVertexPos, vLowerVertex - vVertexPos);
 	float3 nul = cross(vUpperVertex - vVertexPos, vLeftVertex - vVertexPos);
 	
-	float3 normal = -normalize(nur + nrd + nld + nul);
+	float3 normal = normalize(vVertexPos); //-normalize(nur + nrd + nld + nul);
 	
-	float3 binormal = -normalize(cross(float3(1, 0, 0), normal));
+	float3 binormal = -cross(float3(1, 0, 0), normal);
 	
 	
 	// STORE IN VERTEX BUFFER

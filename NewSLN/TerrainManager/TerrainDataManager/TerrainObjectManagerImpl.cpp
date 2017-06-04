@@ -384,12 +384,12 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::RequestUnloadResource(C3D
 
 float CTerrainObjectManager::CTerrainObjectManagerImpl::GetWorldRadius() const
 {
-	return _fWorldScale * 20000000.f;
+	return _fWorldScale * 100000000.0f;
 }
 
 float CTerrainObjectManager::CTerrainObjectManagerImpl::GetMinCellSize() const
 {
-	return _fWorldScale * 1000.f;
+	return _fWorldScale * 100.f;
 }
 
 void CTerrainObjectManager::CTerrainObjectManagerImpl::CreateObjects()

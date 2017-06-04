@@ -23,7 +23,7 @@ cbuffer MatrixBuffer
 //////////////
 struct VertexInputType
 {
-    float4 position : POSITION;
+    float3 position : POSITION;
     float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
 	float3 binormal : BINORMAL;
@@ -47,11 +47,8 @@ PixelInputType LightVertexShader(VertexInputType input)
     PixelInputType output;
     
 
-	// Change the position vector to be 4 units for proper matrix calculations.
-    input.position.w = 1.0f;
-
 	// Calculate the position of the vertex against the world, view, and projection matrices.
-    output.position = mul(input.position, viewMatrix);
+    output.position = mul(float4(input.position, 1.0f), viewMatrix);
 
    /*
    double3 vPos = input.position.xyz;

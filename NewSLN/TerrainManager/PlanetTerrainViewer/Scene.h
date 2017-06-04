@@ -18,6 +18,7 @@ public:
 
 	// return num primitives
 	virtual int						Render(CD3DGraphicsContext* in_pContext) = 0;
+	virtual int						GetVisibleObjectsCount() const = 0;
 };
 
 class CD3DScene
@@ -44,6 +45,7 @@ public:
 	void							UnregisterRenderer(CD3DSceneRenderer* in_pRenderer);
 
 	void							CreateDebugTextBlock();
+	CDirect2DTextBlock*				GetDebugTextBlock() { return _pTextBlock; }
 	void							ShowDebugTextBlock(bool in_bShow);
 
 	float							GetWorldRadius() const;
@@ -53,6 +55,8 @@ public:
 	float							GetMinCellSize() const;
 
 	int								GetRenderedPrimitives() const { return _nRenderedPrimitives; }
+
+	CResourceManager*				GetResourceManager() { return _pResourceManager; }
 
 private:
 

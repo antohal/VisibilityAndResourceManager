@@ -16,7 +16,9 @@ public:
 	bool					Initialize(unsigned int in_uiWidth, unsigned int in_uiHeight, float zNear, float zFar, HWND in_Hwnd, bool in_bFullscreen);
 	
 	void					Shutdown();
-	bool					Frame();
+	
+	bool					FrameUpdate();
+	bool					FrameRender();
 
 	CDirect2DTextBlock*		GetTextBlock() { return _pTextBlock; }
 	CD3DScene*				GetScene() { return _pScene; }

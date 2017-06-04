@@ -211,6 +211,8 @@ protected:
 
 	virtual int		Render(CD3DGraphicsContext* in_pContext) override;
 
+	virtual int		GetVisibleObjectsCount() const override { return 0; }
+
 	virtual float	GetWorldRadius() const;
 	virtual float	GetMinCellSize() const;
 
@@ -252,10 +254,10 @@ private:
 		D3DXMATRIX view;
 		D3DXMATRIX projection;
 
-		vm::Vector4df	vCamPos;
+		/*vm::Vector4df	vCamPos;
 		vm::Vector4df	vAxisX;
 		vm::Vector4df	vAxisY;
-		vm::Vector4df	vAxisZ;
+		vm::Vector4df	vAxisZ;*/
 	};
 
 	struct LightBufferType

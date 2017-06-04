@@ -62,6 +62,11 @@ unsigned int CD3DApplication::GetWindowHeight() const
 	return _uiHeight;
 }
 
+float CD3DApplication::LastFrameDeltaTime() const
+{
+	return _fLastFrameDeltaTime;
+}
+
 void CD3DApplication::Shutdown()
 {
 	// Release the graphics object.
@@ -145,16 +150,27 @@ bool CD3DApplication::Frame()
 
 	_pMouseInput->Frame();
 
-	for (CD3DAppHandler* in_pHandler : _setAppHandlers)
-	{
-		in_pHandler->OnFrame();
-	}
+	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
+
+	double deltaTime = elapsed.count() / 1000.0;
+
+	if (deltaTime > 1)
+		deltaTime = 1;
+
+	_fLastFrameDeltaTime = static_cast<float>(deltaTime);
 
 	// Do the frame processing for the graphics object.
-	if (!_pGraphicsContext->Frame())
+	_pGraphicsContext->FrameUpdate();
+	
+	for (CD3DAppHandler* in_pHandler : _setAppHandlers)
 	{
-		return false;
+		in_pHandler->OnFrame(_fLastFrameDeltaTime);
 	}
+
+	_pGraphicsContext->FrameRender();
+
+	_prevFrameTime = thisFrameTime;
 
 	return true;
 }

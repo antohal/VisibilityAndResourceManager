@@ -67,10 +67,8 @@ void CD3DGraphicsContext::Shutdown()
 	return;
 }
 
-
-bool CD3DGraphicsContext::Frame()
+bool CD3DGraphicsContext::FrameUpdate()
 {
-
 	if (!_bResourcesCreated)
 	{
 		_pD3DSystem->CreateResources();
@@ -80,9 +78,9 @@ bool CD3DGraphicsContext::Frame()
 
 	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
-	
+
 	double deltaTime = elapsed.count() / 1000.0;
-	
+
 	if (deltaTime > 1)
 		deltaTime = 1;
 
@@ -95,6 +93,11 @@ bool CD3DGraphicsContext::Frame()
 
 	_pScene->Update(this, (float)deltaTime);
 
+	return true;
+}
+
+bool CD3DGraphicsContext::FrameRender()
+{
 	Render();
 
 	return true;
