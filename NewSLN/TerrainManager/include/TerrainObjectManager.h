@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <d3d11.h>
 
@@ -26,55 +26,43 @@ public:
 	CTerrainObjectManager();
 	~CTerrainObjectManager();
 
-	// инициализация. Параметры:
-	// in_pD3DDevice11, in_pDeviceContext - объекты Direct3D 11
-	// in_pcwszPlanetDirectory - имя дериктории, где лежат данные Земли
-	// in_fWorldScale - коэффициент масштаба мира
-	// in_fHeightScale - коэффициент масштаба высоты
+	// РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ. РџР°СЂР°РјРµС‚СЂС‹:
+	// in_pD3DDevice11, in_pDeviceContext - РѕР±СЉРµРєС‚С‹ Direct3D 11
+	// in_pcwszPlanetDirectory - РёРјСЏ РґРµСЂРёРєС‚РѕСЂРёРё, РіРґРµ Р»РµР¶Р°С‚ РґР°РЅРЅС‹Рµ Р—РµРјР»Рё
+	// in_fWorldScale - РєРѕСЌС„С„РёС†РёРµРЅС‚ РјР°СЃС€С‚Р°Р±Р° РјРёСЂР°
+	// in_fHeightScale - РєРѕСЌС„С„РёС†РёРµРЅС‚ РјР°СЃС€С‚Р°Р±Р° РІС‹СЃРѕС‚С‹
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale);
 
+	// РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕР»РѕР¶РµРЅРёРµ РєР°РјРµСЂС‹ Рё РјР°С‚СЂРёС†Сѓ РїСЂРѕРµРєС†РёРё
 	void SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection);
 
-	// В момент вызова этой функции формируется 4 списка: 
-	// объекты, которые нужно создать
-	// объекты, которые стали видимыми - нужно ли ?
-	// объекты, которые стали невидимыми - нужно ли ?
-	// объекты, которые нужно удалить
+	// Р’ РјРѕРјРµРЅС‚ РІС‹Р·РѕРІР° СЌС‚РѕР№ С„СѓРЅРєС†РёРё С„РѕСЂРјРёСЂСѓРµС‚СЃСЏ 4 СЃРїРёСЃРєР°: 
+	// РѕР±СЉРµРєС‚С‹, РєРѕС‚РѕСЂС‹Рµ РЅСѓР¶РЅРѕ СЃРѕР·РґР°С‚СЊ
+	// РѕР±СЉРµРєС‚С‹, РєРѕС‚РѕСЂС‹Рµ РЅСѓР¶РЅРѕ СѓРґР°Р»РёС‚СЊ
 	void Update(float in_fDeltaTime);
 
-	//Получить описание объекта Земли по идентификатору
+	//РџРѕР»СѓС‡РёС‚СЊ РѕРїРёСЃР°РЅРёРµ РѕР±СЉРµРєС‚Р° Р—РµРјР»Рё РїРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂСѓ
 	const CTerrainBlockDesc*	GetTerrainObjectDesc(TerrainObjectID ID) const;
 
-	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
+	//@{ РЎРїРёСЃРѕРє РЅРѕРІС‹С… РѕР±СЉРµРєС‚РѕРІ, РєРѕС‚РѕСЂС‹Рµ РЅСѓР¶РЅРѕ СЃРѕР·РґР°С‚СЊ (РјРѕРіСѓС‚ СЃС‚Р°С‚СЊ РІРёРґРёРјС‹РјРё)
 	size_t GetNewObjectsCount() const;
 	TerrainObjectID	GetNewObjectID(size_t index) const;
 	//@}
 
-	//@{ Список объектов, которые стали видимыми - вопрос насколько эта функциональность нужна, когда есть просто список видимых ?
-	//size_t GetNewVisibleObjectsCount() const;
-	//TerrainObjectID GetNewVisibleObjectID(size_t index) const;
-	////@}
-
-	////@{ Список объектов, которые стали невидимыми
-	//size_t GetNewInvisibleObjectsCount() const;
-	//TerrainObjectID GetNewInvisibleObjectID(size_t index);
-	//@}
-
-	//@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
+	//@{ РЎРїРёСЃРѕРє РѕР±СЉРµРєС‚РѕРІ, РєРѕС‚РѕСЂС‹Рµ РЅСѓР¶РЅРѕ СѓРґР°Р»РёС‚СЊ (РІС‹РїР°Р»Рё РёР· СЃРїРёСЃРєР° РїРѕС‚РµРЅС†РёР°Р»СЊРЅРѕ РІРёРґРёРјС‹С…)
 	size_t GetObjectsToDeleteCount() const;
 	TerrainObjectID GetObjectToDeleteID(size_t index) const;
 	//@}
 
-	//@{ Список текущих видимых объектов
+	//@{ РЎРїРёСЃРѕРє С‚РµРєСѓС‰РёС… РІРёРґРёРјС‹С… РѕР±СЉРµРєС‚РѕРІ
 	size_t GetVisibleObjectsCount() const;
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
-
-	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
+	// РїРѕР»СѓС‡РёС‚СЊ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РјРµРЅРµРґР¶РµСЂ СЂРµСЃСѓСЂСЃРѕРІ (РµСЃР»Рё РЅРµРѕР±С…РѕРґРёРјРѕ Р·Р°РґР°С‚СЊ РїР°СЂР°РјРµС‚СЂР°Рј РїСЂРµРґСЃРєР°Р·Р°С‚РµР»СЏ РІРёРґРёРјРѕСЃС‚Рё Р·РЅР°С‡РµРЅРёСЏ, РѕС‚Р»РёС‡РЅС‹Рµ РѕС‚ Р·РЅР°С‡РµРЅРёР№ РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ)
 	CResourceManager* GetResourceManager();
 
-	// получить конвертер карт высот
+	// РїРѕР»СѓС‡РёС‚СЊ РєРѕРЅРІРµСЂС‚РµСЂ РєР°СЂС‚ РІС‹СЃРѕС‚
 	HeightfieldConverter*	GetHeightfieldConverter();
 
 private:

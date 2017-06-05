@@ -250,7 +250,6 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
     <ClCompile Include="PlanetCameraController.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SimpleTerrainRenderer.cpp" />
-    <ClCompile Include="StaticTerrainRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Log.h" />
@@ -263,7 +262,6 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
     <ClInclude Include="PlanetCameraController.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SimpleTerrainRenderer.h" />
-    <ClInclude Include="StaticTerrainRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SimpleTerrain.ps" />

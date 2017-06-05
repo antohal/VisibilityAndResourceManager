@@ -4,7 +4,6 @@
 #include "TerrainDataManager.h"
 #include "PlanetCameraController.h"
 #include "GraphicsContext.h"
-#include "StaticTerrainRenderer.h"
 
 #include "SimpleTerrainRenderer.h"
 #include "TerrainObjectManager.h"
@@ -131,63 +130,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//@}
 
-	bool bUseStaticRenderer = false;
-
-	CD3DStaticTerrainRenderer* pStaticTerrainRenderer = nullptr;
 	CTerrainObjectManager* pTerrainObjectManager = nullptr;
 	CSimpleTerrainRenderer* pSimpleTerrainRenderer = nullptr;
 	CMyAppHandler* pAppHandler = nullptr;
-	CTerrainVisibilityManager* pTerrainVisibilityManager = nullptr;
 
 	//@{ Prepare terrain rendering pipeline
 
-	if (bUseStaticRenderer)
-	{
-		pStaticTerrainRenderer = new CD3DStaticTerrainRenderer;
+	
 
-		pStaticTerrainRenderer->Init(pApplication->GetGraphicsContext()->GetSystem(), g_fWorldScale);
+	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
 
-		pStaticTerrainRenderer->LoadPlanet(L"PlanetViewerData//TestPlanet");
+	pTerrainObjectManager = new CTerrainObjectManager();
+	pTerrainObjectManager->Init(pDevice, pDeviceContext, L"PlanetViewerData//TestPlanet", g_fWorldScale, 50000.0);
 
-		pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pStaticTerrainRenderer);
-
-		pApplication->GetGraphicsContext()->GetScene()->SetWorldRadius(g_fWorldScale * 100000000.f);
-		pApplication->GetGraphicsContext()->GetScene()->SetMinCellSize(g_fWorldScale * 100.f);
-
-		pApplication->GetGraphicsContext()->GetScene()->RegisterObjectManager(pStaticTerrainRenderer);
+	pTerrainObjectManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
 
+	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
+	pSimpleTerrainRenderer->Init(pTerrainObjectManager);
 
-		pTerrainVisibilityManager = new CTerrainVisibilityManager;
-
-		pTerrainVisibilityManager->Init(pStaticTerrainRenderer, g_fWorldScale);
-
-		pApplication->GetGraphicsContext()->GetScene()->InstallVisibilityPlugin(pStaticTerrainRenderer, pTerrainVisibilityManager);
-
-		pApplication->GetGraphicsContext()->GetScene()->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
-
-	}
-	else
-	{
-
-		ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
-		ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
-
-		pTerrainObjectManager = new CTerrainObjectManager();
-		pTerrainObjectManager->Init(pDevice, pDeviceContext, L"PlanetViewerData//TestPlanet", g_fWorldScale, 10000.0);
-
-		pTerrainObjectManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
+	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
 
 
-		pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
-		pSimpleTerrainRenderer->Init(pTerrainObjectManager);
+	pAppHandler = new CMyAppHandler(pTerrainObjectManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext());
+	pApplication->InstallAppHandler(pAppHandler);
 
-		pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
-
-
-		pAppHandler = new CMyAppHandler(pTerrainObjectManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext());
-		pApplication->InstallAppHandler(pAppHandler);
-	}
 
 	//@}
 
@@ -199,19 +167,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	if (pSimpleTerrainRenderer)
 		delete pSimpleTerrainRenderer;
 
-	if (pStaticTerrainRenderer)
-		delete pStaticTerrainRenderer;
-
-
 	// Shutdown application
 	pApplication->Shutdown();
 
 
 
 	// delete objects
-
-	if (pTerrainVisibilityManager)
-		delete pTerrainVisibilityManager;
 
 	if (pPlanetCameraController)
 		delete pPlanetCameraController;
