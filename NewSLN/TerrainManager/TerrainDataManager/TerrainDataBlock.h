@@ -58,6 +58,8 @@ private:
 	float									_fMinLongitude = 0;
 	float									_fMaxLongitude = 0;
 
+	unsigned int							_uiDepth = 0;
+
 	std::wstring							_wsTextureFileName;
 	std::wstring							_wsHeightmapFileName;
 
@@ -66,4 +68,6 @@ private:
 
 	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
 	CTerrainBlockDesc*						_pHolder = nullptr;
+
+	friend class CTerrainDataManager::CTerrainDataManagerImplementation;
 };

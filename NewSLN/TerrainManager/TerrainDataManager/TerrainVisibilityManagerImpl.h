@@ -6,7 +6,7 @@ class CTerrainVisibilityManager::CTerrainVisibilityManagerImpl
 {
 public:
 
-	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale);
+	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth);
 
 	//@{ IVisibilityManagerPlugin
 	bool IsObjectVisible(C3DBaseObject* in_pObject) const;
@@ -27,5 +27,6 @@ private:
 
 	const CTerrainBlockDesc* _pRoot = nullptr;
 
-	float	_fWorldScale = 1;
+	float			_fWorldScale = 1;
+	unsigned int	_uiMaxDepth = 0;
 };

@@ -37,6 +37,9 @@ public:
 	// получить указатель на дочерний блок
 	const CTerrainBlockDesc*		GetChildBlockDesc(unsigned int id) const;
 
+	// получить уровень глубины
+	unsigned int					Depth() const;
+
 protected:
 
 	~CTerrainBlockDesc();
@@ -57,7 +60,7 @@ public:
 	~CTerrainDataManager();
 
 	// Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock);
+	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth = nullptr);
 
 	// Освободить загруженное описание данных
 	void	ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock);

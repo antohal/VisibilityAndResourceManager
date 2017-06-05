@@ -15,9 +15,9 @@ CTerrainVisibilityManager::~CTerrainVisibilityManager()
 	delete _implementation;
 }
 
-void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale)
+void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth)
 {
-	_implementation->Init(in_pMeshTree, in_fWorldScale);
+	_implementation->Init(in_pMeshTree, in_fWorldScale, in_uiMaxDepth);
 }
 
 //@{ IVisibilityManagerPlugin
@@ -155,9 +155,10 @@ double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3d
 	return vecDists.front();
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth)
 {
 	_fWorldScale = in_fWorldScale;
+	_uiMaxDepth = in_uiMaxDepth;
 
 	_pRoot = in_pMeshTree->GetRootTerrainData();
 

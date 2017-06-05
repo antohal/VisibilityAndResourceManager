@@ -87,31 +87,7 @@ TerrainObjectID	CTerrainObjectManager::GetNewObjectID(size_t index) const
 	return _implementation->GetNewObjectID(index);
 }
 //@}
-//
-////@{ Список объектов, которые стали видимыми
-//size_t CTerrainObjectManager::GetNewVisibleObjectsCount() const
-//{
-//	return _implementation->GetNewVisibleObjectsCount();
-//}
-//
-//TerrainObjectID CTerrainObjectManager::GetNewVisibleObjectID(size_t index) const
-//{
-//	return _implementation->GetNewVisibleObjectID(index);
-//}
-////@}
-//
-////@{ Список объектов, которые стали невидимыми
-//size_t CTerrainObjectManager::GetNewInvisibleObjectsCount() const
-//{
-//	return _implementation->GetNewInvisibleObjectsCount();
-//}
-//
-//TerrainObjectID CTerrainObjectManager::GetNewInvisibleObjectID(size_t index)
-//{
-//	return _implementation->GetNewInvisibleObjectID(index);
-//}
 
-//@}
 
 //@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
 size_t CTerrainObjectManager::GetObjectsToDeleteCount() const
@@ -191,7 +167,8 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(ID3D11Device* in_pD3
 
 	LogMessage("Loading planet terrain info");
 
-	_pTerrainDataManager->LoadTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData);
+	unsigned int uiMaxDepth = 0;
+	_pTerrainDataManager->LoadTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData, &uiMaxDepth);
 
 	CreateObjects();
 
@@ -201,7 +178,7 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(ID3D11Device* in_pD3
 
 
 	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, in_fWorldScale);
+	pTerrainVisibilityManager->Init(this, in_fWorldScale, uiMaxDepth);
 
 	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
 }
