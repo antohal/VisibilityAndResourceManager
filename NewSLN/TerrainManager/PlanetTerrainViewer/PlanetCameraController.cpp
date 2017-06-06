@@ -12,6 +12,8 @@
 void CPlanetCameraController::SetCoordinates(const CPlanetCameraController::Coordinates& in_Coordinates)
 {
 	_coordinates = in_Coordinates;
+
+	_fHeightCommand = _coordinates._height;
 }
 
 const CPlanetCameraController::Coordinates&	CPlanetCameraController::GetCoordinates() const
@@ -88,9 +90,9 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 	}
 
 	vm::Vector3df vCameraPos = vm::Vector3df(
-			_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude),
-			_coordinates._height*cos(_coordinates._lattitude)*sin(_coordinates._longitude),
-			_coordinates._height*sin(_coordinates._lattitude)
+		_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude),
+		_coordinates._height*cos(_coordinates._lattitude)*sin(_coordinates._longitude),
+		_coordinates._height*sin(_coordinates._lattitude)
 		);
 
 	vm::Vector3df vVertical = vm::normalize(vCameraPos);
@@ -113,22 +115,27 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 	vm::Vector3df vCameraGlobalUp = vNorth * vCameraLocalUp[0] + vWest * vCameraLocalUp[1] + vVertical * vCameraLocalUp[2];
 
 	in_pCamera->Set(vCameraPos, vCameraGlobalUp, vCameraGlobalDir);
+
+	_coordinates._height += (_fHeightCommand - _coordinates._height)*_fScrollCoeff*deltaTime;
 }
 
 void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 {
-	double heightMin = _fWorldScale * 6000000.0;
+	double heightMin = _fWorldScale * 6357000;
 	double heightMax = _fWorldScale * 10000000.0;
 
 	double coeffMax = _fWorldScale * 300000.0;
-	double coeffMin = _fWorldScale * 10000.0;
+	double coeffMin = _fWorldScale * 500.0;
 
 	double coeff = coeffMax;
 
-	if (_coordinates._height < heightMin)
+	if (_fHeightCommand < heightMin)
+	{
 		coeff = coeffMin;
+		_fHeightCommand = heightMin;
+	}
 	else
-	if (_coordinates._height > heightMax)
+	if (_fHeightCommand > heightMax)
 		coeff = coeffMax;
 	else
 	{
@@ -141,13 +148,13 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 	if (wheelDelta < -50)
 		wheelDelta = -50;
 
-	_coordinates._height += wheelDelta * deltaTime * coeff;
+	_fHeightCommand += wheelDelta * deltaTime * coeff;
 
-	if (_coordinates._height > _dfMaxHeight)
-		_coordinates._height = _dfMaxHeight;
+	if (_fHeightCommand > _dfMaxHeight)
+		_fHeightCommand = _dfMaxHeight;
 
-	if (_coordinates._height < 0)
-		_coordinates._height = 0;
+	if (_fHeightCommand < 0)
+		_fHeightCommand = 0;
 }
 
 void CPlanetCameraController::CreateDebugTextBlock()

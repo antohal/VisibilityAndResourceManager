@@ -23,6 +23,7 @@ public:
 		double			_elevation = 0;
 	};
 
+	void				SetScrollCoeff(float in_fScrollCoeff) { _fScrollCoeff = in_fScrollCoeff; }
 	void				SetCoordinates(const Coordinates& in_Coordinates);
 	const Coordinates&	GetCoordinates() const;
 
@@ -49,6 +50,8 @@ private:
 	UINT				_uiLatLongHeightParam = -1;
 	UINT				_uiAzElParam = -1;
 
+	float				_fScrollCoeff = 1;
+	float				_fHeightCommand = 0;
 	float				_fWorldScale = 1;
 	double				_dfMaxHeight = 50000000.0;
 };

@@ -219,6 +219,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Common\FileUtil.cpp" />
     <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="..\Common\StlUtil.cpp" />
     <ClCompile Include="..\Common\wgs84.cpp" />
@@ -228,6 +229,7 @@
     <ClCompile Include="TerrainVisibilityManagerImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common\FileUtil.h" />
     <ClInclude Include="..\Common\Log.h" />
     <ClInclude Include="..\Common\StlUtil.h" />
     <ClInclude Include="..\Common\wgs84.h" />

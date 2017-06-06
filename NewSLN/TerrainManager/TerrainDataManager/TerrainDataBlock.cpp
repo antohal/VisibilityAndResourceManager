@@ -5,6 +5,7 @@
 
 #include "Log.h"
 #include "StlUtil.h"
+#include "FileUtil.h"
 
 CTerrainBlockDesc::CTerrainBlockDesc()
 {
@@ -66,6 +67,11 @@ unsigned int CTerrainBlockDesc::GetChildBlockDescCount() const
 const CTerrainBlockDesc* CTerrainBlockDesc::GetChildBlockDesc(unsigned int id) const
 {
 	return _implementation->GetChildBlockData(id);
+}
+
+unsigned int CTerrainBlockDesc::Depth() const
+{
+	return _implementation->Depth();
 }
 
 
@@ -174,7 +180,54 @@ const CTerrainBlockDesc* CTerrainBlockDesc::CTerrainBlockDescImplementation::Get
 	CTerrainBlockDesc* pNewDataBlock = new CTerrainBlockDesc();
 	pNewDataBlock->_implementation->Init(in_pOwner, in_fMinLattitude, in_fMaxLattitude, in_fMinLongitude, in_fMaxLongitude, in_wsTextureFileName, in_wsHeightmapFileName, in_pParent);
 
+	in_pOwner->TerrainBlockCreated(pNewDataBlock);
+
 	return pNewDataBlock;
+}
+
+size_t CTerrainBlockDesc::CTerrainBlockDescImplementation::GetMemoryUsage() const
+{
+	return sizeof(CTerrainBlockDescImplementation) + _wsTextureFileName.size()*2 + _wsHeightmapFileName.size()*2 + sizeof(CTerrainBlockDesc);
+}
+
+void CTerrainBlockDesc::CTerrainBlockDescImplementation::GenerateChilds(const wchar_t* in_pcwszDirectoryName, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth, const std::vector<std::wstring>& vecTextures, const std::vector<std::wstring>& vecHeightmaps)
+{
+	// достигли нужной глубины - выходим
+	if (_uiDepth >= in_uiDepth)
+		return;
+
+	if (vecHeightmaps.empty() || vecTextures.empty())
+	{
+		LogMessage("Error loading heightmaps or textures - cannot generate block");
+		return;
+	}
+
+	float fDeltaLongitude = (_fMaxLongitude - _fMinLongitude) / in_uiM;
+	float fDeltaLattitude = (_fMaxLattitude - _fMinLattitude) / in_uiN;
+
+	for (unsigned int uiXX = 0; uiXX < in_uiM; uiXX++)
+	{
+		float fChildMinLongitude = _fMinLongitude + fDeltaLongitude*uiXX;
+		float fChildMaxLongitude = _fMinLongitude + fDeltaLongitude*uiXX + fDeltaLongitude;
+
+		for (unsigned int uiYY = 0; uiYY < in_uiN; uiYY++)
+		{
+			std::wstring wsRandomHeightmap = vecHeightmaps[rand() % vecHeightmaps.size()];
+			std::wstring wsRandomTexture = vecTextures[rand() % vecTextures.size()];
+
+			float fChildMinLattitude = _fMinLattitude + fDeltaLattitude*uiYY;
+			float fChildMaxLattitude = _fMinLattitude + fDeltaLattitude*uiYY + fDeltaLattitude;
+
+			CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
+				fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsRandomTexture, wsRandomHeightmap, _pHolder);
+
+			pChildBlock->_implementation->_uiDepth = _uiDepth + 1;
+
+			_vecChildBlocks.push_back(pChildBlock);
+
+			pChildBlock->_implementation->GenerateChilds(in_pcwszDirectoryName, in_uiM, in_uiN, in_uiDepth, vecTextures, vecHeightmaps);
+		}
+	}
 }
 
 void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory(const std::wstring& in_wsDirectory)

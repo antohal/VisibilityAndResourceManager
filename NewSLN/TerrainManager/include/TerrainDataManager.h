@@ -62,6 +62,12 @@ public:
 	// Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
 	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth = nullptr);
 
+	// Сгенерировать данные планеты. Текстуры и карты нормалей будут браться из директории [in_pcwszDirectoryName] случайным образом 
+	// Карты нормалей из HeightMaps, текстуры из Textures
+	// in_uiM, in_uiN - количество разбиений каждого уровня по широте и долготе
+	// in_uiDepth - глубина дерева
+	void	GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth);
+
 	// Освободить загруженное описание данных
 	void	ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock);
 

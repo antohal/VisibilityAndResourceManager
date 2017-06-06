@@ -37,7 +37,7 @@ public:
 	CTerrainVisibilityManager();
 	~CTerrainVisibilityManager();
 
-	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth);
+	void Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
 	//@{ IVisibilityManagerPlugin
 	bool IsObjectVisible(C3DBaseObject* in_pObject) const;

@@ -45,10 +45,17 @@ public:
 	// загрузить дочерние блоки из указанной директории
 	void									LoadChildsFromDirectory(const std::wstring& in_wsDirectory);
 
+	// сгенерировать дочерние узлы случайным образом
+	void									GenerateChilds(const wchar_t* in_pcwszDirectoryName, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth, const std::vector<std::wstring>& vecTextures, const std::vector<std::wstring>& vecHeightmaps);
+
+	unsigned int							Depth() const { return _uiDepth; }
+
 	// создание экземпл€ра [статическа€]
 	static CTerrainBlockDesc*				CreateTerrainBlockDataInstance(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
 		float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude, const std::wstring& in_wsTextureFileName, 
 		const std::wstring& in_wsHeightmapFileName, CTerrainBlockDesc* in_pParent);
+
+	size_t									GetMemoryUsage() const;
 
 private:
 

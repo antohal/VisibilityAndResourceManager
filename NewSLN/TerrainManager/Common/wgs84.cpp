@@ -44,20 +44,10 @@ void GetWGS84LongLatHeight(const vm::Vector3df& vPoint, double& out_long, double
 	vm::Vector3df vDir = vm::normalize(vPoint);
 
 	out_lat = asin(vDir[2]);
-	double cosB = cos(out_lat);
+	out_long = atan2(vDir[1], vDir[0]);
 
-	if (fabs(cosB) > 1e-10)
-	{
-		double cosA = vDir[0] / cosB;
-		double sinA = vDir[1] / cosB;
-
-		out_long = atan2(sinA, cosA);
-
-		if (out_long < 0)
-			out_long = 2 * M_PI - out_long;
-	}
-	else
-		out_long = 0;
+	if (out_long < 0)
+		out_long = 2 * M_PI + out_long;
 
 	vm::Vector3df vSurfacePoint = GetWGS84SurfacePoint(out_long, out_lat);
 

@@ -55,6 +55,11 @@ void CTerrainObjectManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceCont
 	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fHeightScale);
 }
 
+void CTerrainObjectManager::InitGenerated(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fHeightScale)
+{
+	_implementation->InitGenerated(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, N, M, depth, in_fWorldScale, in_fHeightScale);
+}
+
 void CTerrainObjectManager::SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection)
 {
 	_implementation->SetViewProjection(in_vPos, in_vDir, in_vUp, in_pmProjection);
@@ -155,7 +160,6 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(ID3D11Device* in_pD3
 {
 	_pTerrainDataManager = new CTerrainDataManager();
 	_pHeightfieldConverter = new HeightfieldConverter();
-
 	_pResourceManager = new CResourceManager();
 
 	_pHeightfieldConverter->Init(in_pD3DDevice11, in_pDeviceContext);
@@ -173,12 +177,39 @@ void CTerrainObjectManager::CTerrainObjectManagerImpl::Init(ID3D11Device* in_pD3
 	CreateObjects();
 
 	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
-
 	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
 
 
 	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, in_fWorldScale, uiMaxDepth);
+	pTerrainVisibilityManager->Init(this, in_fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
+
+	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
+}
+
+void CTerrainObjectManager::CTerrainObjectManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fHeightScale)
+{
+	_pTerrainDataManager = new CTerrainDataManager();
+	_pHeightfieldConverter = new HeightfieldConverter();
+	_pResourceManager = new CResourceManager();
+
+	_pHeightfieldConverter->Init(in_pD3DDevice11, in_pDeviceContext);
+
+	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
+	_pHeightfieldConverter->SetHeightScale(in_fHeightScale);
+
+	_fWorldScale = in_fWorldScale;
+
+	LogMessage("Generating planet terrain info");
+
+	_pTerrainDataManager->GenerateTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData, M, N, depth);
+
+	CreateObjects();
+
+	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
+	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
+
+	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
+	pTerrainVisibilityManager->Init(this, in_fWorldScale, 6000000.0f, 0.5f, depth);
 
 	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
 }

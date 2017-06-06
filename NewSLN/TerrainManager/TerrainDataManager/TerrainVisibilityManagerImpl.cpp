@@ -15,9 +15,9 @@ CTerrainVisibilityManager::~CTerrainVisibilityManager()
 	delete _implementation;
 }
 
-void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth)
+void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
 {
-	_implementation->Init(in_pMeshTree, in_fWorldScale, in_uiMaxDepth);
+	_implementation->Init(in_pMeshTree, in_fWorldScale, in_fMaximumDistance, in_fLodDistCoeff, in_uiMaxDepth);
 }
 
 //@{ IVisibilityManagerPlugin
@@ -56,10 +56,15 @@ double AngularDistance(double a1, double a2)
 }
 
 // ‘ункци€ вычислени€ рассто€ни€ между блоком и точкой
-double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos, double& out_Diameter)
+double CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos, double& out_Diameter)
 {
 	double dfLong, dfLat, dfHeight, dfLen;
 	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
+
+	if (in_pTerrainBlock == _pRoot)
+	{
+		return dfHeight;
+	}
 
 	double dfMinLat = in_pTerrainBlock->GetMinimumLattitude();
 	double dfMaxLat = in_pTerrainBlock->GetMaximumLattitude();
@@ -155,10 +160,13 @@ double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3d
 	return vecDists.front();
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale, unsigned int in_uiMaxDepth)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerrainObjectManager * in_pMeshTree, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
 {
 	_fWorldScale = in_fWorldScale;
 	_uiMaxDepth = in_uiMaxDepth;
+
+	_fLodDistCoeff = in_fLodDistCoeff;
+	_fMaximumDistance = in_fWorldScale * in_fMaximumDistance;
 
 	_pRoot = in_pMeshTree->GetRootTerrainData();
 
@@ -178,6 +186,20 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsObjectVisible(C
 	return _setVisibleObjects.find(in_pObject) != _setVisibleObjects.end();
 }
 
+unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetLodDepth(double dist) const
+{
+	unsigned int uiMaxDepth = 0;
+	double dfCurrentLodDist = _fMaximumDistance;
+
+	while (dist*_fWorldScale <= dfCurrentLodDist)
+	{
+		uiMaxDepth++;
+		dfCurrentLodDist *= _fLodDistCoeff;
+	}
+
+	return std::min<unsigned int>(_uiMaxDepth, uiMaxDepth);
+}
+
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
 {
 	_setVisibleObjects.clear();
@@ -187,69 +209,72 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisi
 	if (!_pRoot)
 		return;
 
-	for (unsigned int i = 0; i < _pRoot->GetChildBlockDescCount(); i++)
-		UpdateVisibilityRecursive(_pRoot->GetChildBlockDesc(i), vPos);
-}
+	double longitude, lattitude, height, length;
+	GetWGS84LongLatHeight(vPos, longitude, lattitude, height, length);
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
-{
-	if (!IsSomeChildVisible(pTerrainBlock, in_vPos))
+	unsigned int uiMaxDepth = GetLodDepth(height);
+
+	if (uiMaxDepth == 0)
 	{
-		bool bIsFar = IsFar(pTerrainBlock, in_vPos);
-
-		// —амый верхний лод или достаточно близко
-		if (!bIsFar || pTerrainBlock->GetParentBlockDesc() == _pRoot)
-			AddVisibleBlock(pTerrainBlock);
-
-		// ≈сли лод далеко, но кака€-то соседска€ веточка видна, то добавить на видимость
-		if (bIsFar)
-		{
-			unsigned int uiNeightbourCount = pTerrainBlock->GetParentBlockDesc()->GetChildBlockDescCount();
-
-			for (unsigned int i = 0; i < uiNeightbourCount; i++)
-			{
-				const CTerrainBlockDesc* pNeighbour = pTerrainBlock->GetParentBlockDesc()->GetChildBlockDesc(i);
-
-				if (pNeighbour == pTerrainBlock)
-					continue;
-
-				if (!IsFar(pNeighbour, in_vPos) || IsSomeChildVisible(pNeighbour, in_vPos))
-				{
-					AddVisibleBlock(pTerrainBlock);
-					break;
-				}
-			}
-		}
+		for (unsigned int i = 0; i < _pRoot->GetChildBlockDescCount(); i++)
+			AddVisibleBlock(_pRoot->GetChildBlockDesc(i));
 	}
-
-	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
-		UpdateVisibilityRecursive(pTerrainBlock->GetChildBlockDesc(i), in_vPos);
+	else
+	{
+		UpdateVisibilityRecursive(_pRoot, vPos);
+	}
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsFar(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
 {
-	const double k_dfDistCoeff = 0.5;
+	bool bRes = false;
 
 	double diameter = 0;
-	double distance = 0;
+	double distToBlock = GetDistance(pTerrainBlock, in_vPos, diameter);
+	unsigned int requiredLodDepth = GetLodDepth(distToBlock);
 
-	distance = GetDistance(pTerrainBlock, in_vPos, diameter);
-
-	return distance > k_dfDistCoeff * diameter;
-}
-
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsSomeChildVisible(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos) const
-{
-
-	for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
+	if (pTerrainBlock->Depth() == requiredLodDepth)
 	{
-		const CTerrainBlockDesc* pChild = pTerrainBlock->GetChildBlockDesc(i);
+		AddVisibleBlock(pTerrainBlock);
+		return true;
+	}
 
-		if(!IsFar(pChild, in_vPos))
+	if (pTerrainBlock->Depth() < requiredLodDepth)
+	{
+		if (pTerrainBlock->GetChildBlockDescCount() == 0)
+		{
+			AddVisibleBlock(pTerrainBlock);
 			return true;
+		}
 
-		if (IsSomeChildVisible(pChild, in_vPos))
+		bool bSomeChildVisible = false;
+
+		vector<const CTerrainBlockDesc*> vecInvisibleChilds;
+		vecInvisibleChilds.reserve(pTerrainBlock->GetChildBlockDescCount());
+
+		for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
+		{
+			const CTerrainBlockDesc* pChildBlock = pTerrainBlock->GetChildBlockDesc(i);
+
+			if (UpdateVisibilityRecursive(pChildBlock, in_vPos))
+			{
+				bSomeChildVisible = true;
+			}
+			else
+			{
+				vecInvisibleChilds.push_back(pChildBlock);
+			}
+		}
+
+		if (bSomeChildVisible)
+		{
+			for (const CTerrainBlockDesc* pInvisibleChild : vecInvisibleChilds)
+			{
+				AddVisibleBlock(pInvisibleChild);
+			}
+
 			return true;
+		}
 	}
 
 	return false;

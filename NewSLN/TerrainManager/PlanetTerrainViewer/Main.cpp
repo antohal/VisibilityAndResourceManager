@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1920, 1080, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
 	{
 		delete pApplication;
 
@@ -122,6 +122,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pPlanetCameraController->SetWorldScale(g_fWorldScale);
 	pPlanetCameraController->SetCoordinates(CPlanetCameraController::Coordinates(D2R*20, D2R*20, g_fWorldScale * 10000000.f, 0, 0));
 	pPlanetCameraController->SetMaxHeight(g_fWorldScale * 20000000.0);
+
+	pPlanetCameraController->SetScrollCoeff(0.5f);
 
 	pApplication->GetGraphicsContext()->GetScene()->GetMainCamera()->SetController(pPlanetCameraController);
 
@@ -142,7 +144,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
 
 	pTerrainObjectManager = new CTerrainObjectManager();
-	pTerrainObjectManager->Init(pDevice, pDeviceContext, L"PlanetViewerData//TestPlanet", g_fWorldScale, 50000.0);
+
+	pTerrainObjectManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, 2000.0);
 
 	pTerrainObjectManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
