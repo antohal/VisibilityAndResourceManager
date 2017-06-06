@@ -15,31 +15,45 @@
 // CSimpleTerrainRenderObject
 //
 
-CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * in_pRenderer, const CTerrainBlockDesc * in_pDesc)
+CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * in_pRenderer, const STerrainBlockParams* in_pParams, TerrainObjectID ID)
 	: _owner(in_pRenderer)
 {
 
-	LogMessage("Loading faceset. Triangulating heightmap '%ls'", in_pDesc->GetHeightmapFileName());
+	// получаем имена текстур из TerrainManager:
+	std::wstring wsTextureFileName = _owner->GetTerrainManager()->GetTextureFileName(ID);
+	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
 
-	_heightfield.Config.Coords.fMinLattitude = in_pDesc->GetMinimumLattitude();
-	_heightfield.Config.Coords.fMaxLattitude = in_pDesc->GetMaximumLattitude();
-	_heightfield.Config.Coords.fMinLongitude = in_pDesc->GetMinimumLongitude();
-	_heightfield.Config.Coords.fMaxLongitude = in_pDesc->GetMaximumLongitude();
+	// получаем конвертер карт высот для дальнейших операций с ним
+	HeightfieldConverter* pHeightfieldConverter = _owner->GetTerrainManager()->GetHeightfieldConverter();
 
-	_heightfield.ID = 0;
+	// создадим объект в котором будет храниться карта высот и ее параметры
+	SHeightfield heightfield;
 
-	_owner->GetTerrainObjectManager()->GetHeightfieldConverter()->ReadHeightfieldDataFromTexture(in_pDesc->GetHeightmapFileName(), _heightfield);
-	_owner->GetTerrainObjectManager()->GetHeightfieldConverter()->CreateTriangulationImmediate(&_heightfield, &_triangulation);
-	_owner->GetTerrainObjectManager()->GetHeightfieldConverter()->ReleaseHeightfield(&_heightfield);
+	// считаем данные карты высот из файла
+	pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield);
 
-	LogMessage("Loading texture '%ls'", in_pDesc->GetTextureFileName());
+	LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
 
-	_wsTextureFileName = in_pDesc->GetTextureFileName();
+	// заполним граничные данные
+	heightfield.Config.Coords.fMinLattitude = in_pParams->fMinLattitude;
+	heightfield.Config.Coords.fMaxLattitude = in_pParams->fMaxLattitude;
+	heightfield.Config.Coords.fMinLongitude = in_pParams->fMinLongitude;
+	heightfield.Config.Coords.fMaxLongitude = in_pParams->fMaxLongitude;
 
-	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), in_pDesc->GetTextureFileName(), NULL, NULL, &_pTextureSRV, NULL);
+	// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
+	pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, &_triangulation);
+
+	// карта высот нам больше не нужна, освобождаем ее
+	pHeightfieldConverter->ReleaseHeightfield(&heightfield);
+
+	LogMessage("Loading texture '%ls'", wsTextureFileName.c_str());
+	_wsTextureFileName = wsTextureFileName;
+
+	// Загружаем текстуру
+	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), wsTextureFileName.c_str(), NULL, NULL, &_pTextureSRV, NULL);
 	if (FAILED(result))
 	{
-		LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", in_pDesc->GetTextureFileName());
+		LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", wsTextureFileName.c_str());
 		return;
 	}
 
@@ -47,8 +61,10 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 {
-	_owner->GetTerrainObjectManager()->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
+	// освобождаем триангуляцию вместе с буферами вершин и индексов
+	_owner->GetTerrainManager()->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
 
+	// освобождаем текстуру
 	if (_pTextureSRV)
 	{
 		_pTextureSRV->Release();
@@ -103,16 +119,16 @@ CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 	FinalizeShader();
 }
 
-void CSimpleTerrainRenderer::Init(CTerrainObjectManager* in_pTerrainObjectManager)
+void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager)
 {
- 	_pTerrainObjectManager = in_pTerrainObjectManager;
+	_pTerrainManager = in_pTerrainManager;
 
 	InitializeShader(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), L"PlanetTerrainViewerShaders\\SimpleTerrain.vs", L"PlanetTerrainViewerShaders\\SimpleTerrain.ps");
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)
 {
-	CSimpleTerrainRenderObject* pNewObject = new CSimpleTerrainRenderObject(this, _pTerrainObjectManager->GetTerrainObjectDesc(ID));
+	CSimpleTerrainRenderObject* pNewObject = new CSimpleTerrainRenderObject(this, _pTerrainManager->GetTerrainObjectParams(ID), ID);
 	_mapTerrainRenderObjects[ID] = pNewObject;
 
 	return pNewObject;

@@ -19,13 +19,7 @@ public:
 	void									Init(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner, float in_fMinLattitude, float in_fMaxLattitude, float in_fMinLongitude, float in_fMaxLongitude,
 		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, CTerrainBlockDesc* in_pParent);
 
-	//@{ получить минимальные значени€ по долготе и широте
-	float									GetMinimumLattitude() const;
-	float									GetMaximumLattitude() const;
-
-	float									GetMinimumLongitude() const;
-	float									GetMaximumLongitude() const;
-	//@}
+	const STerrainBlockParams*				GetParams() const { return &_params; }
 
 	// получить им€ файла текстуры
 	const wchar_t*							GetTextureFileName() const;
@@ -48,7 +42,7 @@ public:
 	// сгенерировать дочерние узлы случайным образом
 	void									GenerateChilds(const wchar_t* in_pcwszDirectoryName, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth, const std::vector<std::wstring>& vecTextures, const std::vector<std::wstring>& vecHeightmaps);
 
-	unsigned int							Depth() const { return _uiDepth; }
+	unsigned int							Depth() const { return _params.uiDepth; }
 
 	// создание экземпл€ра [статическа€]
 	static CTerrainBlockDesc*				CreateTerrainBlockDataInstance(CTerrainDataManager::CTerrainDataManagerImplementation* in_pOwner,
@@ -59,13 +53,7 @@ public:
 
 private:
 
-	float									_fMinLattitude = 0;
-	float									_fMaxLattitude = 0;
-
-	float									_fMinLongitude = 0;
-	float									_fMaxLongitude = 0;
-
-	unsigned int							_uiDepth = 0;
+	STerrainBlockParams						_params;
 
 	std::wstring							_wsTextureFileName;
 	std::wstring							_wsHeightmapFileName;

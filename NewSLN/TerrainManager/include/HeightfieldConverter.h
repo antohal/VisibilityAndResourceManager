@@ -31,7 +31,7 @@ struct SHeightfield
 		unsigned int			nCountY;					// количество точек по широте
 	};							
 
-	unsigned long long			ID;							// идентификатор
+	unsigned long long			ID = 0;						// идентификатор
 	SConfig						Config;						// конфигурация
 	
 	ID3D11ShaderResourceView*	pTextureSRV = nullptr;		// текстура с данными [формат текстуры - float]

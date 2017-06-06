@@ -1,11 +1,41 @@
 #pragma once
 
+#include <utility>
 
 #ifndef TERRAINMANAGER_EXPORTS
 #define TERRAINDATAMANAGER_API __declspec(dllimport)
 #else
 #define TERRAINDATAMANAGER_API __declspec(dllexport)
 #endif
+
+// максимальная глубина дерева
+#define MAX_TERRAIN_TREE_DEPTH	20
+
+// индексы террейн блока на текущем уровне
+struct STerrainBlockIndex
+{
+	unsigned char	ucLongitudeIndex = 255;
+	unsigned char	ucLattitudeIndex = 255;
+};
+
+// параметры блока Земли
+struct STerrainBlockParams
+{
+	// минимальная и максимальная долгота
+	float	fMinLongitude = 0;
+	float	fMaxLongitude = 0;
+
+	// минимальная и максимальная широта
+	float	fMinLattitude = 0;
+	float	fMaxLattitude = 0;
+
+	// уровень глубины блока
+	unsigned int	uiDepth = 0;
+
+	// положение в дереве (индекс по долготе и широте по каждому уровню глубины). Для уровня глубины больше текущего будут значения по умолчанию = 255
+	STerrainBlockIndex		aTreePosition[MAX_TERRAIN_TREE_DEPTH];
+};
+
 
 // Описание блока Земли
 class TERRAINDATAMANAGER_API CTerrainBlockDesc
@@ -14,13 +44,7 @@ public:
 
 	CTerrainBlockDesc();
 
-	//@{ получить минимальные значения по долготе и широте
-	float							GetMinimumLattitude() const;
-	float							GetMaximumLattitude() const;
-
-	float							GetMinimumLongitude() const;
-	float							GetMaximumLongitude() const;
-	//@}
+	const STerrainBlockParams*		GetParams() const;
 
 	// получить имя файла текстуры
 	const wchar_t*					GetTextureFileName() const;
@@ -36,9 +60,6 @@ public:
 
 	// получить указатель на дочерний блок
 	const CTerrainBlockDesc*		GetChildBlockDesc(unsigned int id) const;
-
-	// получить уровень глубины
-	unsigned int					Depth() const;
 
 protected:
 

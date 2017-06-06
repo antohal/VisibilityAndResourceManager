@@ -2,6 +2,8 @@
 
 #include <d3d11.h>
 
+#include "TerrainDataManager.h"
+
 #ifndef TERRAINMANAGER_EXPORTS
 #define TERRAINOBJECTMANAGER_API __declspec(dllimport)
 #else
@@ -19,12 +21,12 @@ class HeightfieldConverter;
 
 typedef size_t TerrainObjectID;
 
-class TERRAINOBJECTMANAGER_API CTerrainObjectManager
+class TERRAINOBJECTMANAGER_API CTerrainManager
 {
 public:
 
-	CTerrainObjectManager();
-	~CTerrainObjectManager();
+	CTerrainManager();
+	~CTerrainManager();
 
 	// инициализация. Параметры:
 	// in_pD3DDevice11, in_pDeviceContext - объекты Direct3D 11
@@ -45,8 +47,14 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
+	// получить имя текстуры для данного объекта
+	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
+
+	// получить имя карты высот для данного объекта
+	const wchar_t*	GetHeightmapFileName(TerrainObjectID ID) const;
+
 	//Получить описание объекта Земли по идентификатору
-	const CTerrainBlockDesc*	GetTerrainObjectDesc(TerrainObjectID ID) const;
+	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
 
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
@@ -71,6 +79,6 @@ public:
 
 private:
 
-	class CTerrainObjectManagerImpl;
-	CTerrainObjectManagerImpl*	_implementation = nullptr;
+	class CTerrainManagerImpl;
+	CTerrainManagerImpl*	_implementation = nullptr;
 };

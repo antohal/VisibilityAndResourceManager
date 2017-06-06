@@ -6,7 +6,7 @@
 #include "GraphicsContext.h"
 
 #include "SimpleTerrainRenderer.h"
-#include "TerrainObjectManager.h"
+#include "TerrainManager.h"
 
 #include "Log.h"
 
@@ -17,7 +17,7 @@ class CMyAppHandler : public CD3DAppHandler
 {
 public:
 
-	CMyAppHandler(CTerrainObjectManager* in_pTerrainObjectManager, CSimpleTerrainRenderer* in_pSimpleTerrainRenderer, CD3DCamera* in_pCamera, CD3DGraphicsContext* in_pContext)
+	CMyAppHandler(CTerrainManager* in_pTerrainObjectManager, CSimpleTerrainRenderer* in_pSimpleTerrainRenderer, CD3DCamera* in_pCamera, CD3DGraphicsContext* in_pContext)
 		:_pTerrainManager(in_pTerrainObjectManager),  _pTerrainRenderer(in_pSimpleTerrainRenderer), _pCamera(in_pCamera), _pContext(in_pContext)
 	{}
 	
@@ -92,7 +92,7 @@ public:
 
 private:
 
-	CTerrainObjectManager*	_pTerrainManager = nullptr;
+	CTerrainManager*		_pTerrainManager = nullptr;
 	CSimpleTerrainRenderer*	_pTerrainRenderer = nullptr;
 	CD3DCamera*				_pCamera = nullptr;
 	CD3DGraphicsContext*	_pContext = nullptr;
@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1024, 768, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
 	{
 		delete pApplication;
 
@@ -132,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//@}
 
-	CTerrainObjectManager* pTerrainObjectManager = nullptr;
+	CTerrainManager* pTerrainManager = nullptr;
 	CSimpleTerrainRenderer* pSimpleTerrainRenderer = nullptr;
 	CMyAppHandler* pAppHandler = nullptr;
 
@@ -143,20 +143,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
 
-	pTerrainObjectManager = new CTerrainObjectManager();
+	pTerrainManager = new CTerrainManager();
 
-	pTerrainObjectManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, 2000.0);
+	// Инициализируем террейн менеджер
+	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, 2000.0f);
 
-	pTerrainObjectManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
+	// Это если нужно сгенерить планету
+	pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, 2000.0f);
 
+	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
+	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
-	pSimpleTerrainRenderer->Init(pTerrainObjectManager);
+	pSimpleTerrainRenderer->Init(pTerrainManager);
 
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
 
 
-	pAppHandler = new CMyAppHandler(pTerrainObjectManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext());
+	pAppHandler = new CMyAppHandler(pTerrainManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext());
 	pApplication->InstallAppHandler(pAppHandler);
 
 

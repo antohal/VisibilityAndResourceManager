@@ -66,10 +66,11 @@ double CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetDistance(con
 		return dfHeight;
 	}
 
-	double dfMinLat = in_pTerrainBlock->GetMinimumLattitude();
-	double dfMaxLat = in_pTerrainBlock->GetMaximumLattitude();
-	double dfMinLong = in_pTerrainBlock->GetMinimumLongitude();
-	double dfMaxLong = in_pTerrainBlock->GetMaximumLongitude();
+	double dfMinLat = in_pTerrainBlock->GetParams()->fMinLattitude;;
+	double dfMaxLat = in_pTerrainBlock->GetParams()->fMaxLattitude;
+	double dfMinLong = in_pTerrainBlock->GetParams()->fMinLongitude;
+	double dfMaxLong = in_pTerrainBlock->GetParams()->fMaxLongitude;
+
 	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
 	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
 
@@ -233,13 +234,13 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 	double distToBlock = GetDistance(pTerrainBlock, in_vPos, diameter);
 	unsigned int requiredLodDepth = GetLodDepth(distToBlock);
 
-	if (pTerrainBlock->Depth() == requiredLodDepth)
+	if (pTerrainBlock->GetParams()->uiDepth == requiredLodDepth)
 	{
 		AddVisibleBlock(pTerrainBlock);
 		return true;
 	}
 
-	if (pTerrainBlock->Depth() < requiredLodDepth)
+	if (pTerrainBlock->GetParams()->uiDepth < requiredLodDepth)
 	{
 		if (pTerrainBlock->GetChildBlockDescCount() == 0)
 		{

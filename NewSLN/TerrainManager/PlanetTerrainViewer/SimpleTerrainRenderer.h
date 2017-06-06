@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Scene.h"
-#include "TerrainObjectManager.h"
+#include "TerrainManager.h"
 #include "HeightfieldConverter.h"
 
 #include <map>
@@ -12,7 +12,9 @@ class CSimpleTerrainRenderObject
 {
 protected:
 
-	CSimpleTerrainRenderObject(CSimpleTerrainRenderer* in_pRenderer, const CTerrainBlockDesc* in_pDesc);
+	// Создать объект для рендера Земли по параметрам
+	CSimpleTerrainRenderObject(CSimpleTerrainRenderer* in_pRenderer, const STerrainBlockParams* in_pParams, TerrainObjectID ID);
+
 	~CSimpleTerrainRenderObject();
 
 	void SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext);
@@ -22,10 +24,10 @@ protected:
 
 private:
 
-	SHeightfield					_heightfield;
+	//в этой структуре хранятся вершинные и индексные буферы после генерации
 	STriangulation					_triangulation;
 
-	std::wstring					_wsTextureFileName;	
+	std::wstring					_wsTextureFileName;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
 
 	CSimpleTerrainRenderer*			_owner = nullptr;
@@ -45,7 +47,7 @@ public:
 
 	~CSimpleTerrainRenderer();
 
-	void							Init(CTerrainObjectManager* in_pTerrainObjectManager);
+	void							Init(CTerrainManager* in_pTerrainManager);
 
 	CSimpleTerrainRenderObject*		CreateObject(TerrainObjectID);
 	void							DeleteObject(TerrainObjectID);
@@ -63,7 +65,7 @@ public:
 
 	void							SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
 	
-	CTerrainObjectManager*			GetTerrainObjectManager() { return _pTerrainObjectManager; };
+	CTerrainManager*				GetTerrainManager() { return _pTerrainManager; };
 
 private:
 
@@ -85,11 +87,6 @@ private:
 	{
 		D3DXMATRIX view;
 		D3DXMATRIX projection;
-
-		/*vm::Vector4df	vCamPos;
-		vm::Vector4df	vAxisX;
-		vm::Vector4df	vAxisY;
-		vm::Vector4df	vAxisZ;*/
 	};
 
 	struct LightBufferType
@@ -108,7 +105,7 @@ private:
 
 	//@}
 
-	CTerrainObjectManager*			_pTerrainObjectManager = nullptr;
+	CTerrainManager*				_pTerrainManager = nullptr;
 
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
 

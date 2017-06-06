@@ -225,7 +225,7 @@
     <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
-    <ClCompile Include="TerrainObjectManagerImpl.cpp" />
+    <ClCompile Include="TerrainManagerImpl.cpp" />
     <ClCompile Include="TerrainVisibilityManagerImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -234,11 +234,11 @@
     <ClInclude Include="..\Common\StlUtil.h" />
     <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\TerrainDataManager.h" />
-    <ClInclude Include="..\include\TerrainObjectManager.h" />
+    <ClInclude Include="..\include\TerrainManager.h" />
     <ClInclude Include="..\include\TerrainVisibilityManager.h" />
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />
-    <ClInclude Include="TerrainObjectManagerImpl.h" />
+    <ClInclude Include="TerrainManagerImpl.h" />
     <ClInclude Include="TerrainVisibilityManagerImpl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

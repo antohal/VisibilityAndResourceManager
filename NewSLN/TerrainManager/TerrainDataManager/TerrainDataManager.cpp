@@ -59,6 +59,9 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 
 	_uiTerrainBlocksCount = 0;
 
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLattitudeIndex = 0;
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLongitudeIndex = 0;
+
 	pRootBlock->_implementation->LoadChildsFromDirectory(in_pcwszDirectoryName);
 	*out_ppRootDataBlock = pRootBlock;
 
@@ -102,6 +105,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainData
 	std::vector<std::wstring> vecTextures;
 	GetFileListFromDirectory(wsTexturesDir, vecTextures);
 
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLattitudeIndex = 0;
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLongitudeIndex = 0;
 
 	pRootBlock->_implementation->GenerateChilds(in_pcwszDirectoryName, in_uiM, in_uiN, in_uiDepth, vecTextures, vecHeightmaps);
 	*out_ppRootDataBlock = pRootBlock;
@@ -132,8 +137,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GetDepthRecursive(c
 	if (!block)
 		return;
 
-	if (block->_implementation->_uiDepth > out_depth)
-		out_depth = block->_implementation->_uiDepth;
+	if (block->_implementation->_params.uiDepth > out_depth)
+		out_depth = block->_implementation->_params.uiDepth;
 
 	for (unsigned int i = 0; i < block->GetChildBlockDescCount(); i++)
 	{

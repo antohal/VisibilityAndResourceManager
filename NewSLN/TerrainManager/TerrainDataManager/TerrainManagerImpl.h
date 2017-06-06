@@ -1,7 +1,6 @@
 #pragma once
 
-#include "TerrainDataManager.h"
-#include "TerrainObjectManager.h"
+#include "TerrainManager.h"
 #include "HeightfieldConverter.h"
 
 #include "VisibilityManager.h"
@@ -64,11 +63,11 @@ private:
 };
 
 
-class CTerrainObjectManager::CTerrainObjectManagerImpl : public C3DBaseTerrainObjectManager
+class CTerrainManager::CTerrainManagerImpl : public C3DBaseTerrainObjectManager
 {
 public:
 
-	~CTerrainObjectManagerImpl();
+	~CTerrainManagerImpl();
 
 	// инициализация. Параметр - имя дериктории, где лежат данные Земли
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale);
@@ -84,23 +83,21 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
+	// получить имя текстуры для данного объекта
+	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
+
+	// получить имя карты высот для данного объекта
+	const wchar_t*	GetHeightmapFileName(TerrainObjectID ID) const;
+
+
 	//Получить описание объекта Земли по идентификатору
-	const CTerrainBlockDesc*	GetTerrainObjectDesc(TerrainObjectID ID) const;
+	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
 
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
 	TerrainObjectID	GetNewObjectID(size_t index) const;
 	//@}
 
-	//@{ Список объектов, которые стали видимыми
-	//size_t GetNewVisibleObjectsCount() const;
-	//TerrainObjectID GetNewVisibleObjectID(size_t index) const;
-	////@}
-
-	////@{ Список объектов, которые стали невидимыми
-	//size_t GetNewInvisibleObjectsCount() const;
-	//TerrainObjectID GetNewInvisibleObjectID(size_t index);
-	//@}
 
 	//@{ Список объектов, которые нужно удалить (выпали из списка потенциально видимых)
 	size_t GetObjectsToDeleteCount() const;
