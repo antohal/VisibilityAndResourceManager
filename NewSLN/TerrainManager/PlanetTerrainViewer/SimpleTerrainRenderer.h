@@ -47,7 +47,7 @@ public:
 
 	~CSimpleTerrainRenderer();
 
-	void							Init(CTerrainManager* in_pTerrainManager);
+	void							Init(CTerrainManager* in_pTerrainManager, float in_fWorldScale);
 
 	CSimpleTerrainRenderObject*		CreateObject(TerrainObjectID);
 	void							DeleteObject(TerrainObjectID);
@@ -66,6 +66,8 @@ public:
 	void							SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
 	
 	CTerrainManager*				GetTerrainManager() { return _pTerrainManager; };
+
+	HeightfieldConverter*			GetHeightfieldConverter() { return _pHeightfieldConverter; }
 
 private:
 
@@ -106,6 +108,8 @@ private:
 	//@}
 
 	CTerrainManager*				_pTerrainManager = nullptr;
+
+	HeightfieldConverter*			_pHeightfieldConverter = nullptr;
 
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
 

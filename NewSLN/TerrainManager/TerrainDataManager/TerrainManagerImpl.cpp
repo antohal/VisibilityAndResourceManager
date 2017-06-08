@@ -1,7 +1,17 @@
 #include "TerrainManagerImpl.h"
 #include "Log.h"
+#include "FileUtil.h"
+#include "wgs84.h"
 
 #include <d3dx10math.h>
+
+#define USE_ENGINE_SCALE
+
+#ifdef USE_ENGINE_SCALE
+const float g_fMasterScale = 100.f;
+#else
+const float g_fMasterScale = 1.f;
+#endif
 
 CInternalTerrainObject::CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, 
 	const CTerrainBlockDesc* in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo)
@@ -50,17 +60,17 @@ CTerrainManager::~CTerrainManager()
 	delete _implementation;
 }
 // инициализация. Параметр - имя дериктории, где лежат данные Земли
-void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale)
+void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fWorldSize)
 {
-	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fHeightScale);
+	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fWorldSize);
 }
 
-void CTerrainManager::InitGenerated(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fHeightScale)
+void CTerrainManager::InitGenerated(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
 {
-	_implementation->InitGenerated(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, N, M, depth, in_fWorldScale, in_fHeightScale);
+	_implementation->InitGenerated(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, N, M, depth, in_fWorldScale, in_fWorldSize);
 }
 
-void CTerrainManager::SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection)
+void CTerrainManager::SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection)
 {
 	_implementation->SetViewProjection(in_vPos, in_vDir, in_vUp, in_pmProjection);
 }
@@ -140,11 +150,6 @@ CResourceManager* CTerrainManager::GetResourceManager()
 	return _implementation->GetResourceManager();
 }
 
-HeightfieldConverter * CTerrainManager::GetHeightfieldConverter()
-{
-	return _implementation->GetHeightfieldConverter();
-}
-
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
 //		CTerrainManager::CTerrainManagerImpl
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -164,28 +169,20 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 
 	if (_pTerrainDataManager)
 		delete _pTerrainDataManager;
-
-	if (_pHeightfieldConverter)
-		delete _pHeightfieldConverter;
 }
 
-void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale)
+void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, float in_fWorldScale, float in_fWorldSize)
 {
 	_pTerrainDataManager = new CTerrainDataManager();
-	_pHeightfieldConverter = new HeightfieldConverter();
 	_pResourceManager = new CResourceManager();
 
-	_pHeightfieldConverter->Init(in_pD3DDevice11, in_pDeviceContext);
-
-	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	_pHeightfieldConverter->SetHeightScale(in_fHeightScale);
-
-	_fWorldScale = in_fWorldScale;
+	_fWorldSize = in_fWorldSize;
+	_fWorldScale = g_fMasterScale*in_fWorldScale;
 
 	LogMessage("Loading planet terrain info");
 
 	unsigned int uiMaxDepth = 0;
-	_pTerrainDataManager->LoadTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData, &uiMaxDepth);
+	_pTerrainDataManager->LoadTerrainDataInfo(std::wstring(GetStartDir() + in_pcwszPlanetDirectory).c_str(), &_pPlanetTerrainData, &uiMaxDepth);
 
 	CreateObjects();
 
@@ -194,23 +191,18 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 
 
 	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, in_fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
+	pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
 
 	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
 }
 
-void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fHeightScale)
+void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
 {
 	_pTerrainDataManager = new CTerrainDataManager();
-	_pHeightfieldConverter = new HeightfieldConverter();
 	_pResourceManager = new CResourceManager();
 
-	_pHeightfieldConverter->Init(in_pD3DDevice11, in_pDeviceContext);
-
-	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	_pHeightfieldConverter->SetHeightScale(in_fHeightScale);
-
-	_fWorldScale = in_fWorldScale;
+	_fWorldScale = g_fMasterScale*in_fWorldScale;
+	_fWorldSize = in_fWorldSize;
 
 	LogMessage("Generating planet terrain info");
 
@@ -222,26 +214,26 @@ void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDe
 	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
 
 	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, in_fWorldScale, 6000000.0f, 0.5f, depth);
+	pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5f, depth);
 
 	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
 }
 
-void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 & in_vPos, const D3DXVECTOR3 & in_vDir, const D3DXVECTOR3 & in_vUp, const D3DMATRIX * in_pmProjection)
+void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 * in_vPos, const D3DXVECTOR3 * in_vDir, const D3DXVECTOR3 * in_vUp, const D3DMATRIX * in_pmProjection)
 {
 	Vector3 vPos, vDir, vUp;
 
-	vPos.x = (float)in_vPos.x;
-	vPos.y = (float)in_vPos.y;
-	vPos.z = (float)in_vPos.z;
+	vPos.x = (float)in_vPos->x;
+	vPos.y = (float)in_vPos->y;
+	vPos.z = (float)in_vPos->z;
 
-	vDir.x = (float)in_vDir.x;
-	vDir.y = (float)in_vDir.y;
-	vDir.z = (float)in_vDir.z;
+	vDir.x = (float)in_vDir->x;
+	vDir.y = (float)in_vDir->y;
+	vDir.z = (float)in_vDir->z;
 
-	vUp.x = (float)in_vDir.x;
-	vUp.y = (float)in_vDir.y;
-	vUp.z = (float)in_vDir.z;
+	vUp.x = (float)in_vDir->x;
+	vUp.y = (float)in_vDir->y;
+	vUp.z = (float)in_vDir->z;
 
 	_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
@@ -361,10 +353,6 @@ CResourceManager * CTerrainManager::CTerrainManagerImpl::GetResourceManager()
 	return _pResourceManager;
 }
 
-HeightfieldConverter * CTerrainManager::CTerrainManagerImpl::GetHeightfieldConverter()
-{
-	return _pHeightfieldConverter;
-}
 
 size_t CTerrainManager::CTerrainManagerImpl::GetObjectsCount() const
 {
@@ -413,7 +401,7 @@ void CTerrainManager::CTerrainManagerImpl::RequestUnloadResource(C3DBaseResource
 
 float CTerrainManager::CTerrainManagerImpl::GetWorldRadius() const
 {
-	return _fWorldScale * 100000000.0f;
+	return _fWorldSize;
 }
 
 float CTerrainManager::CTerrainManagerImpl::GetMinCellSize() const
@@ -449,6 +437,62 @@ void CTerrainManager::CTerrainManagerImpl::CreateObjectsRecursive(const CTerrain
 	}
 }
 
+
+void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float latti, float minH, float maxH)
+{
+	vm::Vector3df vPoint = GetWGS84SurfacePoint(longi, latti);
+	vm::Vector3df vNormal = GetWGS84SurfaceNormal(longi, latti);
+
+	out_BB.update(vPoint + vNormal*minH);
+	out_BB.update(vPoint + vNormal*maxH);
+}
+
+
+void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
+{
+	double middleLattitude = (in_Coords.fMinLattitude + in_Coords.fMaxLattitude)*0.5;
+	double middleLongitude = (in_Coords.fMinLongitude + in_Coords.fMaxLongitude)*0.5;
+
+	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
+	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+	vm::Vector3df vEast = vm::normalize(vm::cross(vNormal, vm::Vector3df(0, 0, 1)));
+	vm::Vector3df vNorth = vm::normalize(vm::cross(vNormal, vEast));
+
+	memcpy(out_TriangulationCoords.vPosition, &vMiddlePoint[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vXAxis, &vNorth[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vYAxis, &vNormal[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vZAxis, &vEast[0], 3 * sizeof(double));
+
+	vm::BoundBox<double> vBoundBox(vMiddlePoint);
+
+	const double dfMinHeight = -5000.0;
+	const double dfMaxHeight = 10000.0;
+
+	vBoundBox.update(vMiddlePoint + vNormal*dfMinHeight);
+	vBoundBox.update(vMiddlePoint + vNormal*dfMaxHeight);
+
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
+	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+
+
+	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vBoundBoxMaximum, &vBoundBox._vMax[0], 3 * sizeof(double));
+
+	for (unsigned int i = 0; i < 3; i++)
+	{
+		out_TriangulationCoords.vPosition[i] *= _fWorldScale;
+		out_TriangulationCoords.vBoundBoxMinimum[i] *= _fWorldScale;
+		out_TriangulationCoords.vBoundBoxMaximum[i] *= _fWorldScale;
+	}
+}
+
 void CTerrainManager::CTerrainManagerImpl::CreateObject(const CTerrainBlockDesc* in_pData)
 {
 	SHeightfield::SCoordinates coords;
@@ -459,7 +503,7 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(const CTerrainBlockDesc*
 	coords.fMaxLongitude = in_pData->GetParams()->fMaxLongitude;
 
 	STriangulationCoordsInfo coordsInfo;
-	_pHeightfieldConverter->ComputeTriangulationCoords(coords, coordsInfo);
+	ComputeTriangulationCoords(coords, coordsInfo);
 
 	CInternalTerrainObject* pObject = new CInternalTerrainObject(static_cast<C3DBaseManager*>(this), _idCurrentIDForNewObject, in_pData, coordsInfo);
 

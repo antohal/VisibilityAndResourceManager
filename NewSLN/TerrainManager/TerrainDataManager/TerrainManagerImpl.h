@@ -70,11 +70,13 @@ public:
 	~CTerrainManagerImpl();
 
 	// инициализация. Параметр - имя дериктории, где лежат данные Земли
-	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, float in_fWorldScale, float in_fHeightScale);
+	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+		float in_fWorldScale, float in_fWorldSize);
 
-	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fHeightScale);
+	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
 
-	void SetViewProjection(const D3DXVECTOR3& in_vPos, const D3DXVECTOR3& in_vDir, const D3DXVECTOR3& in_vUp, const D3DMATRIX* in_pmProjection);
+	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
 
 	// В момент вызова этой функции формируется 4 списка: 
 	// объекты, которые нужно создать
@@ -112,8 +114,6 @@ public:
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
-
-	HeightfieldConverter*	GetHeightfieldConverter();
 
 	//@{ C3DBaseObjectManager
 	// получить список объектов
@@ -154,19 +154,20 @@ private:
 	void CreateObject(const CTerrainBlockDesc* in_pData);
 	void DestroyObjects();
 
+	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
+
 	//@{ Main objects
 	CResourceManager*		_pResourceManager = nullptr;
 	CVisibilityManager*		_pVisibilityManager = nullptr;
 
 	CTerrainBlockDesc*		_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*	_pTerrainDataManager = nullptr;
-
-	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
 	//@}
 
 	//@{ Vars
 	TerrainObjectID			_idCurrentIDForNewObject = 0;
 	float					_fWorldScale = 1.f;
+	float					_fWorldSize = 10000000.f;
 	//@}
 
 	//@{ Containers

@@ -24,7 +24,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
 
 	// получаем конвертер карт высот дл€ дальнейших операций с ним
-	HeightfieldConverter* pHeightfieldConverter = _owner->GetTerrainManager()->GetHeightfieldConverter();
+	HeightfieldConverter* pHeightfieldConverter = _owner->GetHeightfieldConverter();
 
 	// создадим объект в котором будет хранитьс€ карта высот и ее параметры
 	SHeightfield heightfield;
@@ -62,7 +62,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 {
 	// освобождаем триангул€цию вместе с буферами вершин и индексов
-	_owner->GetTerrainManager()->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
+	_owner->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
 
 	// освобождаем текстуру
 	if (_pTextureSRV)
@@ -109,6 +109,9 @@ unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 
 CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 {
+	if (_pHeightfieldConverter)
+		delete _pHeightfieldConverter;
+
 	for (auto it = _mapTerrainRenderObjects.begin(); it != _mapTerrainRenderObjects.end(); it++)
 	{
 		delete it->second;
@@ -119,11 +122,19 @@ CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 	FinalizeShader();
 }
 
-void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager)
+void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_fWorldScale)
 {
 	_pTerrainManager = in_pTerrainManager;
 
 	InitializeShader(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), L"PlanetTerrainViewerShaders\\SimpleTerrain.vs", L"PlanetTerrainViewerShaders\\SimpleTerrain.ps");
+
+
+	_pHeightfieldConverter = new HeightfieldConverter;
+
+	_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext());
+
+	_pHeightfieldConverter->SetWorldScale(in_fWorldScale * 100.f);
+	_pHeightfieldConverter->SetHeightScale(1000.f);
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)

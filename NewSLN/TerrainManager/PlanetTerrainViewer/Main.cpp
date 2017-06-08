@@ -57,7 +57,7 @@ public:
 		vUp.y = (float)_pCamera->GetUp()[1];
 		vUp.z = (float)_pCamera->GetUp()[2];
 
-		_pTerrainManager->SetViewProjection(vPos, vDir, vUp, _pContext->GetSystem()->GetProjectionMatrix());
+		_pTerrainManager->SetViewProjection(&vPos, &vDir, &vUp, _pContext->GetSystem()->GetProjectionMatrix());
 
 		_pTerrainManager->Update(in_fFrameTime);
 
@@ -119,9 +119,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CPlanetCameraController* pPlanetCameraController = new CPlanetCameraController();
 	pPlanetCameraController->CreateDebugTextBlock();
 
-	pPlanetCameraController->SetWorldScale(g_fWorldScale);
-	pPlanetCameraController->SetCoordinates(CPlanetCameraController::Coordinates(D2R*20, D2R*20, g_fWorldScale * 10000000.f, 0, 0));
-	pPlanetCameraController->SetMaxHeight(g_fWorldScale * 20000000.0);
+	pPlanetCameraController->SetWorldScale(g_fWorldScale * 100.f);
+	pPlanetCameraController->SetCoordinates(CPlanetCameraController::Coordinates(D2R*20, D2R*20, g_fWorldScale * 100.f * 10000000.f, 0, 0));
+	pPlanetCameraController->SetMaxHeight(g_fWorldScale * 100.f * 20000000.0);
 
 	pPlanetCameraController->SetScrollCoeff(0.5f);
 
@@ -146,16 +146,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainManager = new CTerrainManager();
 
 	// Инициализируем террейн менеджер
-	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, 2000.0f);
+	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale*100000000.f);
 
 	// Это если нужно сгенерить планету
-	pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, 2000.0f);
+	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale*100000000.f);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
 	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
-	pSimpleTerrainRenderer->Init(pTerrainManager);
+	pSimpleTerrainRenderer->Init(pTerrainManager, g_fWorldScale);
 
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
 

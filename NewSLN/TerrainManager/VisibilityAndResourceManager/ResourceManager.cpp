@@ -88,7 +88,7 @@ struct CResourceManager::SResourceManagerPrivate
 
 	vector<CVisibilityManager*>	_visibilityManagers;
 
-	map<C3DBaseObject*, float>	_objectVisibilityTimers;
+	map<C3DBaseObject*, double>	_objectVisibilityTimers;
 
 	CDirect2DTextBlock*			_textBlock = nullptr;
 
@@ -505,7 +505,7 @@ void C3DBaseObject::SetPotentiallyVisible()
 	if (!GetResourceManager())
 		return;
 
-	map<C3DBaseObject*, float>& objectVisibilityTimers = GetResourceManager()->_private->_objectVisibilityTimers;
+	map<C3DBaseObject*, double>& objectVisibilityTimers = GetResourceManager()->_private->_objectVisibilityTimers;
 
 	// Если объект стал виден впервые, или после долгого перерыва, то обновить счетчики видимости
 	if (objectVisibilityTimers.find(this) == objectVisibilityTimers.end())
@@ -667,11 +667,11 @@ void CResourceManager::Update(float deltaTime)
 			pVisMan->GetPrivateInterface()->MarkPotentiallyVisibleObjects(vecCollectObjectsData);
 	}
 
-	map<C3DBaseObject*, float>& objectVisibilityTimers = _private->_objectVisibilityTimers;
+	map<C3DBaseObject*, double>& objectVisibilityTimers = _private->_objectVisibilityTimers;
 
 	for (auto it = objectVisibilityTimers.begin(); it != objectVisibilityTimers.end();)
 	{
-		float& timer = it->second;
+		double& timer = it->second;
 
 		timer -= deltaTime;
 

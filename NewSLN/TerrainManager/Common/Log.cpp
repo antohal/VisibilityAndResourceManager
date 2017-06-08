@@ -2,25 +2,27 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string>
 
 static bool g_enabled = false;
 static bool g_inited = false;
 static FILE* g_fp = NULL;
+std::string g_sFileName;
 static std::function<void(const std::string&)> g_Handler;
-
-class CFileCloser
-{
-public:
-	~CFileCloser()
-	{
-		if (g_fp)
-		{
-			fclose(g_fp);
-			g_fp = NULL;
-		}
-	}
-
-} g_FileCloser;
+//
+//class CFileCloser
+//{
+//public:
+//	~CFileCloser()
+//	{
+//		if (g_fp)
+//		{
+//			fclose(g_fp);
+//			g_fp = NULL;
+//		}
+//	}
+//
+//} g_FileCloser;
 
 void LogInit(const char* fileName)
 {
@@ -30,7 +32,9 @@ void LogInit(const char* fileName)
 	if (fp)
 		fclose(fp);
 
-	fopen_s(&g_fp, fileName, "a+");
+	g_sFileName = fileName;
+
+	//fopen_s(&g_fp, fileName, "a+");
 
 	g_inited = true;
 }
@@ -47,7 +51,12 @@ void LogMessage (const char* strFmt, ...)
 		LogInit("visresman.log");
 	}
 
-	if (/*!g_enabled ||*/ !g_fp)
+	if (!g_enabled)
+		return;
+
+	fopen_s(&g_fp, g_sFileName.c_str(), "a+");
+
+	if (!g_fp)
 		return;
 
     va_list ap;
@@ -71,6 +80,9 @@ void LogMessage (const char* strFmt, ...)
 
 		va_end(ap);
 	}
+
+	fclose(g_fp);
+	g_fp = NULL;
 }
 
 void AddLogHandler(const std::function<void(const std::string&)>& handler)

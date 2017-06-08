@@ -42,3 +42,21 @@ void GetFileListFromDirectory(const std::wstring& in_wsDirectory, std::vector<st
 	} 
 	while (FindNextFileW(hFind, &ffd) != 0);
 }
+
+std::wstring GetStartDir()
+{
+	wchar_t wsStartDir[MAX_PATH + 1];
+	int i;
+
+	GetModuleFileNameW(NULL, wsStartDir, MAX_PATH + 1);
+	i = lstrlen(wsStartDir) - 1;
+	while (i >= 0)
+	{
+		if (wsStartDir[i] == TEXT('\\')) break;
+		else i--;
+	}
+	i++;
+	wsStartDir[i] = TEXT('\0');
+
+	return std::wstring(wsStartDir);
+}
