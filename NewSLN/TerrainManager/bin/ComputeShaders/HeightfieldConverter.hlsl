@@ -197,7 +197,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	
 	float3 normal = -normalize(nur + nrd + nld + nul);
 	
-	float3 binormal = -cross(float3(1, 0, 0), normal);
+	float3 tangent = -cross(float3(1, 0, 0), normal);
 	
 	
 	// STORE IN VERTEX BUFFER
@@ -210,14 +210,25 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 4, 	asuint(vVertexPos.y));
 	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 8, 	asuint(vVertexPos.z));
 
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 12, 	asuint(texcoord.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 16, 	asuint(texcoord.y));
-	
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 20,	asuint(normal.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 24, 	asuint(normal.y));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 28, 	asuint(normal.z));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 12,	asuint(texcoord.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 16,	asuint(texcoord.y));
 
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 32,	asuint(binormal.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 36, 	asuint(binormal.y));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 40, 	asuint(binormal.z));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 20,	asuint(normal.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 24,	asuint(normal.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 28,	asuint(normal.z));
+	
+
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 32,	asuint(tangent.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 36, 	asuint(tangent.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 40, 	asuint(tangent.z));
 }
+
+technique11 HeightfieldConverter
+{
+
+	pass p0
+	{
+		SetComputeShader(CompileShader(cs_5_0, CSMain()));
+	}
+
+};

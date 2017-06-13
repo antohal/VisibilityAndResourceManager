@@ -19,7 +19,7 @@ void GetFileListFromDirectory(const std::wstring& in_wsDirectory, std::vector<st
 
 	std::wstring wsSearchRequest = wsDirectory + L"\\*";
 
-	WIN32_FIND_DATA ffd;
+	WIN32_FIND_DATAW ffd;
 
 	HANDLE hFind = INVALID_HANDLE_VALUE;
 
@@ -49,14 +49,14 @@ std::wstring GetStartDir()
 	int i;
 
 	GetModuleFileNameW(NULL, wsStartDir, MAX_PATH + 1);
-	i = lstrlen(wsStartDir) - 1;
+	i = lstrlenW(wsStartDir) - 1;
 	while (i >= 0)
 	{
-		if (wsStartDir[i] == TEXT('\\')) break;
+		if (wsStartDir[i] == L'\\') break;
 		else i--;
 	}
 	i++;
-	wsStartDir[i] = TEXT('\0');
+	wsStartDir[i] = L'\0';
 
 	return std::wstring(wsStartDir);
 }

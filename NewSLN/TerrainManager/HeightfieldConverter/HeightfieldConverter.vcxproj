@@ -95,7 +95,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)..\..\..\..\ISO</OutDir>
+    <OutDir>$(ProjectDir)\..\bin</OutDir>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
   </PropertyGroup>
@@ -221,6 +221,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\Debug.cpp" />
+    <ClCompile Include="..\Common\FileUtil.cpp" />
     <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="DirectComputeConverter.cpp" />
@@ -229,6 +230,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Debug.h" />
+    <ClInclude Include="..\Common\FileUtil.h" />
     <ClInclude Include="..\Common\Log.h" />
     <ClInclude Include="..\Common\mathmisc.h" />
     <ClInclude Include="..\Common\vecmath.h" />

@@ -95,7 +95,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)..\..\..\..\ISO</OutDir>
+    <OutDir>$(ProjectDir)\..\bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugISO|x64'">
     <OutDir>$(ProjectDir)\..\..\..\..\ISO</OutDir>

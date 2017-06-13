@@ -194,8 +194,14 @@ bool CDirect3DSystem::Initialize(unsigned int screenWidth, unsigned int screenHe
 	// Set the feature level to DirectX 11.
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
+	DWORD dwFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+#ifdef DEBUG
+	dwFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 	// Create the swap chain, Direct3D device, and Direct3D device context.
-	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_BGRA_SUPPORT /*| D3D11_CREATE_DEVICE_DEBUG*/, &featureLevel, 1,
+	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, dwFlags, &featureLevel, 1,
 										   D3D11_SDK_VERSION, &swapChainDesc, &_ptrSwapChain, &_ptrDevice, NULL, &_ptrDeviceContext);
 	if(FAILED(result))
 	{

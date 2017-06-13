@@ -27,8 +27,8 @@ struct SHeightfield
 	{
 		SCoordinates			Coords;
 
-		unsigned int			nCountX;					// количество точек по долготе
-		unsigned int			nCountY;					// количество точек по широте
+		unsigned int			nCountX = 256;				// количество точек по долготе
+		unsigned int			nCountY = 256;				// количество точек по широте
 	};							
 
 	unsigned long long			ID = 0;						// идентификатор
@@ -43,7 +43,7 @@ struct SVertex
 	D3DXVECTOR3					position;
 	D3DXVECTOR2					texture;
 	D3DXVECTOR3					normal;
-	D3DXVECTOR3					binormal;
+	D3DXVECTOR3					tangent;
 };
 
 // информация о координатах триангулированной области
@@ -91,7 +91,7 @@ public:
 	~HeightfieldConverter();
 	
 	// инициализация
-	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext);
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile);
 
 	// Задать глобальный коэффициент масштаба.
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах

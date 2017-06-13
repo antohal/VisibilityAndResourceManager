@@ -5,6 +5,8 @@
 #include <chrono>
 #include "vecmath.h"
 
+#include "FileUtil.h"
+
 #include "wgs84.h"
 
 #include "Log.h"
@@ -242,7 +244,7 @@ HRESULT CreateStructuredBuffer(ID3D11Device* pDevice, UINT uElementSize, UINT uC
 		return pDevice->CreateBuffer(&desc, nullptr, ppBufOut);
 }
 
-DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, HeightfieldConverter::HeightfieldConverterPrivate* in_pOwner)
+DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile, HeightfieldConverter::HeightfieldConverterPrivate* in_pOwner)
 {
 	_owner = in_pOwner;
 
@@ -266,11 +268,14 @@ DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Devic
 
 	// Compile shader
 	ID3DBlob *csBlob = nullptr;
-	HRESULT hr = CompileComputeShader(L"ComputeShaders\\HeightfieldConverter.hlsl", "CSMain", _ptrD3DDevice, &csBlob);
+	HRESULT hr = CompileComputeShader(std::wstring(GetStartDir() + in_pcszComputeShaderFile).c_str(), "CSMain", _ptrD3DDevice, &csBlob);
 	if (FAILED(hr))
 	{
 		// TODO: log error here
 		//printf("Failed compiling shader %08X\n", hr);
+
+		LogMessage("Error compiling compute shader %08X", hr);
+
 		return;
 	}
 
@@ -278,6 +283,9 @@ DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Devic
 	hr = _ptrD3DDevice->CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &_ptrComputeShader);
 	if (FAILED(hr))
 	{
+
+		LogMessage("Error creating compute shader %08X", hr);
+
 		// TODO: log error here
 		return;
 	}

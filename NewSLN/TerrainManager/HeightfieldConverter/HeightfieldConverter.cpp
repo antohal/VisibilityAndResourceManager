@@ -16,9 +16,9 @@ HeightfieldConverter::~HeightfieldConverter()
 }
 
 // инициализация
-void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext)
+void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile)
 {
-	_private->Init(in_pD3DDevice11, in_pDeviceContext);
+	_private->Init(in_pD3DDevice11, in_pDeviceContext, in_pcszComputeShaderFile);
 }
 
 void HeightfieldConverter::SetHeightScale(float in_fHeightScale)

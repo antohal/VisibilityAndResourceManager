@@ -16,7 +16,7 @@ HeightfieldConverter::HeightfieldConverterPrivate::~HeightfieldConverterPrivate(
 }
 
 // инициализация
-void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext/*, EHeightfieldConverterMode in_Mode*/)
+void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile)
 {
 	_ptrD3DDevice = in_pD3DDevice11;
 	_ptrDeviceContext = in_pDeviceContext;
@@ -28,7 +28,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 	//	break;
 
 	//case DIRECT_COMPUTE_MODE:
-		_pAbstractConverter = new DirectComputeHeightfieldConverter(in_pD3DDevice11, in_pDeviceContext, this);
+		_pAbstractConverter = new DirectComputeHeightfieldConverter(in_pD3DDevice11, in_pDeviceContext, in_pcszComputeShaderFile, this);
 //		break;
 	}
 }

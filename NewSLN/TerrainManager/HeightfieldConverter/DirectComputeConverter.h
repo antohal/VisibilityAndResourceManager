@@ -15,7 +15,7 @@ class DirectComputeHeightfieldConverter : public IAbstractHeightfieldConverter
 {
 public:
 
-	DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, HeightfieldConverter::HeightfieldConverterPrivate* owner);
+	DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile, HeightfieldConverter::HeightfieldConverterPrivate* owner);
 	~DirectComputeHeightfieldConverter();
 
 	//@{ IAbstractHeightfieldConverter

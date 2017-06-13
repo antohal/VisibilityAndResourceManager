@@ -10,11 +10,6 @@ cbuffer MatrixBuffer
 {
 	matrix viewMatrix;
 	matrix projectionMatrix;
-
-	/*double4 camPos;
-	double4 axisX;
-	double4 axisY;
-	double4 axisZ;*/
 };
 
 
@@ -24,18 +19,18 @@ cbuffer MatrixBuffer
 struct VertexInputType
 {
     float3 position : POSITION;
-    float2 tex : TEXCOORD0;
+	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
-	float3 binormal : BINORMAL;
+	float3 tangent : TANGENT;
 };
 
 
 struct PixelInputType
 {
     float4 position : SV_POSITION;
-    float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
-	float3 binormal : BINORMAL;
+    float2 tex : TEXCOORD0;
+	float3 tangent : TANGENT;
 };
 
 
@@ -49,21 +44,6 @@ PixelInputType LightVertexShader(VertexInputType input)
 
 	// Calculate the position of the vertex against the world, view, and projection matrices.
     output.position = mul(float4(input.position, 1.0f), viewMatrix);
-
-   /*
-   double3 vPos = input.position.xyz;
-   double3 vDelta = vPos - camPos.xyz;
-
-   double dfX = dot(axisX.xyz, vDelta);
-   double dfY = dot(axisY.xyz, vDelta);
-   double dfZ = dot(axisZ.xyz, vDelta);
-
-   output.position.x = (float)dfX;
-   output.position.y = (float)dfY;
-   output.position.z = (float)dfZ;
-   output.position.w = 1;
-   */
-
     output.position = mul(output.position, projectionMatrix);
     
 
@@ -73,7 +53,7 @@ PixelInputType LightVertexShader(VertexInputType input)
     // Normalize the normal vector.
     output.normal = input.normal;
 
-	output.binormal = input.binormal;
+	output.tangent = input.tangent;
 
     return output;
 }

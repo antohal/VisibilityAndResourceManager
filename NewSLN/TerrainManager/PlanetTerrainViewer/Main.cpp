@@ -10,7 +10,7 @@
 
 #include "Log.h"
 
-const float g_fWorldScale = 0.001f;
+const float g_fWorldScale = 0.00001f;
 
 
 class CMyAppHandler : public CD3DAppHandler
@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 100.f, g_fWorldScale * 15000000.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 100.f, g_fWorldScale * 25000000.f * 100.f, false))
 	{
 		delete pApplication;
 
@@ -146,10 +146,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainManager = new CTerrainManager();
 
 	// Инициализируем террейн менеджер
-	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale*100000000.f);
+	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
 	// Это если нужно сгенерить планету
-	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale*100000000.f);
+	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
