@@ -282,7 +282,7 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 		for (unsigned long uiYY = 0; uiYY < uiCountY; uiYY++)
 		{
 			std::wstring wsTextureFileName = L"T_" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY) + L".dds";
-			std::wstring wsHeightmapFileName = L"N_" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY) + L".dds";
+			std::wstring wsHeightmapFileName = L"H_" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY) + L".dds";
 			std::wstring wsChildsDirectory = wsDirectory + L"\\" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY);
 
 			std::wstring wsTexturePath = wsDirectory + L"\\" + wsTextureFileName;
