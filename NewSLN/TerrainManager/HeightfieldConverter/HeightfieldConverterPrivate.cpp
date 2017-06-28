@@ -31,6 +31,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 		_pAbstractConverter = new DirectComputeHeightfieldConverter(in_pD3DDevice11, in_pDeviceContext, in_pcszComputeShaderFile, this);
 //		break;
 	}
+
 }
 
 // —оздать триангул€цию немедленно и дождатьс€ готовности

@@ -269,21 +269,30 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 		return;
 	}
 
-	float fDeltaLongitude = (_params.fMaxLongitude - _params.fMinLongitude) / uiCountX;
-	float fDeltaLattitude = (_params.fMaxLattitude - _params.fMinLattitude) / uiCountY;
+	float fDeltaLongitude = (_params.fMaxLongitude - _params.fMinLongitude) / uiCountY;
+	float fDeltaLattitude = (_params.fMaxLattitude - _params.fMinLattitude) / uiCountX;
 
 	_vecChildBlocks.reserve(uiCountX * uiCountY);
 
 	for (unsigned long uiXX = 0; uiXX < uiCountX; uiXX++)
 	{
-		float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiXX;
-		float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiXX + fDeltaLongitude;
+		float fChildMaxLattitude = _params.fMaxLattitude - fDeltaLattitude * uiXX;
+		float fChildMinLattitude = _params.fMaxLattitude - fDeltaLattitude * uiXX - fDeltaLattitude;
 
 		for (unsigned long uiYY = 0; uiYY < uiCountY; uiYY++)
 		{
-			std::wstring wsTextureFileName = L"T_" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY) + L".dds";
-			std::wstring wsHeightmapFileName = L"H_" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY) + L".dds";
-			std::wstring wsChildsDirectory = wsDirectory + L"\\" + std::to_wstring(uiXX) + L"_" + std::to_wstring(uiYY);
+			std::wstring wsXX = std::to_wstring(uiXX);
+			std::wstring wsYY = std::to_wstring(uiYY);
+
+			if (wsXX.size() == 1)
+				wsXX = L"0" + wsXX;
+
+			if (wsYY.size() == 1)
+				wsYY = L"0" + wsYY;
+
+			std::wstring wsTextureFileName = L"T_" + wsXX + L"_" + wsYY + L".dds";
+			std::wstring wsHeightmapFileName = L"H_" + wsXX + L"_" + wsYY + L".dds";
+			std::wstring wsChildsDirectory = wsDirectory + L"\\" + wsXX + L"_" + wsYY;
 
 			std::wstring wsTexturePath = wsDirectory + L"\\" + wsTextureFileName;
 			std::wstring wsHeightmapPath = wsDirectory + L"\\" + wsHeightmapFileName;
@@ -300,8 +309,8 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 				wsHeightmapPath.clear();
 			}
 
-			float fChildMinLattitude = _params.fMinLattitude + fDeltaLattitude*uiYY;
-			float fChildMaxLattitude = _params.fMinLattitude + fDeltaLattitude*uiYY + fDeltaLattitude;
+			float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY;
+			float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY + fDeltaLongitude;
 
 			CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
 				fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
@@ -311,6 +320,7 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 
 			pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
 			pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;
+
 
 			_vecChildBlocks.push_back(pChildBlock);
 

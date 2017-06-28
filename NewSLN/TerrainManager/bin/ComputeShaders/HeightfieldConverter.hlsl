@@ -49,9 +49,9 @@ double3 GetWGS84SurfacePoint(float longitude, float lattitude)
 	double R = sqrt( Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB) );
 
 	return double3(
-			R*cosA*cosB,
 			R*sinA*cosB,
-			R*sinB
+			R*sinB,
+			-R*cosA*cosB
 		);
 }
 
@@ -63,8 +63,8 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 
 	double3 vUnnormalizedNormal = double3(
 		2 * in_vSurfacePoint.x / (Rmax*Rmax),
-		2 * in_vSurfacePoint.y / (Rmax*Rmax),
-		2 * in_vSurfacePoint.z / (Rmin*Rmin)
+		2 * in_vSurfacePoint.y / (Rmin*Rmin),
+		2 * in_vSurfacePoint.z / (Rmax*Rmax)
 		);
 
 	return normalize(vUnnormalizedNormal);
@@ -78,8 +78,8 @@ float GetVertexHeight(uint ix, uint iy)
 	float fx = ix;
 	float fy = iy;
 	
-	texCoord.x = fx/nCountX;
-	texCoord.y = fy/nCountY;
+	texCoord.x = fy/ (nCountY - 1);
+	texCoord.y = 1 - fx/ (nCountX - 1);
 	
 	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
 	
@@ -92,11 +92,11 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;
 	float fLattitudeAmpl = fMaxLattitude - fMinLattitude;
 
-	float dlong = fLongitudeAmpl / (nCountX - 1);
-	float dlat = fLattitudeAmpl / (nCountY - 1);
+	float dlong = fLongitudeAmpl / (nCountY - 1);
+	float dlat = fLattitudeAmpl / (nCountX - 1);
 
-	float longitude = fMinLongitude + ix * dlong;
-	float lattitude = fMinLattitude + iy * dlat;
+	float longitude = fMinLongitude + iy * dlong;
+	float lattitude = fMinLattitude + ix * dlat;
 
 	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
@@ -130,7 +130,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 
 	double3 vMiddlePoint = fWorldScale * GetWGS84SurfacePoint(middleLongitude, middleLattitude);
 	double3 vMiddleNormal = GetWGS84SurfaceNormal(vMiddlePoint);
-	double3 vEast = normalize(cross(vMiddleNormal, double3(0, 0, 1)));
+	double3 vEast = normalize(cross(vMiddleNormal, double3(0, 1, 0)));
 	double3 vNorth = normalize(cross(vMiddleNormal, vEast));
 
 
@@ -188,14 +188,14 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 		vLowerVertex = GetVertexPos(ix, iy + 1, lowerVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
-	float2 texcoord = float2((float)ix / (nCountX - 1), (float)iy / (nCountY - 1));
+	float2 texcoord = float2((float)iy / (nCountY - 1), 1 - (float)ix / (nCountX - 1));
 	
 	float3 nur = cross(vRightVertex - vVertexPos, vUpperVertex - vVertexPos);
 	float3 nrd = cross(vLowerVertex - vVertexPos, vRightVertex - vVertexPos);
 	float3 nld = cross(vLeftVertex - vVertexPos, vLowerVertex - vVertexPos);
 	float3 nul = cross(vUpperVertex - vVertexPos, vLeftVertex - vVertexPos);
 	
-	float3 normal = -normalize(nur + nrd + nld + nul);
+	float3 normal = normalize(vVertexPos);//-normalize(nur + nrd + nld + nul);
 	
 	float3 tangent = -cross(float3(1, 0, 0), normal);
 	

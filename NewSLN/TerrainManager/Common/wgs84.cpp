@@ -13,10 +13,16 @@ vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude)
 
 	double R = sqrt(Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB));
 
-	return vm::Vector3df(
+	/*return vm::Vector3df(
 		R*cosA*cosB,
 		R*sinA*cosB,
 		R*sinB
+	);*/
+
+	return vm::Vector3df(
+		R*sinA*cosB,
+		R*sinB,
+		-R*cosA*cosB
 	);
 }
 
@@ -43,8 +49,8 @@ void GetWGS84LongLatHeight(const vm::Vector3df& vPoint, double& out_long, double
 {
 	vm::Vector3df vDir = vm::normalize(vPoint);
 
-	out_lat = asin(vDir[2]);
-	out_long = atan2(vDir[1], vDir[0]);
+	out_lat = asin(vDir[1]);
+	out_long = atan2(vDir[0], -vDir[2]);
 
 	if (out_long < 0)
 		out_long = 2 * M_PI + out_long;

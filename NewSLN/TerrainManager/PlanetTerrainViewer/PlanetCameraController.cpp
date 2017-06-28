@@ -90,29 +90,38 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 	}
 
 	vm::Vector3df vCameraPos = vm::Vector3df(
-		_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude),
+		//_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude),
+		//_coordinates._height*cos(_coordinates._lattitude)*sin(_coordinates._longitude),
+		//_coordinates._height*sin(_coordinates._lattitude)
+
 		_coordinates._height*cos(_coordinates._lattitude)*sin(_coordinates._longitude),
-		_coordinates._height*sin(_coordinates._lattitude)
+		_coordinates._height*sin(_coordinates._lattitude),
+		-_coordinates._height*cos(_coordinates._lattitude)*cos(_coordinates._longitude)
+
 		);
 
 	vm::Vector3df vVertical = vm::normalize(vCameraPos);
-	vm::Vector3df vEast = vm::normalize(vm::cross(vm::Vector3df(0, 0, 1), vVertical));
+	vm::Vector3df vEast = vm::normalize(vm::cross(vm::Vector3df(0, 1, 0), vVertical));
 	vm::Vector3df vNorth = vm::normalize(vm::cross(vVertical, vEast));
 	vm::Vector3df vWest = -vEast;
 
-	double elevation = _coordinates._elevation - M_PI*0.5;
+	double elevation = _coordinates._elevation;// -M_PI*0.5;
 
 	vm::Vector3df vCameraLocalDir = vm::normalize(vm::Vector3df(
-			cos(elevation)*cos(_coordinates._azimuth),
+			/*cos(elevation)*cos(_coordinates._azimuth),
 			cos(elevation)*sin(_coordinates._azimuth),
-			sin(elevation)
+			sin(elevation)*/
+
+		cos(elevation)*sin(_coordinates._azimuth),
+		sin(elevation),
+		-cos(elevation)*cos(_coordinates._azimuth)
 		));
 
-	vm::Vector3df vCameraLocalLeft = vm::normalize(vm::cross(vm::Vector3df(0, 0, 1), vCameraLocalDir));
+	vm::Vector3df vCameraLocalLeft = vm::normalize(vm::cross(vm::Vector3df(0, 1, 0), vCameraLocalDir));
 	vm::Vector3df vCameraLocalUp = vm::normalize(vm::cross(vCameraLocalDir, vCameraLocalLeft));
 
-	vm::Vector3df vCameraGlobalDir = vNorth * vCameraLocalDir[0] + vWest * vCameraLocalDir[1] + vVertical * vCameraLocalDir[2];
-	vm::Vector3df vCameraGlobalUp = vNorth * vCameraLocalUp[0] + vWest * vCameraLocalUp[1] + vVertical * vCameraLocalUp[2];
+	vm::Vector3df vCameraGlobalDir = vNorth * vCameraLocalDir[1] + vWest * vCameraLocalDir[0] + vVertical * vCameraLocalDir[2];
+	vm::Vector3df vCameraGlobalUp = vNorth * vCameraLocalUp[1] + vWest * vCameraLocalUp[0] + vVertical * vCameraLocalUp[2];
 
 	in_pCamera->Set(vCameraPos, vCameraGlobalUp, vCameraGlobalDir);
 
