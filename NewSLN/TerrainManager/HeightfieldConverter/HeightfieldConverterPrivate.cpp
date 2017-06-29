@@ -9,6 +9,14 @@
 
 #pragma comment(lib, "d3dx11.lib")
 
+#define USE_ENGINE_SCALE
+
+#ifdef USE_ENGINE_SCALE
+const float g_fMasterScale = 100.f;
+#else
+const float g_fMasterScale = 1.f;
+#endif
+
 HeightfieldConverter::HeightfieldConverterPrivate::~HeightfieldConverterPrivate()
 {
 	if (_pAbstractConverter)
@@ -71,7 +79,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UpdateTasks()
 // По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 void HeightfieldConverter::HeightfieldConverterPrivate::SetWorldScale(float in_fScale)
 {
-	_fScale = in_fScale;
+	_fScale = in_fScale * g_fMasterScale;
 }
 
 float HeightfieldConverter::HeightfieldConverterPrivate::GetWorldScale() const
@@ -81,7 +89,7 @@ float HeightfieldConverter::HeightfieldConverterPrivate::GetWorldScale() const
 
 void HeightfieldConverter::HeightfieldConverterPrivate::SetHeightScale(float in_fHeightScale)
 {
-	_fHeightScale = in_fHeightScale;
+	_fHeightScale = in_fHeightScale ;
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)

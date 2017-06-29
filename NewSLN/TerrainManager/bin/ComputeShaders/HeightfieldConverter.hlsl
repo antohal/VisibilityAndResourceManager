@@ -11,7 +11,7 @@ cbuffer HeightfieldSettings  : register(b0)
 
 	uint	nCountX;					// количество точек по X
 	uint	nCountY;					// количество точек по Y
-	
+
 	float	fWorldScale;				// Масштаб мира
 	float	fHeightScale;				// Масштаб высоты
 };
@@ -19,9 +19,9 @@ cbuffer HeightfieldSettings  : register(b0)
 
 SamplerState HeightTextureSampler
 {
-    Filter   = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
 };
 
 Texture2D				InputHeightTexture		: register(t0);
@@ -46,12 +46,12 @@ double3 GetWGS84SurfacePoint(float longitude, float lattitude)
 	double cosA = cos(longitude);
 	double sinA = sin(longitude);
 
-	double R = sqrt( Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB) );
+	double R = sqrt(Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB));
 
 	return double3(
-			R*sinA*cosB,
-			R*sinB,
-			-R*cosA*cosB
+		R*sinA*cosB,
+		R*sinB,
+		-R*cosA*cosB
 		);
 }
 
@@ -74,15 +74,15 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 float GetVertexHeight(uint ix, uint iy)
 {
 	float2 texCoord;
-	
+
 	float fx = ix;
 	float fy = iy;
-	
-	texCoord.x = fy/ (nCountY - 1);
-	texCoord.y = 1 - fx/ (nCountX - 1);
-	
+
+	texCoord.x = fy / (nCountY - 1);
+	texCoord.y = 1 - fx / (nCountX - 1);
+
 	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
-	
+
 	return TexColor.r;
 }
 
@@ -102,7 +102,7 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
 
 	double scaledHeight = fWorldScale * height * fHeightScale;
-	
+
 	double3 vVertex = vSurfacePoint + scaledHeight * vSurfaceNormal;
 
 	// local coords
@@ -120,7 +120,7 @@ float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double
 }
 
 [numthreads(1, 1, 1)]
-void CSMain( uint3 DTid : SV_DispatchThreadID )
+void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
 	uint ix = DTid.x;
 	uint iy = DTid.y;
@@ -135,41 +135,41 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 
 
 	// INDICES
-	
+
 	if (ix < nCountX - 1 && iy < nCountY - 1)
 	{
 		uint nStartIndex = 6 * (ix + iy * (nCountX - 1));
-	
+
 		uint i0 = iy*nCountX + ix;
 		uint i1 = iy*nCountX + ix + 1;
 		uint i2 = (iy + 1)*nCountX + ix;
 		uint i3 = (iy + 1)*nCountX + ix + 1;
 
-		OutIndexBuffer.Store(nStartIndex 		* 4, i0);
-		OutIndexBuffer.Store((nStartIndex + 1) 	* 4, i1);
-		OutIndexBuffer.Store((nStartIndex + 2) 	* 4, i3);
+		OutIndexBuffer.Store(nStartIndex * 4, i0);
+		OutIndexBuffer.Store((nStartIndex + 1) * 4, i1);
+		OutIndexBuffer.Store((nStartIndex + 2) * 4, i3);
 
-		OutIndexBuffer.Store((nStartIndex + 3) 	* 4, i0);
-		OutIndexBuffer.Store((nStartIndex + 4) 	* 4, i3);
-		OutIndexBuffer.Store((nStartIndex + 5) 	* 4, i2);
+		OutIndexBuffer.Store((nStartIndex + 3) * 4, i0);
+		OutIndexBuffer.Store((nStartIndex + 4) * 4, i3);
+		OutIndexBuffer.Store((nStartIndex + 5) * 4, i2);
 	}
-	
+
 	// VERTICES
-	
+
 	float thisVertexHeight = GetVertexHeight(ix, iy);
 	float3 vVertexPos = GetVertexPos(ix, iy, thisVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
-	
+
 	float3 vLeftVertex = vVertexPos;
 	float3 vRightVertex = vVertexPos;
 	float3 vUpperVertex = vVertexPos;
 	float3 vLowerVertex = vVertexPos;
-	
+
 	if (ix >= 1)
 	{
 		float leftVertexHeight = GetVertexHeight(ix - 1, iy);
 		vLeftVertex = GetVertexPos(ix - 1, iy, leftVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
-	
+
 	if (ix < nCountX - 1)
 	{
 		float rightVertexHeight = GetVertexHeight(ix + 1, iy);
@@ -181,7 +181,7 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 		float upperVertexHeight = GetVertexHeight(ix, iy - 1);
 		vUpperVertex = GetVertexPos(ix, iy - 1, upperVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
-	
+
 	if (iy < nCountY - 1)
 	{
 		float lowerVertexHeight = GetVertexHeight(ix, iy + 1);
@@ -189,46 +189,36 @@ void CSMain( uint3 DTid : SV_DispatchThreadID )
 	}
 
 	float2 texcoord = float2((float)iy / (nCountY - 1), 1 - (float)ix / (nCountX - 1));
-	
+
 	float3 nur = cross(vRightVertex - vVertexPos, vUpperVertex - vVertexPos);
 	float3 nrd = cross(vLowerVertex - vVertexPos, vRightVertex - vVertexPos);
 	float3 nld = cross(vLeftVertex - vVertexPos, vLowerVertex - vVertexPos);
 	float3 nul = cross(vUpperVertex - vVertexPos, vLeftVertex - vVertexPos);
-	
+
 	float3 normal = normalize(vVertexPos);//-normalize(nur + nrd + nld + nul);
-	
+
 	float3 tangent = -cross(float3(1, 0, 0), normal);
-	
-	
+
+
 	// STORE IN VERTEX BUFFER
-	
+
 	uint ivtx = GetVertexId(ix, iy);
-	
+
 	uint VERTEX_SIZE = 44;
-	
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE, 		asuint(vVertexPos.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 4, 	asuint(vVertexPos.y));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 8, 	asuint(vVertexPos.z));
 
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 12,	asuint(texcoord.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 16,	asuint(texcoord.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE, asuint(vVertexPos.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 4, asuint(vVertexPos.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 8, asuint(vVertexPos.z));
 
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 20,	asuint(normal.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 24,	asuint(normal.y));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 28,	asuint(normal.z));
-	
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 12, asuint(normal.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 16, asuint(normal.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 20, asuint(normal.z));
 
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 32,	asuint(tangent.x));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 36, 	asuint(tangent.y));
-	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 40, 	asuint(tangent.z));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 24, asuint(texcoord.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 28, asuint(texcoord.y));
+
+
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 32, asuint(tangent.x));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 36, asuint(tangent.y));
+	OutVertexBuffer.Store(ivtx * VERTEX_SIZE + 40, asuint(tangent.z));
 }
-
-technique11 HeightfieldConverter
-{
-
-	pass p0
-	{
-		SetComputeShader(CompileShader(cs_5_0, CSMain()));
-	}
-
-};
