@@ -30,6 +30,14 @@ void CTerrainVisibilityManager::UpdateObjectsVisibility(const Vector3& in_vPos, 
 {
 	_implementation->UpdateObjectsVisibility(in_vPos, in_vDir, in_vUp, in_pmProjection);
 }
+unsigned int CTerrainVisibilityManager::GetVisibleObjectsCount() const
+{
+	return _implementation->GetVisibleObjectsCount();
+}
+C3DBaseObject * CTerrainVisibilityManager::GetVisibleObject(unsigned int i)
+{
+	return _implementation->GetVisibleObject(i);
+}
 //@}
 
 
@@ -284,4 +292,27 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock)
 {
 	_setVisibleObjects.insert(_mapObjects[pBlock]);
+}
+
+unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibleObjectsCount() const
+{
+	return _setVisibleObjects.size();
+}
+
+C3DBaseObject* CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibleObject(unsigned int i)
+{
+	if (i >= _setVisibleObjects.size())
+		return nullptr;
+
+	unsigned int index = 0;
+
+	for (C3DBaseObject* obj : _setVisibleObjects)
+	{
+		if (index == i)
+			return obj;
+
+		index++;
+	}
+
+	return nullptr;
 }

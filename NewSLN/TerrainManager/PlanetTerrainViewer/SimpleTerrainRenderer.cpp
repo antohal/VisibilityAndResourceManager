@@ -135,7 +135,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	//_pHeightfieldConverter->SetHeightScale(1000.f);
-	_pHeightfieldConverter->SetHeightScale(1.f);
+	_pHeightfieldConverter->SetHeightScale(10.f);
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)

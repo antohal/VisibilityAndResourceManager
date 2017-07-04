@@ -76,6 +76,8 @@ public:
 
 	virtual bool IsObjectVisible(C3DBaseObject* in_pObject) const = 0;
 	virtual void UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection) = 0;
+	virtual unsigned int GetVisibleObjectsCount() const = 0;
+	virtual C3DBaseObject* GetVisibleObject(unsigned int i) = 0;
 };
 
 class VISIBILITYMANAGER_API CVisibilityManager

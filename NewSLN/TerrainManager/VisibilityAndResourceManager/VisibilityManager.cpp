@@ -973,48 +973,79 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 	_private->_fNearClipPlane = 999999.f;
 	_private->_fFarClipPlane = -999999.f;
 
+	bool bHavePlugins = false;
+
 	for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
-		plugin->UpdateObjectsVisibility(FromVec3(_private->_Camera.GetPos()), FromVec3(_private->_Camera.GetDir()), FromVec3(_private->_Camera.GetUp()), &_private->_mProjection);
-
-	for(; !GI.IsEnd(); GI.Next())
 	{
-		CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
+		plugin->UpdateObjectsVisibility(FromVec3(_private->_Camera.GetPos()), FromVec3(_private->_Camera.GetDir()), FromVec3(_private->_Camera.GetUp()), &_private->_mProjection);
+		bHavePlugins = true;
+	}
 
-		if (pInternalObject->_bAlwaysVisible)
-			continue;
-
-		bool bPluginVisible = true;
+	/*if (bHavePlugins)
+	{
 
 		for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
 		{
-			if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+			unsigned int visCount = plugin->GetVisibleObjectsCount();
+
+			for (unsigned int iObj = 0; iObj < visCount; iObj++)
 			{
-				bPluginVisible = false;
-				break;
+
+				C3DBaseObject* pObj = plugin->GetVisibleObject(iObj);
+
+				if (!pObj)
+					continue;
+
+				CVisibilityManager::VisibilityManagerPrivate::SObject& internalObject = _private->_mapObjects[pObj];
+
+
+
 			}
 		}
 
-		if (!bPluginVisible)
-			continue;
+	}
+	else*/
+	{
 
-		if (!_private->IsObjectInCamera(GI, pInternalObject))
-			continue;
+		for (; !GI.IsEnd(); GI.Next())
+		{
+			CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
 
-		if (!pInternalObject->_bTexturesInited)
-			pInternalObject->InitTextures();
-		
+			if (pInternalObject->_bAlwaysVisible)
+				continue;
+
+			bool bPluginVisible = true;
+
+			for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
+			{
+				if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+				{
+					bPluginVisible = false;
+					break;
+				}
+			}
+
+			if (!bPluginVisible)
+				continue;
+
+			if (!_private->IsObjectInCamera(GI, pInternalObject))
+				continue;
+
+			if (!pInternalObject->_bTexturesInited)
+				pInternalObject->InitTextures();
+
 #ifdef TEXTURE_VISIBILITY
 
-		if (_private->_bUpdateTextureVisibility)
-		{
-			_private->UpdateTextureVisibilityForObject(pInternalObject);
-		}
+			if (_private->_bUpdateTextureVisibility)
+			{
+				_private->UpdateTextureVisibilityForObject(pInternalObject);
+			}
 #endif
 
-		_private->_vecVisibleObjects.push_back(pInternalObject->_pObject);
-		_private->SetObjectVisibleOnThisFrame(*pInternalObject);
+			_private->_vecVisibleObjects.push_back(pInternalObject->_pObject);
+			_private->SetObjectVisibleOnThisFrame(*pInternalObject);
+		}
 	}
-
 
 #endif
 

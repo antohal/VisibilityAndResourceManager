@@ -10,7 +10,7 @@
 
 #include "Log.h"
 
-const float g_fWorldScale = 0.00001f;
+const float g_fWorldScale = 0.000005f;
 
 
 class CMyAppHandler : public CD3DAppHandler
@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 100.f, g_fWorldScale * 25000000.f * 100.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 10000.f, g_fWorldScale * 50000000.f * 100.f, false))
 	{
 		delete pApplication;
 

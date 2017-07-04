@@ -63,24 +63,63 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 		MoveHeight(deltaTime, pMouseInput->GetFrameWheelDelta());
 	}
 
+	vm::Vector2df vMouseDelta = pMouseInput->GetLastFrameDelta();
+
+	if (vm::length(vMouseDelta) > 20.f)
+		vMouseDelta = vm::normalize(vMouseDelta) * 20.f;
+
 	if (pMouseInput->GetButtonState(CMouseInput::BUTTON_RIGHT))
 	{
-		vm::Vector2df vMouseDelta = pMouseInput->GetLastFrameDelta();
 
-		if (vm::length(vMouseDelta) > 20)
-			vMouseDelta = vm::normalize(vMouseDelta) * 20;
-
-		double dfAzDelta = vMouseDelta[0] * deltaTime;
-		double dfElDelta = vMouseDelta[1] * deltaTime;
+		double dfAzDelta = 0.1f*vMouseDelta[0] * deltaTime;
+		double dfElDelta = 0.1f*vMouseDelta[1] * deltaTime;
 
 		_coordinates._azimuth += dfAzDelta;
 		_coordinates._elevation += dfElDelta;
 
-		if (_coordinates._elevation < 0)
-			_coordinates._elevation = 0;
+		if (_coordinates._elevation < -M_PI)
+			_coordinates._elevation = -M_PI;
 
 		if (_coordinates._elevation > M_PI)
 			_coordinates._elevation = M_PI;
+	}
+
+	if (pMouseInput->GetButtonState(CMouseInput::BUTTON_LEFT))
+	{
+		double heightMin = _fWorldScale * 6357000;
+		double heightMax = _fWorldScale * 10000000.0;
+
+		double coeffMin = 0.01;
+		double coeffMax = 1;
+
+		double coeff = coeffMax;
+
+		if (_fHeightCommand < heightMin)
+		{
+			coeff = coeffMin;
+			_fHeightCommand = heightMin;
+		}
+		else
+		{
+			if (_fHeightCommand > heightMax)
+				coeff = coeffMax;
+			else
+			{
+				coeff = vm::lerp((_coordinates._height - heightMin) / (heightMax - heightMin), coeffMin, coeffMax);
+			}
+		}
+
+		double dfDeltaLon = -coeff*0.1f*vMouseDelta[0] * deltaTime;
+		double dfDeltaLat = coeff*0.1f*vMouseDelta[1] * deltaTime;
+
+		_coordinates._lattitude += dfDeltaLat;
+		_coordinates._longitude += dfDeltaLon;
+
+		if (_coordinates._lattitude > M_PI*0.5)
+			_coordinates._lattitude = M_PI*0.5;
+
+		if (_coordinates._lattitude < -M_PI*0.5)
+			_coordinates._lattitude = -M_PI*0.5;
 	}
 
 	if (_pTextBlock)
@@ -144,11 +183,13 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 		_fHeightCommand = heightMin;
 	}
 	else
-	if (_fHeightCommand > heightMax)
-		coeff = coeffMax;
-	else
 	{
-		coeff = vm::lerp((_coordinates._height - heightMin) / (heightMax - heightMin), coeffMin, coeffMax);
+		if (_fHeightCommand > heightMax)
+			coeff = coeffMax;
+		else
+		{
+			coeff = vm::lerp((_coordinates._height - heightMin) / (heightMax - heightMin), coeffMin, coeffMax);
+		}
 	}
 
 	if (wheelDelta > 50)

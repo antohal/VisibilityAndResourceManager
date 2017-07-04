@@ -11,6 +11,10 @@ public:
 	//@{ IVisibilityManagerPlugin
 	bool IsObjectVisible(C3DBaseObject* in_pObject) const;
 	void UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection);
+
+	unsigned int GetVisibleObjectsCount() const;
+	C3DBaseObject* GetVisibleObject(unsigned int i);
+
 	//@}
 
 private:

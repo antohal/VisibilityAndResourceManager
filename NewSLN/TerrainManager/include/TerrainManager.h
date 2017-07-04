@@ -21,6 +21,13 @@ class HeightfieldConverter;
 
 typedef size_t TerrainObjectID;
 
+struct TerrainManagerConfig
+{
+	float	MaxLodHeight;
+	float	LodCoeff;
+
+};
+
 class TERRAINOBJECTMANAGER_API CTerrainManager
 {
 public:
@@ -35,6 +42,9 @@ public:
 	// in_fHeightScale - коэффициент масштаба высоты
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		float in_fWorldScale, float in_fWorldSize);
+
+	void GetConfig(TerrainManagerConfig* out_Config) const;
+	void SetConfig(const TerrainManagerConfig* in_Config);
 
 	// Инициализация со случайной генерацией планеты до уровня глубины depth, с разбиением по долготе и широте N и M соответственно. 
 	// Текстуры и карты высот беруться случайным образом из [in_pcwszPlanetDirectory]/Textures и /HeightMaps
