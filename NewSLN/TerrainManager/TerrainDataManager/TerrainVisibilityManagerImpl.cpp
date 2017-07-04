@@ -226,7 +226,11 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisi
 	if (uiMaxDepth == 0)
 	{
 		for (unsigned int i = 0; i < _pRoot->GetChildBlockDescCount(); i++)
-			AddVisibleBlock(_pRoot->GetChildBlockDesc(i));
+		{
+			const CTerrainBlockDesc* pBlock = _pRoot->GetChildBlockDesc(i);
+			if (!IsBlockBehindEarth(pBlock, vPos))
+				AddVisibleBlock(pBlock);
+		}
 	}
 	else
 	{
@@ -244,7 +248,9 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 
 	if (pTerrainBlock->GetParams()->uiDepth == requiredLodDepth)
 	{
-		AddVisibleBlock(pTerrainBlock);
+		if (!IsBlockBehindEarth(pTerrainBlock, in_vPos))
+			AddVisibleBlock(pTerrainBlock);
+
 		return true;
 	}
 
@@ -252,7 +258,9 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 	{
 		if (pTerrainBlock->GetChildBlockDescCount() == 0)
 		{
-			AddVisibleBlock(pTerrainBlock);
+			if (!IsBlockBehindEarth(pTerrainBlock, in_vPos))
+				AddVisibleBlock(pTerrainBlock);
+
 			return true;
 		}
 
@@ -279,7 +287,8 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 		{
 			for (const CTerrainBlockDesc* pInvisibleChild : vecInvisibleChilds)
 			{
-				AddVisibleBlock(pInvisibleChild);
+				if (!IsBlockBehindEarth(pInvisibleChild, in_vPos))
+					AddVisibleBlock(pInvisibleChild);
 			}
 
 			return true;
@@ -287,6 +296,107 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 	}
 
 	return false;
+}
+
+bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEarth(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos) const
+{
+	double dfMinLat = in_pTerrainBlock->GetParams()->fMinLattitude;
+	double dfMaxLat = in_pTerrainBlock->GetParams()->fMaxLattitude;
+	double dfMinLong = in_pTerrainBlock->GetParams()->fMinLongitude;
+	double dfMaxLong = in_pTerrainBlock->GetParams()->fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+	double dfMinHeight = (-20000.0);
+	double dfMaxHeight = (20000.0);
+
+
+	// corners
+	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	// mid points
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+	// center
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+		return false;
+
+
+	///-----------------------------
+
+	// corners
+	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	// mid points
+
+	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+	// center
+	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
+	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+		return false;
+
+
+	return true;
 }
 
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock)

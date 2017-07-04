@@ -9,6 +9,8 @@
 
 #include "vecmath.h"
 
+#include <algorithm>
+
 void CPlanetCameraController::SetCoordinates(const CPlanetCameraController::Coordinates& in_Coordinates)
 {
 	_coordinates = in_Coordinates;
@@ -164,7 +166,7 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 
 	in_pCamera->Set(vCameraPos, vCameraGlobalUp, vCameraGlobalDir);
 
-	_coordinates._height += (_fHeightCommand - _coordinates._height)*_fScrollCoeff*deltaTime;
+	_coordinates._height += (_fHeightCommand - _coordinates._height)*std::max<float>(1.f, _fScrollCoeff*deltaTime);
 }
 
 void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
@@ -172,8 +174,8 @@ void CPlanetCameraController::MoveHeight(float deltaTime, int wheelDelta)
 	double heightMin = _fWorldScale * 6357000;
 	double heightMax = _fWorldScale * 10000000.0;
 
-	double coeffMax = _fWorldScale * 300000.0;
-	double coeffMin = _fWorldScale * 500.0;
+	double coeffMax = _fWorldScale * 600000.0;
+	double coeffMin = _fWorldScale * 1000.0;
 
 	double coeff = coeffMax;
 

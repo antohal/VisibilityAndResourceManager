@@ -24,6 +24,9 @@ private:
 
 	double GetDistance(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos, double& out_Diameter);
 
+	bool IsBlockBehindEarth(const CTerrainBlockDesc*, const vm::Vector3df& in_vPos) const;
+
+
 	unsigned int GetLodDepth(double dist) const;
 
 	std::map<C3DBaseObject*, const CTerrainBlockDesc*>	_mapTerrainBlockInfo;

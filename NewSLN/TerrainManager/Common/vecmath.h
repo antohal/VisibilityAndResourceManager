@@ -41,6 +41,12 @@ using namespace std;
 namespace vm 
 {
 
+template <typename T>
+inline T sqr(const T& a)
+{
+	return a*a;
+}
+
 //@{ Useful functions
 template <typename T>
 inline void CLIP_NUMBER(T& tNum, const T& A, const T& B)
