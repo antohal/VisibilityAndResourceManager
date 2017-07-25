@@ -471,15 +471,22 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	vBoundBox.update(vMiddlePoint + vNormal*dfMinHeight);
 	vBoundBox.update(vMiddlePoint + vNormal*dfMaxHeight);
 
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+	double dfMinLat = in_Coords.fMinLattitude;
+	double dfMaxLat = in_Coords.fMaxLattitude;
+	double dfMinLong = in_Coords.fMinLongitude;
+	double dfMaxLong = in_Coords.fMaxLongitude;
 
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMaxLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, in_Coords.fMinLongitude, middleLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMinLattitude, dfMinHeight, dfMaxHeight);
-	UpdateBBoxSurfacePoint(vBoundBox, middleLongitude, in_Coords.fMaxLattitude, dfMinHeight, dfMaxHeight);
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 30;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 30;
+
+	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	{
+		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		{
+			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight);
+			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight);
+		}
+	}
 
 
 	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));

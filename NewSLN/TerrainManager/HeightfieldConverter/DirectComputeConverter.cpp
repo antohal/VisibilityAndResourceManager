@@ -436,6 +436,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.fWorldScale = _owner->_owner->GetWorldScale();
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
 	constantData.fLongitudeCoeff = fLongitudeCoeff;
+	constantData.fLattitudeCoeff = fLattitudeCoeff;
 
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX, 

@@ -77,6 +77,14 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 	return normalize(vUnnormalizedNormal);
 }
 
+float2 CalcTexcoords(uint ix, uint iy)
+{
+	return float2(
+		fLongitudeCoeff *(float)iy / (nCountY - 1),
+		fLattitudeCoeff * (1 - (float)ix / (nCountX - 1))
+		);
+}
+
 // получить высоту вершины по индексам вдоль осей x и y
 float GetVertexHeight(uint ix, uint iy)
 {
@@ -85,8 +93,7 @@ float GetVertexHeight(uint ix, uint iy)
 	float fx = ix;
 	float fy = iy;
 
-	texCoord.x = fLongitudeCoeff * fy / (nCountY - 1);
-	texCoord.y = ( 1 - fLattitudeCoeff * fx / (nCountX - 1) );
+	texCoord = CalcTexcoords(ix, iy);
 
 	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
 
@@ -195,10 +202,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 		vLowerVertex = GetVertexPos(ix, iy + 1, lowerVertexHeight, vMiddlePoint, vMiddleNormal, vEast, vNorth);
 	}
 
-	float2 texcoord = float2(
-			fLongitudeCoeff *(float)iy / (nCountY - 1),
-			(1 - fLattitudeCoeff * (float)ix / (nCountX - 1))
-		);
+	float2 texcoord = CalcTexcoords(ix, iy);
 
 	float3 nur = cross(vRightVertex - vVertexPos, vUpperVertex - vVertexPos);
 	float3 nrd = cross(vLowerVertex - vVertexPos, vRightVertex - vVertexPos);

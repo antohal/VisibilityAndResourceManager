@@ -44,7 +44,7 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 	float4 ambientColor;
 
 
-	ambientColor = float4(0.2, 0.2, 0.2, 0.2);
+	ambientColor = float4(0.5, 0.5, 0.5, 0.5);
 
 	// Sample the pixel color from the texture using the sampler at this texture coordinate location.
 	textureColor = shaderTexture.Sample(SampleType, input.tex);

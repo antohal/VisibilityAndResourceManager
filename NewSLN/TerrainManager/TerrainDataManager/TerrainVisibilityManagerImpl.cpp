@@ -308,93 +308,29 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEart
 	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
 	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
 
-	double dfMinHeight = (-20000.0);
-	double dfMaxHeight = (20000.0);
+	double dfMinHeight = (-10000.0);
+	double dfMaxHeight = (10000.0);
 
 
-	// corners
-	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
 
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
+	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	{
+		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		{
+			vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLat);
 
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
+			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint))
+				return false;
 
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
+			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+			//	return false;
 
-	// mid points
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
-
-	// center
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-		return false;
-
-
-	///-----------------------------
-
-	// corners
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	// mid points
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
-	// center
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
-	if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-		return false;
-
+			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+			//	return false;
+		}
+	}
 
 	return true;
 }

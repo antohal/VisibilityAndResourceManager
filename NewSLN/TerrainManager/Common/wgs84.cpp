@@ -65,22 +65,20 @@ bool IsSegmentIntersectsEarthMinRadius(const vm::Vector3df& A, const vm::Vector3
 {
 	const double Rmin = 6356752.3142  ;
 
-	if (vm::dot(vm::normalize(A), vm::normalize(B)) > 0.2/* && vm::length(B - A) < Rmin*/ && vm::length(A) > Rmin && vm::length(B) > Rmin)
+	vm::Vector3df C = vm::Vector3df(0.0);
+	vm::Vector3df vDir = vm::normalize(B - A);
+	double lenAB = vm::length(B - A);
+
+	double l = vm::dot(vDir, C - A);
+
+	if (l < 0 || l > lenAB + Rmin)
 		return false;
 
-	vm::Vector3df C = vm::Vector3df(0, 0, 0);
+	vm::Vector3df P = A + vDir * l;
+	double distFromSegmentToC = vm::length(C - P);
 
-	double xA = A[0], yA = A[1], zA = A[2];
-	double xB = B[0], yB = B[1], zB = B[2];
+	if (distFromSegmentToC < Rmin)
+		return true;
 
-	double a = vm::sqr(xB - xA) + vm::sqr(yB - yA) + vm::sqr(zB - zA);
-	double b = 2 * ((xB-xA)*xA + (yB-yA)*yA + (zB - zA)*zA);
-	double c = xA*xA + yA*yA + zA*zA - Rmin*Rmin;
-
-	double Delta = b*b - 4 * a*c;
-
-	if (Delta < 0)
-		return false;
-
-	return true;
+	return false;
 }
