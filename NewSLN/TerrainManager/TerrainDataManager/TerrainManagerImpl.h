@@ -71,7 +71,7 @@ public:
 
 	// инициализация. Параметр - имя дериктории, где лежат данные Земли
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		float in_fWorldScale, float in_fWorldSize);
+		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff);
 
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);

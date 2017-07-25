@@ -3,6 +3,9 @@
 #include <strsafe.h>
 #include <Windows.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "Log.h"
 #include "StlUtil.h"
 #include "FileUtil.h"
@@ -312,22 +315,25 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 			float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY;
 			float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY + fDeltaLongitude;
 
-			CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
-				fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
-
-			memcpy(pChildBlock->_implementation->_params.aTreePosition, _params.aTreePosition, sizeof(_params.aTreePosition));
-			pChildBlock->_implementation->_params.uiDepth = _params.uiDepth + 1;
-
-			pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
-			pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;
-
-
-			_vecChildBlocks.push_back(pChildBlock);
-
-
-			if (PathFileExistsW(wsChildsDirectory.c_str()))
+			if (fChildMinLongitude < 2 * M_PI)
 			{
-				pChildBlock->_implementation->LoadChildsFromDirectory(wsChildsDirectory);
+				CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
+					fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
+
+				memcpy(pChildBlock->_implementation->_params.aTreePosition, _params.aTreePosition, sizeof(_params.aTreePosition));
+				pChildBlock->_implementation->_params.uiDepth = _params.uiDepth + 1;
+
+				pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
+				pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;
+
+
+				_vecChildBlocks.push_back(pChildBlock);
+
+
+				if (PathFileExistsW(wsChildsDirectory.c_str()))
+				{
+					pChildBlock->_implementation->LoadChildsFromDirectory(wsChildsDirectory);
+				}
 			}
 		}
 	}

@@ -41,7 +41,7 @@ public:
 	// in_fWorldScale - коэффициент масштаба мира
 	// in_fHeightScale - коэффициент масштаба высоты
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		float in_fWorldScale, float in_fWorldSize);
+		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff);
 
 	void GetConfig(TerrainManagerConfig* out_Config) const;
 	void SetConfig(const TerrainManagerConfig* in_Config);

@@ -22,12 +22,12 @@ struct STerrainBlockIndex
 struct STerrainBlockParams
 {
 	// минимальная и максимальная долгота
-	float	fMinLongitude = 0;
-	float	fMaxLongitude = 0;
+	float			fMinLongitude = 0;
+	float			fMaxLongitude = 0;
 
 	// минимальная и максимальная широта
-	float	fMinLattitude = 0;
-	float	fMaxLattitude = 0;
+	float			fMinLattitude = 0;
+	float			fMaxLattitude = 0;
 
 	// уровень глубины блока
 	unsigned int	uiDepth = 0;
@@ -81,7 +81,7 @@ public:
 	~CTerrainDataManager();
 
 	// Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth = nullptr);
+	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, unsigned int* out_uiMaximumDepth = nullptr);
 
 	// Сгенерировать данные планеты. Текстуры и карты нормалей будут браться из директории [in_pcwszDirectoryName] случайным образом 
 	// Карты нормалей из HeightMaps, текстуры из Textures

@@ -397,6 +397,18 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 {
 	_triangulation.ID = _heightfield.ID;
 
+
+	// Ограничение по максимальной долготе
+	float fLongitudeCoeff = 1.f;
+	if (_heightfield.Config.Coords.fMaxLongitude > 2 * M_PI)
+	{
+		fLongitudeCoeff = (2 * M_PI - _heightfield.Config.Coords.fMinLongitude) / (_heightfield.Config.Coords.fMaxLongitude - _heightfield.Config.Coords.fMinLongitude);
+
+		_heightfield.Config.nCountY *= fLongitudeCoeff;
+
+		_heightfield.Config.Coords.fMaxLongitude = 2 * M_PI;
+	}
+
 	_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
 	_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
 
@@ -413,6 +425,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.Config = _heightfield.Config;
 	constantData.fWorldScale = _owner->_owner->GetWorldScale();
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
+	constantData.fLongitudeCoeff = fLongitudeCoeff;
 
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX, 
