@@ -30,7 +30,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	SHeightfield heightfield;
 
 	// считаем данные карты высот из файла
-	pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield);
+	pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield, 4);
 
 	LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
 

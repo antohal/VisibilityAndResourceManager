@@ -99,7 +99,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ComputeTriangulationCoor
 }
 
 // —читать данные карты высот из текстуры
-void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield)
+void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield, unsigned short in_usCompressionRatio)
 {
 	// Load the texture in.
 	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(_ptrD3DDevice, in_pcwszTextureFileName, NULL, NULL, &out_Heightfield.pTextureSRV, NULL);
@@ -126,8 +126,8 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 		D3D11_TEXTURE2D_DESC description;
 		tex->GetDesc(&description);
 		
-		out_Heightfield.Config.nCountX = description.Width;
-		out_Heightfield.Config.nCountY = description.Height;
+		out_Heightfield.Config.nCountX = description.Width / in_usCompressionRatio;
+		out_Heightfield.Config.nCountY = description.Height / in_usCompressionRatio;
 	}
 }
 

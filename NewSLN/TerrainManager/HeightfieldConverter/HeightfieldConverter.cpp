@@ -72,9 +72,9 @@ float HeightfieldConverter::GetWorldScale() const
 }
 
 // —читать данные карты высот из текстуры
-void HeightfieldConverter::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield)
+void HeightfieldConverter::ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield, unsigned short in_usCompressionRatio)
 {
-	_private->ReadHeightfieldDataFromTexture(in_pcwszTextureFileName, out_Heightfield);
+	_private->ReadHeightfieldDataFromTexture(in_pcwszTextureFileName, out_Heightfield, in_usCompressionRatio);
 }
 
 void HeightfieldConverter::ReadHeightfieldDataFromMemory(const unsigned char* in_pData, unsigned int in_nWidth, unsigned int in_nHeight, SHeightfield& out_Heightfield)
