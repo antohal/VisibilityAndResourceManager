@@ -315,7 +315,7 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 			float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY;
 			float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY + fDeltaLongitude;
 
-			if (fChildMinLongitude < 2 * M_PI)
+			if (fChildMinLongitude < 2 * M_PI && fChildMaxLattitude > -M_PI*0.5)
 			{
 				CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
 					fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);

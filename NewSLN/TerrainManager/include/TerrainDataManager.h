@@ -81,7 +81,7 @@ public:
 	~CTerrainDataManager();
 
 	// «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, unsigned int* out_uiMaximumDepth = nullptr);
+	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth = nullptr);
 
 	// —генерировать данные планеты. “екстуры и карты нормалей будут братьс€ из директории [in_pcwszDirectoryName] случайным образом 
 	//  арты нормалей из HeightMaps, текстуры из Textures

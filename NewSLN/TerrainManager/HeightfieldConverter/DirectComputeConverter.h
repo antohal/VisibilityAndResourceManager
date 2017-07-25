@@ -44,12 +44,11 @@ private:
 		SHeightfield::SConfig Config;
 
 		float	fLongitudeCoeff = 1;
+		float	fLattitudeCoeff = 1;
 
 		float fWorldScale = 1;
 		float fHeightScale = 1;
 
-
-		float	fTemp1;
 		float	fTemp2;
 		float	fTemp3;
 	};

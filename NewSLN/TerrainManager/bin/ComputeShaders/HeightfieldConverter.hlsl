@@ -14,12 +14,11 @@ cbuffer HeightfieldSettings  : register(b0)
 
 
 	float	fLongitudeCoeff;			// максимальная текстурная координата по долготе
-
+	float	fLattitudeCoeff;			// максимальная текстурная координата по широте
 
 	float	fWorldScale;				// Масштаб мира
 	float	fHeightScale;				// Масштаб высоты
 
-	float	fTemp1;
 	float	fTemp2;
 	float	fTemp3;
 };
@@ -87,7 +86,7 @@ float GetVertexHeight(uint ix, uint iy)
 	float fy = iy;
 
 	texCoord.x = fLongitudeCoeff * fy / (nCountY - 1);
-	texCoord.y = ( 1 - fx / (nCountX - 1) );
+	texCoord.y = ( 1 - fLattitudeCoeff * fx / (nCountX - 1) );
 
 	float4 TexColor = InputHeightTexture.SampleLevel(HeightTextureSampler, texCoord, 0);
 
@@ -198,7 +197,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
 	float2 texcoord = float2(
 			fLongitudeCoeff *(float)iy / (nCountY - 1),
-			(1 - (float)ix / (nCountX - 1))
+			(1 - fLattitudeCoeff * (float)ix / (nCountX - 1))
 		);
 
 	float3 nur = cross(vRightVertex - vVertexPos, vUpperVertex - vVertexPos);

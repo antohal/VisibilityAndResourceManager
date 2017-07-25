@@ -20,9 +20,9 @@ CTerrainDataManager::~CTerrainDataManager()
 }
 
 // Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-bool CTerrainDataManager::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, unsigned int* out_uiMaximumDepth)
+bool CTerrainDataManager::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth)
 {
-	return _implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock, in_fLongitudeScaleCoeff, out_uiMaximumDepth);
+	return _implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff, out_uiMaximumDepth);
 }
 
 void CTerrainDataManager::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth)
@@ -52,10 +52,10 @@ CTerrainDataManager::CTerrainDataManagerImplementation::~CTerrainDataManagerImpl
 
 
 // Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, unsigned int* out_uiMaximumDepth)
+bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth)
 {
 	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
-		-static_cast<float>(M_PI*0.5), static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
+		-static_cast<float>(M_PI*0.5) * in_fLattitudeScaleCoeff, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
 
 	_uiTerrainBlocksCount = 0;
 

@@ -409,6 +409,16 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 		_heightfield.Config.Coords.fMaxLongitude = 2 * M_PI;
 	}
 
+	float fLattitudeCoeff = 1.f;
+	if (_heightfield.Config.Coords.fMinLattitude < -M_PI*0.5)
+	{
+
+		fLattitudeCoeff = (_heightfield.Config.Coords.fMaxLattitude + M_PI*0.5) / (_heightfield.Config.Coords.fMaxLattitude - _heightfield.Config.Coords.fMinLattitude);
+
+		_heightfield.Config.nCountX *= fLattitudeCoeff;
+		_heightfield.Config.Coords.fMinLattitude = -M_PI*0.5;
+	}
+
 	_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
 	_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
 
