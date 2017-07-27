@@ -519,6 +519,12 @@ inline Type length(const Vector<Type, N>& in_vVec)
 }
 
 template <typename Type, int N>
+inline Type length2(const Vector<Type, N>& in_vVec)
+{
+	return static_cast<Type>(dot(in_vVec, in_vVec));
+}
+
+template <typename Type, int N>
 inline Vector<Type, N> normalize(const Vector<Type, N>& in_vVec)
 {
     const Type tInvLength = Type(1)/length(in_vVec);

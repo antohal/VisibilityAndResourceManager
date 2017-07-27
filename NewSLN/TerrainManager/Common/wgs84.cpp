@@ -63,23 +63,39 @@ void GetWGS84LongLatHeight(const vm::Vector3df& vPoint, double& out_long, double
 
 bool IsSegmentIntersectsEarthMinRadius(const vm::Vector3df& A, const vm::Vector3df& B)
 {
-	// const double Rmin = 6356752.3142  ;
-	const double Rmin = 6356752.3142 * 0.95;
+	// A lies outside sphere
 
-	vm::Vector3df C = vm::Vector3df(0.0);
-	vm::Vector3df vDir = vm::normalize(B - A);
-	double lenAB = vm::length(B - A);
+	const double Rmin = 6356752.3142;
 
-	double l = vm::dot(vDir, C - A);
+	vm::Vector3df C(0.0);
+	vm::Vector3df O = A;
+	vm::Vector3df D = vm::normalize(B - A);
 
-	if (l < 0 || l > lenAB + Rmin)
+	vm::Vector3df L = C - O;
+	double tca = vm::dot(L, D);
+
+	if (tca < 0)
 		return false;
 
-	vm::Vector3df P = A + vDir * l;
-	double distFromSegmentToC = vm::length(C - P);
+	double d2 = vm::length2(L) - tca*tca;
 
-	if (distFromSegmentToC < Rmin)
-		return true;
+	if (d2 < 0)
+		return false;
 
-	return false;
+	double d = sqrt(d2);
+
+	// ray misses the sphere
+	if (d > Rmin)
+		return false;
+
+	double thc = sqrt(Rmin*Rmin - d*d);
+
+	double t0 = tca - thc;
+	double t1 = tca + thc;
+
+
+	if (vm::length(B - A) < t0)
+		return false;
+
+	return true;
 }
