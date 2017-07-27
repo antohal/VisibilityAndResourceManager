@@ -137,8 +137,6 @@ const CTerrainBlockDesc* CTerrainBlockDesc::CTerrainBlockDescImplementation::Get
 	CTerrainBlockDesc* pNewDataBlock = new CTerrainBlockDesc();
 	pNewDataBlock->_implementation->Init(in_pOwner, in_fMinLattitude, in_fMaxLattitude, in_fMinLongitude, in_fMaxLongitude, in_wsTextureFileName, in_wsHeightmapFileName, in_pParent);
 
-	in_pOwner->TerrainBlockCreated(pNewDataBlock);
-
 	return pNewDataBlock;
 }
 
@@ -187,6 +185,8 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::GenerateChilds(const wc
 			_vecChildBlocks.push_back(pChildBlock);
 
 			pChildBlock->_implementation->GenerateChilds(in_pcwszDirectoryName, in_uiM, in_uiN, in_uiDepth, vecTextures, vecHeightmaps);
+
+			_pOwner->TerrainBlockCreated(pChildBlock);
 		}
 	}
 }
@@ -364,6 +364,8 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 
 					pChildBlock->_implementation->_params.fMinLattitude = fCorrectedMinLattitude;
 					pChildBlock->_implementation->_params.fMaxLongitude = fCorrectedMaxLongitude;
+
+					_pOwner->TerrainBlockCreated(pChildBlock);
 
 				} // end if (fChildMinLongitude < 2 * M_PI)
 

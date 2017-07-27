@@ -476,8 +476,8 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	double dfMinLong = in_Coords.fMinLongitude;
 	double dfMaxLong = in_Coords.fMaxLongitude;
 
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 30;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 30;
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
 
 	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
 	{

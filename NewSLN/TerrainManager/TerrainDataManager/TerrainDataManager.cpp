@@ -76,10 +76,14 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 		*out_uiMaximumDepth = uiMaxDepth;
 	}
 
+	_uiMaxDepth = uiMaxDepth;
+
 	unsigned int uiMemUsage = 0;
 	GetMemoryUsageRecursive(pRootBlock, uiMemUsage);
 
 	LogMessage("Readed %d blocks, maximum tree depth is %d, bytes: %d", _uiTerrainBlocksCount, uiMaxDepth, uiMemUsage);
+
+	GenerateAdjacency();
 
 	return true;
 }
@@ -117,8 +121,12 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainData
 	unsigned int uiMaxDepth = 0;
 	GetDepthRecursive(pRootBlock, uiMaxDepth);
 
+	_uiMaxDepth = uiMaxDepth;
+
 	unsigned int uiMemUsage = 0;
 	GetMemoryUsageRecursive(pRootBlock, uiMemUsage);
+
+	GenerateAdjacency();
 
 	LogMessage("Generated %d blocks, maximum tree depth is %d, bytes: %d", _uiTerrainBlocksCount, uiMaxDepth, uiMemUsage);
 }
@@ -127,6 +135,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainData
 void CTerrainDataManager::CTerrainDataManagerImplementation::TerrainBlockCreated(CTerrainBlockDesc* in_pTerrainBlock)
 {
 	_uiTerrainBlocksCount++;
+
+	_mapLodLevelBlocks[in_pTerrainBlock->GetParams()->uiDepth].push_back(in_pTerrainBlock);
 }
 
 // Освободить загруженное описание данных
@@ -160,4 +170,71 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GetMemoryUsageRecur
 	{
 		GetMemoryUsageRecursive(block->GetChildBlockDesc(i), out_memory);
 	}
+}
+
+inline bool EQUALS(float a, float b)
+{
+	return fabsf(a - b) < 1e-5f;
+}
+
+void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
+{
+	//for (unsigned int uiDepth = 1; uiDepth <= _uiMaxDepth; uiDepth++)
+	//{
+
+	//	std::vector<CTerrainBlockDesc*> vecDepthBlocks = _mapLodLevelBlocks[uiDepth];
+
+	//	for (CTerrainBlockDesc* blockA : vecDepthBlocks)
+	//	{
+	//		for (CTerrainBlockDesc* blockB : vecDepthBlocks)
+	//		{
+	//			if (blockA == blockB)
+	//				continue;
+
+	//			// horizontal
+	//			if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMinLattitude) && EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMaxLattitude))
+	//			{
+	//				// left
+	//				if (EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) ||
+	//					(EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2*M_PI)))
+	//				{
+	//					blockA->_implementation->_leftNeighbour = blockB;
+	//					continue;
+	//				}
+
+	//				// right
+	//				if (EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) ||
+	//					(EQUALS(blockA->GetParams()->fMaxLongitude, 2*M_PI) && EQUALS(blockB->GetParams()->fMaxLongitude, 0)))
+	//				{
+	//					blockA->_implementation->_rightNeighbour = blockB;
+	//					continue;
+	//				}
+	//			}
+
+
+	//			//vertical
+	//			if (EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMinLongitude) && EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMaxLongitude))
+	//			{
+
+	//				//top
+	//				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) ||
+	//					(EQUALS(blockA->GetParams()->fMaxLattitude, 0.5*M_PI) && EQUALS(blockB->GetParams()->fMinLattitude, -0.5*M_PI)))
+	//				{
+	//					blockA->_implementation->_topNeighbour = blockB;
+	//				}
+
+
+	//				//bottom
+	//				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) ||
+	//					(EQUALS(blockA->GetParams()->fMinLattitude, -0.5*M_PI) && EQUALS(blockB->GetParams()->fMaxLattitude, 0.5*M_PI)))
+	//				{
+	//					blockA->_implementation->_bottomNeighbour = blockB;
+	//				}
+
+	//			}
+
+	//		}
+	//	}
+
+	//}
 }

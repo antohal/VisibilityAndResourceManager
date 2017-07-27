@@ -176,12 +176,12 @@ private:
 
 	mutable std::mutex									_containersMutex;
 
-		//@{ following containers are guarded by mutex (_containersMutex)
+	//@{ following containers are guarded by mutex (_containersMutex)
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 
-
-		//@}
+	//@}
 
 	//@}
+
 };

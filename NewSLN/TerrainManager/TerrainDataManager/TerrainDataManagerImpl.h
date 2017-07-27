@@ -1,6 +1,8 @@
 #pragma once
 
 #include "TerrainDataManager.h"
+#include <map>
+#include <vector>
 
 class CTerrainDataManager::CTerrainDataManagerImplementation
 {
@@ -22,8 +24,11 @@ public:
 private:
 
 	void	GetDepthRecursive(const CTerrainBlockDesc* block, unsigned int& out_depth);
-
 	void	GetMemoryUsageRecursive(const CTerrainBlockDesc* block, unsigned int& out_memory);
+	void	GenerateAdjacency();
 
 	unsigned int	_uiTerrainBlocksCount = 0;
+	unsigned int	_uiMaxDepth = 0;
+
+	std::map<int, std::vector<CTerrainBlockDesc*>>	_mapLodLevelBlocks;
 };

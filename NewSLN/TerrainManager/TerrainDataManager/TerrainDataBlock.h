@@ -61,6 +61,11 @@ private:
 	CTerrainBlockDesc*						_pParentBlock = nullptr;
 	std::vector<CTerrainBlockDesc*>			_vecChildBlocks;
 
+	CTerrainBlockDesc*						_leftNeighbour = nullptr;
+	CTerrainBlockDesc*						_rightNeighbour = nullptr;
+	CTerrainBlockDesc*						_topNeighbour = nullptr;
+	CTerrainBlockDesc*						_bottomNeighbour = nullptr;
+
 	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
 	CTerrainBlockDesc*						_pHolder = nullptr;
 
