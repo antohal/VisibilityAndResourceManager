@@ -54,11 +54,11 @@ CTerrainDataManager::CTerrainDataManagerImplementation::~CTerrainDataManagerImpl
 // Загрузить описание данных поверхности Земли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
 bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth)
 {
-	float deg180coeff = in_fLattitudeScaleCoeff;
+	float fLattitudeRange = static_cast<float>(M_PI) * in_fLattitudeScaleCoeff;
 
 
 	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
-		-static_cast<float>(M_PI*0.5) * in_fLattitudeScaleCoeff, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
+		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
 
 	_uiTerrainBlocksCount = 0;
 
