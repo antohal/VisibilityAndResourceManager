@@ -21,6 +21,8 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 
 	void	SetHeightScale(float in_fHeightScale);
 
+	void	SetNormalDivisionAngle(float in_fAngleInDeg);
+
 	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 
 	// —читать данные карты высот из текстуры
@@ -48,6 +50,10 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 		return _fHeightScale;
 	}
 
+	float	GetNormalDivisionAngleDeg() const {
+		return _fNormalDivisionAngle;
+	}
+
 private:
 
 	IAbstractHeightfieldConverter*	_pAbstractConverter = nullptr;
@@ -57,4 +63,5 @@ private:
 
 	float							_fScale = 1;
 	float							_fHeightScale = 1;
+	float							_fNormalDivisionAngle = 45;
 };

@@ -26,6 +26,11 @@ void HeightfieldConverter::SetHeightScale(float in_fHeightScale)
 	_private->SetHeightScale(in_fHeightScale);
 }
 
+void HeightfieldConverter::SetNormalDivisionAngle(float in_fAngleInDeg)
+{
+	_private->SetNormalDivisionAngle(in_fAngleInDeg);
+}
+
 void HeightfieldConverter::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
 {
 	_private->ComputeTriangulationCoords(in_Coords, out_TriangulationCoords);

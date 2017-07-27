@@ -388,30 +388,6 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 {
 	_triangulation.ID = _heightfield.ID;
 
-
-	// Ограничение по максимальной долготе
-	/*float fLongitudeCoeff = 1.f;
-	if (_heightfield.Config.Coords.fMaxLongitude > 2 * M_PI)
-	{
-		fLongitudeCoeff = (2 * M_PI - _heightfield.Config.Coords.fMinLongitude) / (_heightfield.Config.Coords.fMaxLongitude - _heightfield.Config.Coords.fMinLongitude);
-
-		_heightfield.Config.nCountY *= fLongitudeCoeff;
-
-		_heightfield.Config.Coords.fMaxLongitude = 2 * M_PI;
-	}
-
-	float fLattitudeCoeff = 1.f;
-	if (_heightfield.Config.Coords.fMinLattitude < -M_PI*0.5)
-	{
-
-		fLattitudeCoeff = (_heightfield.Config.Coords.fMaxLattitude + M_PI*0.5) / (_heightfield.Config.Coords.fMaxLattitude - _heightfield.Config.Coords.fMinLattitude);
-
-		_heightfield.Config.nCountX *= fLattitudeCoeff;
-		_heightfield.Config.Coords.fMinLattitude = -M_PI*0.5;
-	}*/
-
-	// TODO!!!
-
 	_heightfield.Config.nCountY *= _fLongitudeCoeff;
 	_heightfield.Config.nCountX *= _fLattitudeCoeff;
 
@@ -433,6 +409,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
 	constantData.fLongitudeCoeff = _fLongitudeCoeff;
 	constantData.fLattitudeCoeff = _fLattitudeCoeff;
+	constantData.fNormalDivisionAngle = _owner->_owner->GetNormalDivisionAngleDeg() * D2R;
 
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX, 

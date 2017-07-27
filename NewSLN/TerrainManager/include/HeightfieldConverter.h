@@ -97,6 +97,9 @@ public:
 	// Задать множитель высоты, считываемых из текстур карт высот
 	void	SetHeightScale(float in_fHeightScale);
 
+	// Задать предельный угол при котором происходит разделение нормалей [по умолчанию 45 градусов]
+	void	SetNormalDivisionAngle(float in_fAngleInDeg);
+
 	// Рассчитать координаты триангулированной области
 	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 

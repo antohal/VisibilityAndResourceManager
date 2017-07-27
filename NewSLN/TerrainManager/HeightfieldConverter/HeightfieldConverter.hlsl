@@ -3,23 +3,23 @@
 /////////////
 cbuffer HeightfieldSettings  : register(b0)
 {
-	float	fMinLattitude;				// РјРёРЅРёРјР°Р»СЊРЅР°СЏ С€РёСЂРѕС‚Р°
-	float	fMaxLattitude;				// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ С€РёСЂРѕС‚Р°
+	float	fMinLattitude;				// минимальная широта
+	float	fMaxLattitude;				// максимальная широта
 
-	float	fMinLongitude;				// РјРёРЅРёРјР°Р»СЊРЅР°СЏ РґРѕР»РіРѕС‚Р°
-	float	fMaxLongitude;				// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ РґРѕР»РіРѕС‚Р°
+	float	fMinLongitude;				// минимальная долгота
+	float	fMaxLongitude;				// максимальная долгота
 
-	uint	nCountX;					// РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє РїРѕ X
-	uint	nCountY;					// РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє РїРѕ Y
+	uint	nCountX;					// количество точек по X
+	uint	nCountY;					// количество точек по Y
 
 
-	float	fLongitudeCoeff;			// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ С‚РµРєСЃС‚СѓСЂРЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° РїРѕ РґРѕР»РіРѕС‚Рµ
-	float	fLattitudeCoeff;			// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ С‚РµРєСЃС‚СѓСЂРЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° РїРѕ С€РёСЂРѕС‚Рµ
+	float	fLongitudeCoeff;			// максимальная текстурная координата по долготе
+	float	fLattitudeCoeff;			// максимальная текстурная координата по широте
 
-	float	fWorldScale;				// РњР°СЃС€С‚Р°Р± РјРёСЂР°
-	float	fHeightScale;				// РњР°СЃС€С‚Р°Р± РІС‹СЃРѕС‚С‹
+	float	fWorldScale;				// Масштаб мира
+	float	fHeightScale;				// Масштаб высоты
 
-	float	fTemp2;
+	float	fNormalDivisionAngle;		// Угол разделения нормалей (рад)
 	float	fTemp3;
 };
 
@@ -35,13 +35,13 @@ Texture2D				InputHeightTexture		: register(t0);
 RWByteAddressBuffer 	OutVertexBuffer 		: register(u0);
 RWByteAddressBuffer 	OutIndexBuffer 			: register(u1);
 
-// РїРѕР»СѓС‡РёС‚СЊ РёРЅРґРµРєСЃ РІРµСЂС€РёРЅС‹
+// получить индекс вершины
 uint GetVertexId(uint ix, uint iy)
 {
 	return ix + iy * nCountX;
 }
 
-// РїРѕР»СѓС‡РёС‚СЊ С‚РѕС‡РєСѓ РЅР° РїРѕРІРµСЂС…РЅРѕСЃС‚Рё СЌР»Р»РёРїСЃРѕРёРґР° WGS-84
+// получить точку на поверхности эллипсоида WGS-84
 double3 GetWGS84SurfacePoint(float longitude, float lattitude)
 {
 	double Rmin = 6356752.3142;
@@ -62,7 +62,7 @@ double3 GetWGS84SurfacePoint(float longitude, float lattitude)
 		);
 }
 
-// РЅРѕСЂРјР°Р»СЊ Рє СЌР»Р»РёРїСЃРѕРёРґСѓ РІ С‚РѕС‡РєРµ РЅР° РїРѕРІРµСЂС…РЅРѕСЃС‚Рё
+// нормаль к эллипсоиду в точке на поверхности
 double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 {
 	const double Rmin = 6356752.3142;
@@ -85,7 +85,7 @@ float2 CalcTexcoords(uint ix, uint iy)
 		);
 }
 
-// РїРѕР»СѓС‡РёС‚СЊ РІС‹СЃРѕС‚Сѓ РІРµСЂС€РёРЅС‹ РїРѕ РёРЅРґРµРєСЃР°Рј РІРґРѕР»СЊ РѕСЃРµР№ x Рё y
+// получить высоту вершины по индексам вдоль осей x и y
 float GetVertexHeight(uint ix, uint iy)
 {
 	float2 texCoord;
@@ -100,7 +100,7 @@ float GetVertexHeight(uint ix, uint iy)
 	return TexColor.r;
 }
 
-// РїРѕР»СѓС‡РёС‚СЊ РїРѕР·РёС†РёСЋ РІРµСЂС€РёРЅС‹
+// получить позицию вершины
 float3 GetVertexPos(uint ix, uint iy, float height, double3 vMiddlePoint, double3 vMiddleNormal, double3 vEast, double3 vNorth)
 {
 	float fLongitudeAmpl = fMaxLongitude - fMinLongitude;

@@ -42,10 +42,10 @@ private:
 		float	fLongitudeCoeff = 1;
 		float	fLattitudeCoeff = 1;
 
-		float fWorldScale = 1;
-		float fHeightScale = 1;
+		float	fWorldScale = 1;
+		float	fHeightScale = 1;
 
-		float	fTemp2;
+		float	fNormalDivisionAngle = 0.78f;
 		float	fTemp3;
 	};
 
