@@ -1,6 +1,5 @@
 #include "HeightfieldConverterPrivate.h"
 
-#include "SoftwareConverter.h"
 #include "DirectComputeConverter.h"
 
 #include "Log.h"
@@ -43,30 +42,17 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 }
 
 // Создать триангуляцию немедленно и дождаться готовности
-void HeightfieldConverter::HeightfieldConverterPrivate::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
+void HeightfieldConverter::HeightfieldConverterPrivate::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
 {
 	if (_pAbstractConverter)
-		_pAbstractConverter->CreateTriangulationImmediate(in_pHeightfield, out_pTriangulation);
-}
-
-// добавить/удалить listener
-void HeightfieldConverter::HeightfieldConverterPrivate::RegisterListener(HeightfieldConverterListener* listener)
-{
-	if (_pAbstractConverter)
-		_pAbstractConverter->RegisterListener(listener);
-}
-
-void HeightfieldConverter::HeightfieldConverterPrivate::UnregisterListener(HeightfieldConverterListener* listener)
-{
-	if (_pAbstractConverter)
-		_pAbstractConverter->UnregisterListener(listener);
+		_pAbstractConverter->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, out_pTriangulation);
 }
 
 // добавить задачу на триангуляцию, которая будет выполняться асинхронно с помощью DirectCompute
-void HeightfieldConverter::HeightfieldConverterPrivate::AppendTriangulationTask(const SHeightfield* in_pHeightfield)
+void HeightfieldConverter::HeightfieldConverterPrivate::AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback)
 {
 	if (_pAbstractConverter)
-		_pAbstractConverter->AppendTriangulationTask(in_pHeightfield);
+		_pAbstractConverter->AppendTriangulationTask(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, param, in_Callback);
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::UpdateTasks()

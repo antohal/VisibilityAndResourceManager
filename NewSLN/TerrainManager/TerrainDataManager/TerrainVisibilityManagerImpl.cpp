@@ -321,14 +321,14 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEart
 		{
 			vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLat);
 
-			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint))
+			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint))
+			//	return false;
+
+			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
 				return false;
 
-			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-			//	return false;
-
-			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-			//	return false;
+			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+				return false;
 		}
 	}
 

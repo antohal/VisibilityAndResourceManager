@@ -22,18 +22,22 @@ struct STerrainBlockIndex
 struct STerrainBlockParams
 {
 	// минимальная и максимальная долгота
-	float			fMinLongitude = 0;
-	float			fMaxLongitude = 0;
+	float				fMinLongitude = 0;
+	float				fMaxLongitude = 0;
 
 	// минимальная и максимальная широта
-	float			fMinLattitude = 0;
-	float			fMaxLattitude = 0;
+	float				fMinLattitude = 0;
+	float				fMaxLattitude = 0;
+
+	// коэффициенты обрезки
+	float				fLongitudeСutCoeff = 1;
+	float				fLattitudeCutCoeff = 1;
 
 	// уровень глубины блока
-	unsigned int	uiDepth = 0;
+	unsigned int		uiDepth = 0;
 
 	// положение в дереве (индекс по долготе и широте по каждому уровню глубины). Для уровня глубины больше текущего будут значения по умолчанию = 255
-	STerrainBlockIndex		aTreePosition[MAX_TERRAIN_TREE_DEPTH];
+	STerrainBlockIndex	aTreePosition[MAX_TERRAIN_TREE_DEPTH];
 };
 
 

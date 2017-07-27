@@ -27,14 +27,10 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield, unsigned short in_usCompressionRatio);
 
 	// Создать триангуляцию немедленно и дождаться готовности
-	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation);
+	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation);
 
-	// добавить/удалить listener
-	void	RegisterListener(HeightfieldConverterListener*);
-	void 	UnregisterListener(HeightfieldConverterListener*);
-
-	// добавить задачу на триангуляцию, которая будет выполняться асинхронно с помощью DirectCompute
-	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield);
+	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
+	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback);
 
 	// обработать поставленные задачи
 	void	UpdateTasks();

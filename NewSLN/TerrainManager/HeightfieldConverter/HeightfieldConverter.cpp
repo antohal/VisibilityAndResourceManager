@@ -32,26 +32,15 @@ void HeightfieldConverter::ComputeTriangulationCoords(const SHeightfield::SCoord
 }
 
 // Создать триангуляцию немедленно и дождаться готовности
-void HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
+void HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
 {
-	_private->CreateTriangulationImmediate(in_pHeightfield, out_pTriangulation);
-}
-
-// добавить/удалить listener
-void HeightfieldConverter::RegisterListener(HeightfieldConverterListener* in_pListener)
-{
-	_private->RegisterListener(in_pListener);
-}
-
-void HeightfieldConverter::UnregisterListener(HeightfieldConverterListener* in_pListener)
-{
-	_private->UnregisterListener(in_pListener);
+	_private->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff,  out_pTriangulation);
 }
 
 // добавить задачу на триангуляцию, которая будет выполняться асинхронно с помощью DirectCompute
-void HeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield)
+void HeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback)
 {
-	_private->AppendTriangulationTask(in_pHeightfield);
+	_private->AppendTriangulationTask(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, param, in_Callback);
 }
 
 void HeightfieldConverter::UpdateTasks()

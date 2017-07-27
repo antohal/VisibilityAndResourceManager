@@ -41,7 +41,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	heightfield.Config.Coords.fMaxLongitude = in_pParams->fMaxLongitude;
 
 	// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
-	pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, &_triangulation);
+	pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, in_pParams->fLongitudeСutCoeff, in_pParams->fLattitudeCutCoeff, &_triangulation);
 
 	// карта высот нам больше не нужна, освобождаем ее
 	pHeightfieldConverter->ReleaseHeightfield(&heightfield);

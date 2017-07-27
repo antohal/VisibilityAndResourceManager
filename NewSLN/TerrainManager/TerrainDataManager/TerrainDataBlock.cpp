@@ -282,59 +282,95 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 		float fChildMaxLattitude = _params.fMaxLattitude - fDeltaLattitude * uiXX;
 		float fChildMinLattitude = _params.fMaxLattitude - fDeltaLattitude * uiXX - fDeltaLattitude;
 
-		for (unsigned long uiYY = 0; uiYY < uiCountY; uiYY++)
+		if (fChildMaxLattitude > -M_PI*0.5)
 		{
-			std::wstring wsXX = std::to_wstring(uiXX);
-			std::wstring wsYY = std::to_wstring(uiYY);
 
-			if (wsXX.size() == 1)
-				wsXX = L"0" + wsXX;
+			float fLattitudeCoeff = 1.f;
+			float fCorrectedMinLattitude = fChildMinLattitude;
 
-			if (wsYY.size() == 1)
-				wsYY = L"0" + wsYY;
-
-			std::wstring wsTextureFileName = L"T_" + wsXX + L"_" + wsYY + L".dds";
-			std::wstring wsHeightmapFileName = L"H_" + wsXX + L"_" + wsYY + L".dds";
-			std::wstring wsChildsDirectory = wsDirectory + L"\\" + wsXX + L"_" + wsYY;
-
-			std::wstring wsTexturePath = wsDirectory + L"\\" + wsTextureFileName;
-			std::wstring wsHeightmapPath = wsDirectory + L"\\" + wsHeightmapFileName;
-
-			if (!PathFileExistsW(wsTexturePath.c_str()))
+			if (fChildMinLattitude < -M_PI*0.5)
 			{
-				LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: texture file (%ls) does not exist!", wsDirectory.c_str(), wsTextureFileName.c_str());
-				wsTexturePath.clear();
+				fLattitudeCoeff = (fChildMaxLattitude + M_PI*0.5) / (fChildMaxLattitude - fChildMinLattitude);
+				fCorrectedMinLattitude = -M_PI*0.5;
 			}
 
-			if (!PathFileExistsW(wsHeightmapPath.c_str()))
+			for (unsigned long uiYY = 0; uiYY < uiCountY; uiYY++)
 			{
-				LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: heightmap file (%ls) does not exist!", wsDirectory.c_str(), wsHeightmapFileName.c_str());
-				wsHeightmapPath.clear();
-			}
+				std::wstring wsXX = std::to_wstring(uiXX);
+				std::wstring wsYY = std::to_wstring(uiYY);
 
-			float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY;
-			float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY + fDeltaLongitude;
+				if (wsXX.size() == 1)
+					wsXX = L"0" + wsXX;
 
-			if (fChildMinLongitude < 2 * M_PI && fChildMaxLattitude > -M_PI*0.5)
-			{
-				CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
-					fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
+				if (wsYY.size() == 1)
+					wsYY = L"0" + wsYY;
 
-				memcpy(pChildBlock->_implementation->_params.aTreePosition, _params.aTreePosition, sizeof(_params.aTreePosition));
-				pChildBlock->_implementation->_params.uiDepth = _params.uiDepth + 1;
+				std::wstring wsTextureFileName = L"T_" + wsXX + L"_" + wsYY + L".dds";
+				std::wstring wsHeightmapFileName = L"H_" + wsXX + L"_" + wsYY + L".dds";
+				std::wstring wsChildsDirectory = wsDirectory + L"\\" + wsXX + L"_" + wsYY;
 
-				pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
-				pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;
+				std::wstring wsTexturePath = wsDirectory + L"\\" + wsTextureFileName;
+				std::wstring wsHeightmapPath = wsDirectory + L"\\" + wsHeightmapFileName;
 
-
-				_vecChildBlocks.push_back(pChildBlock);
-
-
-				if (PathFileExistsW(wsChildsDirectory.c_str()))
+				if (!PathFileExistsW(wsTexturePath.c_str()))
 				{
-					pChildBlock->_implementation->LoadChildsFromDirectory(wsChildsDirectory);
+					LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: texture file (%ls) does not exist!", wsDirectory.c_str(), wsTextureFileName.c_str());
+					wsTexturePath.clear();
 				}
-			}
-		}
-	}
+
+				if (!PathFileExistsW(wsHeightmapPath.c_str()))
+				{
+					LogMessage("CTerrainBlockDesc::LoadChildsFromDirectory('%ls'), ERROR: heightmap file (%ls) does not exist!", wsDirectory.c_str(), wsHeightmapFileName.c_str());
+					wsHeightmapPath.clear();
+				}
+
+				float fChildMinLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY;
+				float fChildMaxLongitude = _params.fMinLongitude + fDeltaLongitude*uiYY + fDeltaLongitude;
+
+				if (fChildMinLongitude < 2 * M_PI)
+				{
+					float fLongitudeCoeff = 1.f;
+					float fCorrectedMaxLongitude = fChildMaxLongitude;
+
+					if (fChildMaxLongitude > 2 * M_PI)
+					{
+						fLongitudeCoeff = (2 * M_PI - fChildMinLongitude) / (fChildMaxLongitude - fChildMinLongitude);
+						fCorrectedMaxLongitude = 2 * M_PI;
+					}
+
+
+					CTerrainBlockDesc* pChildBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(_pOwner,
+						fChildMinLattitude, fChildMaxLattitude, fChildMinLongitude, fChildMaxLongitude, wsTexturePath, wsHeightmapPath, _pHolder);
+
+					memcpy(pChildBlock->_implementation->_params.aTreePosition, _params.aTreePosition, sizeof(_params.aTreePosition));
+
+					pChildBlock->_implementation->_params.uiDepth = _params.uiDepth + 1;
+
+
+					pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
+					pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;
+
+					_vecChildBlocks.push_back(pChildBlock);
+
+					if (PathFileExistsW(wsChildsDirectory.c_str()))
+					{
+						pChildBlock->_implementation->LoadChildsFromDirectory(wsChildsDirectory);
+					}
+
+					// This correction goes after loading childs recursively, because childs subdivision is occured according to "wrong" interval, that can be bigger than limits of lattitude and longitude
+
+					pChildBlock->_implementation->_params.fLattitudeCutCoeff = fLattitudeCoeff;
+					pChildBlock->_implementation->_params.fLongitudeÑutCoeff = fLongitudeCoeff;
+
+					pChildBlock->_implementation->_params.fMinLattitude = fCorrectedMinLattitude;
+					pChildBlock->_implementation->_params.fMaxLongitude = fCorrectedMaxLongitude;
+
+				} // end if (fChildMinLongitude < 2 * M_PI)
+
+			} // end for (unsigned long uiYY = 0; uiYY < uiCountY; uiYY++)
+
+		} // end if (fChildMaxLattitude > -M_PI*0.5)
+
+	} // end for (unsigned long uiXX = 0; uiXX < uiCountX; uiXX++)
+
 }

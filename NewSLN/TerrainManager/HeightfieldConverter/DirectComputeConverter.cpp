@@ -297,9 +297,9 @@ DirectComputeHeightfieldConverter::~DirectComputeHeightfieldConverter()
 
 }
 
-void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation)
+void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
 {
-	STriangulationTask task(this, *in_pHeightfield);
+	STriangulationTask task(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, nullptr, nullptr);
 	task.createTriangulation();
 	*out_pTriangulation = task._triangulation;
 }
@@ -358,20 +358,11 @@ void DirectComputeHeightfieldConverter::ComputeTriangulationCoords(const SHeight
 	}
 }
 
-void DirectComputeHeightfieldConverter::RegisterListener(HeightfieldConverterListener* in_pListener)
-{
-	_setListeners.insert(in_pListener);
-}
 
-void DirectComputeHeightfieldConverter::UnregisterListener(HeightfieldConverterListener* in_pListener)
-{
-	_setListeners.erase(in_pListener);
-}
-
-void DirectComputeHeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield)
+void DirectComputeHeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback)
 {
 	std::lock_guard<std::mutex> lock(_tasksMutex);
-	_qTriangulationTasks.push(new STriangulationTask(this, *in_pHeightfield));
+	_qTriangulationTasks.push(new STriangulationTask(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, param, in_Callback));
 }
 
 // обработать поставленные задачи
@@ -386,8 +377,8 @@ void DirectComputeHeightfieldConverter::UpdateTasks()
 
 		task->createTriangulation();
 
-		for (HeightfieldConverterListener* listener : _setListeners)
-			listener->TriangulationCreated(&task->_triangulation);
+		if (task->_callback)
+			task->_callback(task->_param, &task->_triangulation);
 
 		delete task;
 	}
@@ -399,7 +390,7 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 
 
 	// Ограничение по максимальной долготе
-	float fLongitudeCoeff = 1.f;
+	/*float fLongitudeCoeff = 1.f;
 	if (_heightfield.Config.Coords.fMaxLongitude > 2 * M_PI)
 	{
 		fLongitudeCoeff = (2 * M_PI - _heightfield.Config.Coords.fMinLongitude) / (_heightfield.Config.Coords.fMaxLongitude - _heightfield.Config.Coords.fMinLongitude);
@@ -417,7 +408,12 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 
 		_heightfield.Config.nCountX *= fLattitudeCoeff;
 		_heightfield.Config.Coords.fMinLattitude = -M_PI*0.5;
-	}
+	}*/
+
+	// TODO!!!
+
+	_heightfield.Config.nCountY *= _fLongitudeCoeff;
+	_heightfield.Config.nCountX *= _fLattitudeCoeff;
 
 	_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
 	_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
@@ -435,8 +431,8 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.Config = _heightfield.Config;
 	constantData.fWorldScale = _owner->_owner->GetWorldScale();
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
-	constantData.fLongitudeCoeff = fLongitudeCoeff;
-	constantData.fLattitudeCoeff = fLattitudeCoeff;
+	constantData.fLongitudeCoeff = _fLongitudeCoeff;
+	constantData.fLattitudeCoeff = _fLattitudeCoeff;
 
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX, 

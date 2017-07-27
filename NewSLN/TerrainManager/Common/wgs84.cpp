@@ -63,7 +63,8 @@ void GetWGS84LongLatHeight(const vm::Vector3df& vPoint, double& out_long, double
 
 bool IsSegmentIntersectsEarthMinRadius(const vm::Vector3df& A, const vm::Vector3df& B)
 {
-	const double Rmin = 6356752.3142  ;
+	// const double Rmin = 6356752.3142  ;
+	const double Rmin = 6356752.3142 * 0.95;
 
 	vm::Vector3df C = vm::Vector3df(0.0);
 	vm::Vector3df vDir = vm::normalize(B - A);

@@ -73,14 +73,8 @@ struct STriangulation
 	STriangulationCoordsInfo	Info;
 };
 
-// Класс-обработчик событий триангуляции (аналог callback)
-class HeightfieldConverterListener
-{
-public:
-
-	// Функция вызывается, когда триангуляция готова
-	virtual void 				TriangulationCreated(const STriangulation* in_pTriangulation) = 0;
-};
+// Колбэк-функция, сигнализирующая о завершении триангуляции
+typedef void (*TriangulationTaskCompleteCallback)(void* param, STriangulation* in_pCompletedTriangulation);
 
 // Главный класс-триангулятор карт высот
 class HEIGHFIELD_CONVERTER_API HeightfieldConverter
@@ -114,16 +108,12 @@ public:
 	void	ReadHeightfieldDataFromMemory(const unsigned char* in_pData, unsigned int in_nWidth, unsigned int in_nHeight, SHeightfield& out_Heightfield);
 
 	// Создать триангуляцию немедленно и дождаться готовности
-	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, STriangulation* out_pTriangulation);
-
-	// добавить/удалить listener
-	void	RegisterListener(HeightfieldConverterListener*);
-	void 	UnregisterListener(HeightfieldConverterListener*);
+	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation);
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
-	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield);
+	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback);
 
-	// обработать поставленные задачи
+	// обработать поставленные задачи [можно вызвать в отдельном потоке]
 	void	UpdateTasks();
 
 	// Освободить карту высот
