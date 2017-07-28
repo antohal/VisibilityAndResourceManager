@@ -16,35 +16,35 @@
 //
 
 CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * in_pRenderer, const STerrainBlockParams* in_pParams, TerrainObjectID ID)
-	: _owner(in_pRenderer)
+	: _owner(in_pRenderer), _ID(ID)
 {
 
 	// получаем имена текстур из TerrainManager:
 	std::wstring wsTextureFileName = _owner->GetTerrainManager()->GetTextureFileName(ID);
 	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
 
-	// получаем конвертер карт высот для дальнейших операций с ним
-	HeightfieldConverter* pHeightfieldConverter = _owner->GetHeightfieldConverter();
+	//// получаем конвертер карт высот для дальнейших операций с ним
+	//HeightfieldConverter* pHeightfieldConverter = _owner->GetHeightfieldConverter();
 
-	// создадим объект в котором будет храниться карта высот и ее параметры
-	SHeightfield heightfield;
+	//// создадим объект в котором будет храниться карта высот и ее параметры
+	//SHeightfield heightfield;
 
-	// считаем данные карты высот из файла
-	pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield, 4);
+	//// считаем данные карты высот из файла
+	//pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield, 1);
 
-	LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
+	//LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
 
-	// заполним граничные данные
-	heightfield.Config.Coords.fMinLattitude = in_pParams->fMinLattitude;
-	heightfield.Config.Coords.fMaxLattitude = in_pParams->fMaxLattitude;
-	heightfield.Config.Coords.fMinLongitude = in_pParams->fMinLongitude;
-	heightfield.Config.Coords.fMaxLongitude = in_pParams->fMaxLongitude;
+	//// заполним граничные данные
+	//heightfield.Config.Coords.fMinLattitude = in_pParams->fMinLattitude;
+	//heightfield.Config.Coords.fMaxLattitude = in_pParams->fMaxLattitude;
+	//heightfield.Config.Coords.fMinLongitude = in_pParams->fMinLongitude;
+	//heightfield.Config.Coords.fMaxLongitude = in_pParams->fMaxLongitude;
 
-	// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
-	pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, in_pParams->fLongitudeСutCoeff, in_pParams->fLattitudeCutCoeff, &_triangulation);
+	//// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
+	//pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, in_pParams->fLongitudeСutCoeff, in_pParams->fLattitudeCutCoeff, &_triangulation);
 
-	// карта высот нам больше не нужна, освобождаем ее
-	pHeightfieldConverter->ReleaseHeightfield(&heightfield);
+	//// карта высот нам больше не нужна, освобождаем ее
+	//pHeightfieldConverter->ReleaseHeightfield(&heightfield);
 
 	LogMessage("Loading texture '%ls'", wsTextureFileName.c_str());
 	_wsTextureFileName = wsTextureFileName;
@@ -61,9 +61,6 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 {
-	// освобождаем триангуляцию вместе с буферами вершин и индексов
-	_owner->GetHeightfieldConverter()->ReleaseTriangulation(&_triangulation);
-
 	// освобождаем текстуру
 	if (_pTextureSRV)
 	{
@@ -80,9 +77,16 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 	unsigned int stride = sizeof(SVertex);
 	unsigned int offset = 0;
 
+	STriangulation* pTriangulation = nullptr;
+	_owner->GetTerrainManager()->GetTerrainObjectTriangulation(_ID, &pTriangulation);
 
-	ID3D11Buffer* pVertexBuffer = _triangulation.pVertexBuffer;
-	ID3D11Buffer* pIndexBuffer = _triangulation.pIndexBuffer;
+	if (!pTriangulation)
+	{
+		return;
+	}
+
+	ID3D11Buffer* pVertexBuffer = pTriangulation->pVertexBuffer;
+	ID3D11Buffer* pIndexBuffer = pTriangulation->pIndexBuffer;
 
 	if (pVertexBuffer && pIndexBuffer)
 	{
@@ -97,8 +101,14 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 {
-	if (_triangulation.pIndexBuffer && _triangulation.pVertexBuffer)
-		return _triangulation.nIndexCount;
+	STriangulation* pTriangulation = nullptr;
+	_owner->GetTerrainManager()->GetTerrainObjectTriangulation(_ID, &pTriangulation);
+
+	if (!pTriangulation)
+		return 0;
+
+	if (pTriangulation->pIndexBuffer && pTriangulation->pVertexBuffer)
+		return pTriangulation->nIndexCount;
 
 	return 0;
 }
@@ -135,7 +145,9 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	//_pHeightfieldConverter->SetHeightScale(1000.f);
-	_pHeightfieldConverter->SetHeightScale(10.f);
+	_pHeightfieldConverter->SetHeightScale(20.f);
+
+	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)
@@ -161,6 +173,14 @@ void CSimpleTerrainRenderer::DeleteObject(TerrainObjectID ID)
 void CSimpleTerrainRenderer::AddObjectToRenderQueue(TerrainObjectID objID)
 {
 	_lstRenderQueue.push_back(objID);
+}
+
+void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
+{
+	_pTextBlock = block;
+
+	_uiTriangulationsCountParam = _pTextBlock->AddParameter(L"Количество триангуляций в памяти");
+	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Количество карт высот в памяти");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -215,6 +235,13 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	_lstRenderQueue.clear();
 
+
+	if (_pTextBlock)
+	{
+		_pTextBlock->SetParameterValue(_uiTriangulationsCountParam, _pTerrainManager->GetTriangulationsCount());
+		_pTextBlock->SetParameterValue(_uiHeightfieldsCountParam, _pTerrainManager->GetHeightfieldsCount());
+	}
+
 	return numPrimitives;
 }
 
@@ -262,17 +289,6 @@ bool CSimpleTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContex
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
-	/*vm::Vector3df p = in_pContext->GetScene()->GetMainCamera()->GetPos();
-	dataPtr->vCamPos = vm::Vector4df(p[0], p[1], p[2], 1.0);
-
-	vm::Vector3df d = in_pContext->GetScene()->GetMainCamera()->GetDir();
-	dataPtr->vAxisX = vm::Vector4df(p[0], p[1], p[2], 1.0);
-
-	vm::Vector3df u = in_pContext->GetScene()->GetMainCamera()->GetUp();
-	dataPtr->vAxisZ = vm::Vector4df(u[0], u[1], u[2], 1.0);
-
-	vm::Vector3df l = vm::cross(u, d);
-	dataPtr->vAxisY = vm::Vector4df(l[0], l[1], l[2], 1.0);*/
 
 	// Unlock the constant buffer.
 	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pMatrixBuffer, 0);

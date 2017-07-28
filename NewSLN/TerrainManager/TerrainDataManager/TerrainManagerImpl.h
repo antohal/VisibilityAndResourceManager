@@ -76,6 +76,12 @@ public:
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
 
+	void SetHeightfieldConverter(HeightfieldConverter*);
+
+	void SetHeightfieldCompressionRatio(unsigned int ratio) {
+		_heightfieldCompressionRatio = ratio;
+	}
+
 	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
 
 	// В момент вызова этой функции формируется 4 списка: 
@@ -84,6 +90,8 @@ public:
 	// объекты, которые стали невидимыми
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
+
+	void UpdateTriangulations();
 
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
@@ -94,6 +102,14 @@ public:
 
 	//Получить описание объекта Земли по идентификатору
 	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
+
+	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation);
+
+	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
+
+	size_t GetTriangulationsCount() const;
+
+	size_t GetHeightfieldsCount() const;
 
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
@@ -162,17 +178,21 @@ private:
 
 	CTerrainBlockDesc*		_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*	_pTerrainDataManager = nullptr;
+
+	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
 	//@}
 
 	//@{ Vars
 	TerrainObjectID			_idCurrentIDForNewObject = 0;
 	float					_fWorldScale = 1.f;
 	float					_fWorldSize = 10000000.f;
+	unsigned int			_heightfieldCompressionRatio = 1;
 	//@}
 
 	//@{ Containers
 	std::vector<CInternalTerrainObject*>				_vecObjects;
 	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
+	std::map<const CTerrainBlockDesc*, TerrainObjectID>	_mapDesc2ID;
 
 	mutable std::mutex									_containersMutex;
 
@@ -184,4 +204,22 @@ private:
 
 	//@}
 
+	struct SObjectTriangulation
+	{
+		STriangulation	_triangulation;
+		float			_timeSinceDead = 0;
+		bool			_alive = false;
+	};
+
+	struct SObjectHeightfield
+	{
+		SHeightfield	_heightfield;
+		float			_timeSinceLastRequest = 0;
+	};
+
+	SHeightfield*		RequestObjectHeightfield(TerrainObjectID ID);
+
+	mutable std::mutex									_triangulationsMutex;
+	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
+	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
 };

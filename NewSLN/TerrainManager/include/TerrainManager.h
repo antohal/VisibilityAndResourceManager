@@ -19,6 +19,8 @@ typedef struct _D3DMATRIX D3DMATRIX;
 class CResourceManager;
 class HeightfieldConverter;
 
+struct STriangulation;
+
 typedef size_t TerrainObjectID;
 
 struct TerrainManagerConfig
@@ -46,6 +48,12 @@ public:
 	void GetConfig(TerrainManagerConfig* out_Config) const;
 	void SetConfig(const TerrainManagerConfig* in_Config);
 
+	// Установить триангулятор
+	void SetHeightfieldConverter(HeightfieldConverter*);
+
+	// Установить степень сжатия текстур высоты (и соответственно результирующей триангуляции) Может принимать значения степени двойки - 1, 2, 4, 8, 16, ...
+	void SetHeightfieldCompressionRatio(unsigned int ratio);
+
 	// Инициализация со случайной генерацией планеты до уровня глубины depth, с разбиением по долготе и широте N и M соответственно. 
 	// Текстуры и карты высот беруться случайным образом из [in_pcwszPlanetDirectory]/Textures и /HeightMaps
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
@@ -59,6 +67,10 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
+	// Обновить набор триангуляций для потенциально видимых объектов
+	// Эту функцию можно вызвать в потоке, отличном от Update, но обязательно до следующего Update
+	void UpdateTriangulations();
+
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
 
@@ -67,6 +79,18 @@ public:
 
 	//Получить описание объекта Земли по идентификатору
 	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
+
+	// Получить триангуляцию по объекту Земли. Эту функцию обязательно вызывать перед установкой вершин и индексов.
+	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation) const;
+
+	// Получить соседей данного блока [возвращаются 8 соседних блоков, начиная с северного по часовой стрелке. Если сосед отсутствует - возвращает -1]
+	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
+
+	// Получить количество готовых триангуляций
+	size_t GetTriangulationsCount() const;
+
+	// Получить количество готовых карт высот
+	size_t GetHeightfieldsCount() const;
 
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;

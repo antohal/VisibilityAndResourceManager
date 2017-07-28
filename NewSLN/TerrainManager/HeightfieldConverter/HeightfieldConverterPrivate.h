@@ -29,7 +29,7 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	void	ReadHeightfieldDataFromTexture(const wchar_t* in_pcwszTextureFileName, SHeightfield& out_Heightfield, unsigned short in_usCompressionRatio);
 
 	// Создать триангуляцию немедленно и дождаться готовности
-	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation);
+	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours);
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback);
@@ -63,5 +63,5 @@ private:
 
 	float							_fScale = 1;
 	float							_fHeightScale = 1;
-	float							_fNormalDivisionAngle = 45;
+	float							_fNormalDivisionAngle = 30;
 };

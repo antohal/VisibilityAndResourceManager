@@ -297,9 +297,9 @@ DirectComputeHeightfieldConverter::~DirectComputeHeightfieldConverter()
 
 }
 
-void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
+void DirectComputeHeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours)
 {
-	STriangulationTask task(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, nullptr, nullptr);
+	STriangulationTask task(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, nullptr, nullptr, in_ppNeighbours);
 	task.createTriangulation();
 	*out_pTriangulation = task._triangulation;
 }
@@ -362,7 +362,7 @@ void DirectComputeHeightfieldConverter::ComputeTriangulationCoords(const SHeight
 void DirectComputeHeightfieldConverter::AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback)
 {
 	std::lock_guard<std::mutex> lock(_tasksMutex);
-	_qTriangulationTasks.push(new STriangulationTask(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, param, in_Callback));
+	_qTriangulationTasks.push(new STriangulationTask(this, *in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, param, in_Callback, nullptr));
 }
 
 // обработать поставленные задачи
@@ -391,15 +391,29 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	_heightfield.Config.nCountY *= _fLongitudeCoeff;
 	_heightfield.Config.nCountX *= _fLattitudeCoeff;
 
-	_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
-	_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
+	//_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
+	//_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
+
+	_triangulation.nVertexCount = _triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 6;
 
 	computeBasis();
 
 	createOutputBuffers();
 	createInputBuffers();
 
-	ID3D11ShaderResourceView* aRViews[1] = { _heightfield.pTextureSRV };
+	ID3D11ShaderResourceView* aRViews[9] = { _heightfield.pTextureSRV, nullptr,  nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	if (_neighbours)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (_neighbours[i])
+				aRViews[i + 1] = _neighbours[i]->pTextureSRV;
+			else
+				aRViews[i + 1] = _heightfield.pTextureSRV;
+		}
+	}
+
 	ID3D11UnorderedAccessView* aUAViews[2] = { _ptrVertexBufferUAV, _ptrIndexBufferUAV };
 
 	ConstantBufferData constantData;
@@ -409,11 +423,11 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
 	constantData.fLongitudeCoeff = _fLongitudeCoeff;
 	constantData.fLattitudeCoeff = _fLattitudeCoeff;
-	constantData.fNormalDivisionAngle = _owner->_owner->GetNormalDivisionAngleDeg() * D2R;
+	constantData.fNormalDivisionAngleCos = cos(_owner->_owner->GetNormalDivisionAngleDeg() * D2R);
 
-	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 1, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
-		_heightfield.Config.nCountX, 
-		_heightfield.Config.nCountY,
+	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 9, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
+		_heightfield.Config.nCountX - 1, 
+		_heightfield.Config.nCountY - 1,
 		1);
 }
 

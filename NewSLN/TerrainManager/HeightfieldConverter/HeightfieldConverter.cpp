@@ -37,9 +37,9 @@ void HeightfieldConverter::ComputeTriangulationCoords(const SHeightfield::SCoord
 }
 
 // —оздать триангул€цию немедленно и дождатьс€ готовности
-void HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
+void HeightfieldConverter::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours)
 {
-	_private->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff,  out_pTriangulation);
+	_private->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff,  out_pTriangulation, in_ppNeighbours);
 }
 
 // добавить задачу на триангул€цию, котора€ будет выполн€тьс€ асинхронно с помощью DirectCompute

@@ -65,6 +65,16 @@ void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* i
 	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fWorldSize, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff);
 }
 
+void CTerrainManager::SetHeightfieldConverter(HeightfieldConverter * p)
+{
+	_implementation->SetHeightfieldConverter(p);
+}
+
+void CTerrainManager::SetHeightfieldCompressionRatio(unsigned int ratio)
+{
+	_implementation->SetHeightfieldCompressionRatio(ratio);
+}
+
 void CTerrainManager::InitGenerated(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
 {
 	_implementation->InitGenerated(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, N, M, depth, in_fWorldScale, in_fWorldSize);
@@ -85,6 +95,11 @@ void CTerrainManager::Update(float in_fDeltaTime)
 	_implementation->Update(in_fDeltaTime);
 }
 
+void CTerrainManager::UpdateTriangulations()
+{
+	_implementation->UpdateTriangulations();
+}
+
 // получить имя текстуры для данного объекта
 const wchar_t*	CTerrainManager::GetTextureFileName(TerrainObjectID ID) const
 {
@@ -102,6 +117,26 @@ const wchar_t*	CTerrainManager::GetHeightmapFileName(TerrainObjectID ID) const
 const STerrainBlockParams*	CTerrainManager::GetTerrainObjectParams(TerrainObjectID ID) const
 {
 	return _implementation->GetTerrainObjectParams(ID);
+}
+
+void CTerrainManager::GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation ** out_ppTriangulation) const
+{
+	_implementation->GetTerrainObjectTriangulation(ID, out_ppTriangulation);
+}
+
+void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
+{
+	_implementation->GetTerrainObjectNeighbours(ID, outNeighbours);
+}
+
+size_t CTerrainManager::GetTriangulationsCount() const
+{
+	return _implementation->GetTriangulationsCount();
+}
+
+size_t CTerrainManager::GetHeightfieldsCount() const
+{
+	return _implementation->GetHeightfieldsCount();
 }
 
 //@{ Список новых объектов, которые нужно создать (могут стать видимыми)
@@ -219,6 +254,11 @@ void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDe
 	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
 }
 
+void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldConverter * in_pHeightfieldConverter)
+{
+	_pHeightfieldConverter = in_pHeightfieldConverter;
+}
+
 void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 * in_vPos, const D3DXVECTOR3 * in_vDir, const D3DXVECTOR3 * in_vUp, const D3DMATRIX * in_pmProjection)
 {
 	Vector3 vPos, vDir, vUp;
@@ -239,6 +279,39 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 }
 
+SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
+{
+	auto it = _mapObjectHeightfields.find(ID);
+	if (it != _mapObjectHeightfields.end())
+	{
+		it->second._timeSinceLastRequest = 0;
+
+		return &it->second._heightfield;
+	}
+	else
+	{
+		SObjectHeightfield& objHF = _mapObjectHeightfields[ID];
+
+		std::wstring wsHeightmapFileName = GetHeightmapFileName(ID);
+		const STerrainBlockParams* pParams = GetTerrainObjectParams(ID);
+
+		// считаем данные карты высот из файла
+		_pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), objHF._heightfield, (unsigned short)_heightfieldCompressionRatio);
+
+		LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
+
+		// заполним граничные данные
+		objHF._heightfield.Config.Coords.fMinLattitude = pParams->fMinLattitude;
+		objHF._heightfield.Config.Coords.fMaxLattitude = pParams->fMaxLattitude;
+		objHF._heightfield.Config.Coords.fMinLongitude = pParams->fMinLongitude;
+		objHF._heightfield.Config.Coords.fMaxLongitude = pParams->fMaxLongitude;
+
+		return &objHF._heightfield;
+	}
+
+	return nullptr;
+}
+
 void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 {
 	_containersMutex.lock();
@@ -250,6 +323,123 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 	_pVisibilityManager->UpdateVisibleObjectsSet();
 	_pResourceManager->Update(in_fDeltaTime);
+
+	if (_pHeightfieldConverter)
+	{
+		std::lock_guard<std::mutex> lock(_triangulationsMutex);
+
+		for (auto it = _mapObjectHeightfields.begin(); it != _mapObjectHeightfields.end();)
+		{
+			if (it->second._timeSinceLastRequest > 10.0)
+			{
+				_pHeightfieldConverter->ReleaseHeightfield(&it->second._heightfield);
+
+				it = _mapObjectHeightfields.erase(it);
+			}
+			else
+			{
+				it->second._timeSinceLastRequest += in_fDeltaTime;
+				it++;
+			}
+		}
+
+		for (auto it = _mapObjectTriangulations.begin(); it != _mapObjectTriangulations.end();)
+		{
+			if (it->second._alive)
+			{
+				it++;
+				continue;
+			}
+
+			if (it->second._timeSinceDead > 10.f)
+			{
+				_pHeightfieldConverter->ReleaseTriangulation(&it->second._triangulation);
+
+
+				it = _mapObjectTriangulations.erase(it);
+			}
+			else
+			{
+				if (!it->second._alive)
+					it->second._timeSinceDead += in_fDeltaTime;
+
+				it++;
+			}
+		}
+
+		for (TerrainObjectID deadObj : _vecObjectsToDelete)
+		{
+			auto itTri = _mapObjectTriangulations.find(deadObj);
+			if (itTri == _mapObjectTriangulations.end())
+			{
+				LogMessage("Object %d has no triangulation while was alive", deadObj);
+				continue;
+			}
+
+			itTri->second._alive = false;
+		}
+	}
+}
+
+size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
+{
+	std::lock_guard<std::mutex> lock(_triangulationsMutex);
+	return _mapObjectTriangulations.size();
+}
+
+size_t CTerrainManager::CTerrainManagerImpl::GetHeightfieldsCount() const
+{
+	std::lock_guard<std::mutex> lock(_triangulationsMutex);
+	return _mapObjectHeightfields.size();
+}
+
+void CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
+{
+	if (!_pHeightfieldConverter)
+		return;
+
+	std::lock_guard<std::mutex> lock(_triangulationsMutex);
+
+	for (TerrainObjectID ID : _vecNewObjectIDs)
+	{
+		auto itExisting = _mapObjectTriangulations.find(ID);
+		if (itExisting != _mapObjectTriangulations.end())
+		{
+			itExisting->second._alive = true;
+			itExisting->second._timeSinceDead = 0;
+
+			continue;
+		}
+
+		SObjectTriangulation& objTri = _mapObjectTriangulations[ID];
+
+		objTri._alive = true;
+		objTri._timeSinceDead = 0;
+
+		const STerrainBlockParams* pParams = GetTerrainObjectParams(ID);
+
+		SHeightfield* pHeightfield = RequestObjectHeightfield(ID);
+
+		TerrainObjectID neighbours[8];
+		GetTerrainObjectNeighbours(ID, neighbours);
+
+		const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+		for (int i = 0; i < 8; i++)
+		{
+
+			if (neighbours[i] != (TerrainObjectID)(-1))
+			{
+				neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
+			}
+
+		}
+
+		// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
+		_pHeightfieldConverter->CreateTriangulationImmediate(pHeightfield, pParams->fLongitudeСutCoeff, pParams->fLattitudeCutCoeff, &objTri._triangulation, neighbourHeightfields);
+
+	}
+
 }
 
 const STerrainBlockParams * CTerrainManager::CTerrainManagerImpl::GetTerrainObjectParams(TerrainObjectID ID) const
@@ -263,6 +453,40 @@ const STerrainBlockParams * CTerrainManager::CTerrainManagerImpl::GetTerrainObje
 	}
 
 	return it->second->GetDesc()->GetParams();
+}
+
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation ** out_ppTriangulation) 
+{
+	std::lock_guard<std::mutex> lock(_triangulationsMutex);
+
+	auto it = _mapObjectTriangulations.find(ID);
+
+	if (it == _mapObjectTriangulations.end())
+	{
+		*out_ppTriangulation = nullptr;
+		return;
+	}
+
+	it->second._timeSinceDead = 0;
+	*out_ppTriangulation = &(it->second._triangulation);
+}
+
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
+{
+	const CTerrainBlockDesc* desc = GetTerrainDataForObject(_mapId2Object[ID]);
+	if (!desc)
+	{
+		LogMessage("CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours: Illegal object id (%d)", ID);
+		return;
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (_mapDesc2ID.find(desc->GetNeighbour(i)) != _mapDesc2ID.end())
+			outNeighbours[i] = _mapDesc2ID[desc->GetNeighbour(i)];
+		else
+			outNeighbours[i] = -1;
+	}
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetNewObjectsCount() const
@@ -516,6 +740,7 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(const CTerrainBlockDesc*
 
 	_vecObjects.push_back(pObject);
 	_mapId2Object[_idCurrentIDForNewObject] = pObject;
+	_mapDesc2ID[in_pData] = _idCurrentIDForNewObject;
 
 	_idCurrentIDForNewObject++;
 }

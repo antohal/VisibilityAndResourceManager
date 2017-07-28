@@ -65,6 +65,9 @@ public:
 	// получить указатель на дочерний блок
 	const CTerrainBlockDesc*		GetChildBlockDesc(unsigned int id) const;
 
+	// Получить указатель на соседний блок
+	const CTerrainBlockDesc*		GetNeighbour(unsigned int id) const;
+
 protected:
 
 	~CTerrainBlockDesc();

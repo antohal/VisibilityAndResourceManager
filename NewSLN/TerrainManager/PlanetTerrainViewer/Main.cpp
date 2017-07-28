@@ -66,6 +66,7 @@ public:
 
 		_pTerrainManager->Update(in_fFrameTime);
 
+		_pTerrainManager->UpdateTriangulations();
 
 		// добавляем новые объекты
 
@@ -152,8 +153,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
-	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
-	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1, 1);
+	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
+	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1, 1);
 
 	// Это если нужно сгенерить планету
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
@@ -163,6 +164,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
 	pSimpleTerrainRenderer->Init(pTerrainManager, g_fWorldScale);
+	pSimpleTerrainRenderer->SetDebugTextBlock(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
 

@@ -42,10 +42,10 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 }
 
 // —оздать триангул€цию немедленно и дождатьс€ готовности
-void HeightfieldConverter::HeightfieldConverterPrivate::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation)
+void HeightfieldConverter::HeightfieldConverterPrivate::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours)
 {
 	if (_pAbstractConverter)
-		_pAbstractConverter->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, out_pTriangulation);
+		_pAbstractConverter->CreateTriangulationImmediate(in_pHeightfield, in_fLongitudeCutCoeff, in_fLattitudeCutCoeff, out_pTriangulation, in_ppNeighbours);
 }
 
 // добавить задачу на триангул€цию, котора€ будет выполн€тьс€ асинхронно с помощью DirectCompute

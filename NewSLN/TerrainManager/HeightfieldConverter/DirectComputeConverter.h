@@ -23,7 +23,7 @@ public:
 	virtual void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords) override;
 
 	// Создать триангуляцию немедленно и дождаться готовности
-	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation) override;
+	void	CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours) override;
 
 	// добавить задачу на триангуляцию, которая будет выполняться асинхронно
 	void	AppendTriangulationTask(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback in_Callback) override;
@@ -45,15 +45,15 @@ private:
 		float	fWorldScale = 1;
 		float	fHeightScale = 1;
 
-		float	fNormalDivisionAngle = 0.78f;
+		float	fNormalDivisionAngleCos = 0.96f;
 		float	fTemp3;
 	};
 
 	struct STriangulationTask
 	{
 		STriangulationTask(DirectComputeHeightfieldConverter* owner, const SHeightfield& heightfield, float in_fLongitudeCutCoeff, 
-			float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback callback)
-				: _owner(owner), _heightfield(heightfield), _param(param), _callback(callback), _fLattitudeCoeff(in_fLattitudeCutCoeff), _fLongitudeCoeff(in_fLongitudeCutCoeff)
+			float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback callback, const SHeightfield** ppNeighbours)
+				: _owner(owner), _heightfield(heightfield), _param(param), _callback(callback), _fLattitudeCoeff(in_fLattitudeCutCoeff), _fLongitudeCoeff(in_fLongitudeCutCoeff), _neighbours(ppNeighbours)
 		{
 		}
 
@@ -81,6 +81,8 @@ private:
 		CComPtr<ID3D11Buffer>				_ptrInputBuffer;
 
 		CComPtr<ID3D11Buffer>				_ptrConstantBuffer;
+
+		const SHeightfield**				_neighbours = nullptr;
 	};
 
 	std::mutex									_tasksMutex;

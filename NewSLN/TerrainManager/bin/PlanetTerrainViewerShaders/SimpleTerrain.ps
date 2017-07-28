@@ -38,13 +38,13 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 {
 	float4 textureColor;
 	float3 lightDir;
-	float lightIntensity;
-	float4 color;
+	float lightIntensity, moonLightIntensity;
+	float4 color, moonColor;
 
 	float4 ambientColor;
 
 
-	ambientColor = float4(0.5, 0.5, 0.5, 0.5);
+	ambientColor = float4(0.05, 0.05, 0.05, 0.05);
 
 	// Sample the pixel color from the texture using the sampler at this texture coordinate location.
 	textureColor = shaderTexture.Sample(SampleType, input.tex);
@@ -57,8 +57,11 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
     // Calculate the amount of light on this pixel.
     lightIntensity = saturate(dot(N, lightDir));
 
+	moonLightIntensity = saturate(dot(N, -lightDir));
+	moonColor = float4(0.2, 0.2, 0.5, 1) * moonLightIntensity;
+
     // Determine the final amount of diffuse color based on the diffuse color combined with the light intensity.
-    color = saturate(diffuseColor * lightIntensity + ambientColor);
+    color = saturate(diffuseColor * lightIntensity + moonColor + ambientColor);
 
 	if (mode == 0)
 	{
@@ -70,7 +73,7 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 	}
 	else if (mode == 2)
 	{
-		color = saturate(float4(1,1,1,1) * lightIntensity + ambientColor);
+		color = saturate(float4(1, 1, 1, 1) * lightIntensity + moonColor + ambientColor);
 	}
 
     return color;

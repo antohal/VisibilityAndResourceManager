@@ -51,6 +51,14 @@ public:
 
 	size_t									GetMemoryUsage() const;
 
+	const CTerrainBlockDesc*				GetNeighbour(unsigned int id) const
+	{
+		if (id >= 8)
+			return nullptr;
+
+		return _neighbours[id];
+	}
+
 private:
 
 	STerrainBlockParams						_params;
@@ -61,10 +69,7 @@ private:
 	CTerrainBlockDesc*						_pParentBlock = nullptr;
 	std::vector<CTerrainBlockDesc*>			_vecChildBlocks;
 
-	CTerrainBlockDesc*						_leftNeighbour = nullptr;
-	CTerrainBlockDesc*						_rightNeighbour = nullptr;
-	CTerrainBlockDesc*						_topNeighbour = nullptr;
-	CTerrainBlockDesc*						_bottomNeighbour = nullptr;
+	CTerrainBlockDesc*						_neighbours[8];
 
 	CTerrainDataManager::CTerrainDataManagerImplementation*		_pOwner = nullptr;
 	CTerrainBlockDesc*						_pHolder = nullptr;

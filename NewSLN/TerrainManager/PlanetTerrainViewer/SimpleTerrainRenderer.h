@@ -24,8 +24,7 @@ protected:
 
 private:
 
-	//в этой структуре хранятся вершинные и индексные буферы после генерации
-	STriangulation					_triangulation;
+	TerrainObjectID					_ID;
 
 	std::wstring					_wsTextureFileName;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
@@ -54,6 +53,8 @@ public:
 	void							DeleteObject(TerrainObjectID);
 
 	void							AddObjectToRenderQueue(TerrainObjectID);
+
+	void							SetDebugTextBlock(CDirect2DTextBlock* block);
 
 	//@{ CD3DSceneRenderer
 
@@ -111,6 +112,11 @@ private:
 	CTerrainManager*				_pTerrainManager = nullptr;
 
 	HeightfieldConverter*			_pHeightfieldConverter = nullptr;
+
+	CDirect2DTextBlock*				_pTextBlock = nullptr;
+
+	UINT							_uiTriangulationsCountParam = -1;
+	UINT							_uiHeightfieldsCountParam = -1;
 
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
 

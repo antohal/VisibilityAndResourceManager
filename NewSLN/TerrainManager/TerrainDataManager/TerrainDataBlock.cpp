@@ -55,6 +55,11 @@ const CTerrainBlockDesc* CTerrainBlockDesc::GetChildBlockDesc(unsigned int id) c
 	return _implementation->GetChildBlockData(id);
 }
 
+const CTerrainBlockDesc* CTerrainBlockDesc::GetNeighbour(unsigned int id) const
+{
+	return _implementation->GetNeighbour(id);
+}
+
 //
 // CTerrainBlockDesc::CTerrainBlockDescImplementation
 //
@@ -62,7 +67,8 @@ const CTerrainBlockDesc* CTerrainBlockDesc::GetChildBlockDesc(unsigned int id) c
 CTerrainBlockDesc::CTerrainBlockDescImplementation::CTerrainBlockDescImplementation(CTerrainBlockDesc* in_pHolder)
 	:	_pHolder(in_pHolder)
 {
-
+	for (int i = 0; i < 9; i++)
+		_neighbours[i] = nullptr;
 }
 
 CTerrainBlockDesc::CTerrainBlockDescImplementation::~CTerrainBlockDescImplementation()
