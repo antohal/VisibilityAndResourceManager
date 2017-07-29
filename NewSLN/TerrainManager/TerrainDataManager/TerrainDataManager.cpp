@@ -174,7 +174,7 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GetMemoryUsageRecur
 
 inline bool EQUALS(float a, float b)
 {
-	return fabsf(a - b) < 1e-5f;
+	return fabsf(a - b) < 1e-4f;
 }
 
 void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
