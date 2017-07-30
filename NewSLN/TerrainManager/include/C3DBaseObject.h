@@ -47,6 +47,8 @@ public:
 		return nullptr;
 	}
 
+	virtual bool IsDataReady() const { return true; }
+
 protected:
 
 	// Ёта функци€ внутренн€€, вызываетс€ внутри VisibilityManager в момент, когда объект становитс€ потенциально видимым.

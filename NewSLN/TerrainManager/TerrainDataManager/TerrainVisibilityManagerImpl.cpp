@@ -20,6 +20,11 @@ void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, 
 	_implementation->Init(in_pMeshTree, in_fWorldScale, in_fMaximumDistance, in_fLodDistCoeff, in_uiMaxDepth);
 }
 
+void CTerrainVisibilityManager::SetAwaitVisibleForDataReady(bool in_bSetAwaitVisibleForReady)
+{
+	_implementation->SetAwaitVisibleForDataReady(in_bSetAwaitVisibleForReady);
+}
+
 //@{ IVisibilityManagerPlugin
 bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject* in_pObject) const
 {
@@ -223,13 +228,17 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisi
 
 	unsigned int uiMaxDepth = GetLodDepth(height);
 
+	UpdateVisibleBlocks(vPos, uiMaxDepth);
+}
+
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibleBlocks(const vm::Vector3df& vPos, unsigned int uiMaxDepth)
+{
 	if (uiMaxDepth == 0)
 	{
 		for (unsigned int i = 0; i < _pRoot->GetChildBlockDescCount(); i++)
 		{
 			const CTerrainBlockDesc* pBlock = _pRoot->GetChildBlockDesc(i);
-			if (!IsBlockBehindEarth(pBlock, vPos))
-				AddVisibleBlock(pBlock);
+			AddVisibleBlock(pBlock, vPos);
 		}
 	}
 	else
@@ -238,7 +247,7 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisi
 	}
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
+CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityRecursive(const CTerrainBlockDesc* pTerrainBlock, const vm::Vector3df& in_vPos)
 {
 	bool bRes = false;
 
@@ -248,32 +257,32 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 
 	if (pTerrainBlock->GetParams()->uiDepth == requiredLodDepth)
 	{
-		if (!IsBlockBehindEarth(pTerrainBlock, in_vPos))
-			AddVisibleBlock(pTerrainBlock);
+		AddVisibleBlock(pTerrainBlock, in_vPos);
 
-		return true;
+		return CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::READY_AND_VISIBLE;
 	}
 
 	if (pTerrainBlock->GetParams()->uiDepth < requiredLodDepth)
 	{
 		if (pTerrainBlock->GetChildBlockDescCount() == 0)
 		{
-			if (!IsBlockBehindEarth(pTerrainBlock, in_vPos))
-				AddVisibleBlock(pTerrainBlock);
+			AddVisibleBlock(pTerrainBlock, in_vPos);
 
-			return true;
+			return CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::READY_AND_VISIBLE;
 		}
 
 		bool bSomeChildVisible = false;
 
-		vector<const CTerrainBlockDesc*> vecInvisibleChilds;
+		static vector<const CTerrainBlockDesc*> vecInvisibleChilds;
+		vecInvisibleChilds.clear();
+
 		vecInvisibleChilds.reserve(pTerrainBlock->GetChildBlockDescCount());
 
 		for (unsigned int i = 0; i < pTerrainBlock->GetChildBlockDescCount(); i++)
 		{
 			const CTerrainBlockDesc* pChildBlock = pTerrainBlock->GetChildBlockDesc(i);
 
-			if (UpdateVisibilityRecursive(pChildBlock, in_vPos))
+			if (UpdateVisibilityRecursive(pChildBlock, in_vPos) == CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::READY_AND_VISIBLE)
 			{
 				bSomeChildVisible = true;
 			}
@@ -287,19 +296,21 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateVisibilityR
 		{
 			for (const CTerrainBlockDesc* pInvisibleChild : vecInvisibleChilds)
 			{
-				if (!IsBlockBehindEarth(pInvisibleChild, in_vPos))
-					AddVisibleBlock(pInvisibleChild);
+				AddVisibleBlock(pInvisibleChild, in_vPos);
 			}
 
-			return true;
+			return CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::READY_AND_VISIBLE;
 		}
 	}
 
-	return false;
+	return CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::INVISIBLE;
 }
 
 bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEarth(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos) const
 {
+
+	// TODO: здесь можно поместить обработку параметра по определению того какие блоки мы рисуем - либо фронтальные, либо задние
+
 	double dfMinLat = in_pTerrainBlock->GetParams()->fMinLattitude;
 	double dfMaxLat = in_pTerrainBlock->GetParams()->fMaxLattitude;
 	double dfMinLong = in_pTerrainBlock->GetParams()->fMinLongitude;
@@ -335,9 +346,10 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEart
 	return true;
 }
 
-void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock)
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock, const vm::Vector3df& in_vPos)
 {
-	_setVisibleObjects.insert(_mapObjects[pBlock]);
+	if (!IsBlockBehindEarth(pBlock, in_vPos))
+		_setVisibleObjects.insert(_mapObjects[pBlock]);
 }
 
 unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibleObjectsCount() const
@@ -347,12 +359,14 @@ unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibl
 
 C3DBaseObject* CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibleObject(unsigned int i)
 {
-	if (i >= _setVisibleObjects.size())
+	std::set<C3DBaseObject*>& setObjects = _setVisibleObjects;
+
+	if (i >= setObjects.size())
 		return nullptr;
 
 	unsigned int index = 0;
 
-	for (C3DBaseObject* obj : _setVisibleObjects)
+	for (C3DBaseObject* obj : setObjects)
 	{
 		if (index == i)
 			return obj;

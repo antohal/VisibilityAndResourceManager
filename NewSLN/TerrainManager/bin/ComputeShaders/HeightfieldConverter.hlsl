@@ -335,156 +335,114 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	for (int i = 0; i < 4; i++)
 		CopyQuad(neighbourQuads[i], thisQuad);
 
-//	if (iQuadX > 0 && iQuadX < (int)nCountX - 2 &&
-//		iQuadY > 0 && iQuadY < (int)nCountY - 2 )
-//	{
-		ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY, neighbourQuads[0]);
-		ComputeNeighbourQuadGeom(iQuadX, iQuadY + 1, neighbourQuads[1]);
-		ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY, neighbourQuads[2]);
-		ComputeNeighbourQuadGeom(iQuadX, iQuadY - 1, neighbourQuads[3]);
-//	}
+	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY, neighbourQuads[0]);
+	ComputeNeighbourQuadGeom(iQuadX, iQuadY + 1, neighbourQuads[1]);
+	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY, neighbourQuads[2]);
+	ComputeNeighbourQuadGeom(iQuadX, iQuadY - 1, neighbourQuads[3]);
 
 
 	Vertex v[6];
 
-	/*if ((iQuadX == 0) || (iQuadY == 0) || (iQuadX == ((int)nCountX - 2)) || (iQuadY == ((int)nCountY - 2)))
-	{
-		v[0].normal = thisQuad.t[0].n;
-		v[0].tex = thisQuad.tex[0];
-		v[0].pos = thisQuad.vertex[0];
-		v[0].tangent = normalize(-cross(float3(1, 0, 0), v[0].normal));
+	float3 neighbourPoints[4];
 
-		v[1].normal = thisQuad.t[0].n;
-		v[1].tex = thisQuad.tex[1];
-		v[1].pos = thisQuad.vertex[1];
-		v[1].tangent = normalize(-cross(float3(1, 0, 0), v[1].normal));
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		v[2].normal = thisQuad.t[0].n;
-		v[2].tex = thisQuad.tex[2];
-		v[2].pos = thisQuad.vertex[2];
-		v[2].tangent = normalize(-cross(float3(1, 0, 0), v[2].normal));
+	v[0].normal = thisQuad.t[0].n;
+	v[0].tex = thisQuad.tex[0];
+	v[0].pos = thisQuad.vertex[0];
 
-		v[3].normal = thisQuad.t[1].n;
-		v[3].tex = thisQuad.tex[0];
-		v[3].pos = thisQuad.vertex[0];
-		v[3].tangent = normalize(-cross(float3(1, 0, 0), v[3].normal));
+	neighbourPoints[0] = neighbourQuads[0].vertex[0];
+	neighbourPoints[1] = thisQuad.vertex[3];
+	neighbourPoints[2] = thisQuad.vertex[1];
+	neighbourPoints[3] = neighbourQuads[3].vertex[0];
 
-		v[4].normal = thisQuad.t[1].n;
-		v[4].tex = thisQuad.tex[2];
-		v[4].pos = thisQuad.vertex[2];
-		v[4].tangent = normalize(-cross(float3(1, 0, 0), v[4].normal));
+	ComputeVertexNormalAndTangent(neighbourPoints, v[0]);
 
-		v[5].normal = thisQuad.t[1].n;
-		v[5].tex = thisQuad.tex[3];
-		v[5].pos = thisQuad.vertex[3];
-		v[5].tangent = normalize(-cross(float3(1, 0, 0), v[5].normal));
-	}
-	else
-	{*/
-		float3 neighbourPoints[4];
-
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		v[0].normal = thisQuad.t[0].n;
-		v[0].tex = thisQuad.tex[0];
-		v[0].pos = thisQuad.vertex[0];
-
-		neighbourPoints[0] = neighbourQuads[0].vertex[0];
-		neighbourPoints[1] = thisQuad.vertex[3];
-		neighbourPoints[2] = thisQuad.vertex[1];
-		neighbourPoints[3] = neighbourQuads[3].vertex[0];
-
-		ComputeVertexNormalAndTangent(neighbourPoints, v[0]);
-
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 1  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 1  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		v[1].normal = thisQuad.t[0].n;
-		v[1].tex = thisQuad.tex[1];
-		v[1].pos = thisQuad.vertex[1];
+	v[1].normal = thisQuad.t[0].n;
+	v[1].tex = thisQuad.tex[1];
+	v[1].pos = thisQuad.vertex[1];
 
-		neighbourPoints[0] = thisQuad.vertex[0];
-		neighbourPoints[1] = thisQuad.vertex[2];
-		neighbourPoints[2] = neighbourQuads[2].vertex[1];
-		neighbourPoints[3] = neighbourQuads[3].vertex[1];
+	neighbourPoints[0] = thisQuad.vertex[0];
+	neighbourPoints[1] = thisQuad.vertex[2];
+	neighbourPoints[2] = neighbourQuads[2].vertex[1];
+	neighbourPoints[3] = neighbourQuads[3].vertex[1];
 
-		ComputeVertexNormalAndTangent(neighbourPoints, v[1]);
+	ComputeVertexNormalAndTangent(neighbourPoints, v[1]);
 
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 1  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 2  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		v[2].normal = thisQuad.t[0].n;
-		v[2].tex = thisQuad.tex[2];
-		v[2].pos = thisQuad.vertex[2];
-
-		neighbourPoints[0] = thisQuad.vertex[3];
-		neighbourPoints[1] = neighbourQuads[1].vertex[2];
-		neighbourPoints[2] = neighbourQuads[2].vertex[2];
-		neighbourPoints[3] = thisQuad.vertex[1];
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 1  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-		ComputeVertexNormalAndTangent(neighbourPoints, v[2]);
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 2  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	v[2].normal = thisQuad.t[0].n;
+	v[2].tex = thisQuad.tex[2];
+	v[2].pos = thisQuad.vertex[2];
 
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 3  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		v[3].normal = thisQuad.t[1].n;
-		v[3].tex = thisQuad.tex[0];
-		v[3].pos = thisQuad.vertex[0];
-
-		neighbourPoints[0] = neighbourQuads[0].vertex[0];
-		neighbourPoints[1] = thisQuad.vertex[3];
-		neighbourPoints[2] = thisQuad.vertex[1];
-		neighbourPoints[3] = neighbourQuads[3].vertex[0];
-
-		ComputeVertexNormalAndTangent(neighbourPoints, v[3]);
-
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 4  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		v[4].normal = thisQuad.t[1].n;
-		v[4].tex = thisQuad.tex[2];
-		v[4].pos = thisQuad.vertex[2];
-
-		neighbourPoints[0] = thisQuad.vertex[3];
-		neighbourPoints[1] = neighbourQuads[1].vertex[2];
-		neighbourPoints[2] = neighbourQuads[2].vertex[2];
-		neighbourPoints[3] = thisQuad.vertex[1];
+	neighbourPoints[0] = thisQuad.vertex[3];
+	neighbourPoints[1] = neighbourQuads[1].vertex[2];
+	neighbourPoints[2] = neighbourQuads[2].vertex[2];
+	neighbourPoints[3] = thisQuad.vertex[1];
 
 
-		ComputeVertexNormalAndTangent(neighbourPoints, v[4]);
+	ComputeVertexNormalAndTangent(neighbourPoints, v[2]);
 
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 5  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 3  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		v[5].normal = thisQuad.t[1].n;
-		v[5].tex = thisQuad.tex[3];
-		v[5].pos = thisQuad.vertex[3];
+	v[3].normal = thisQuad.t[1].n;
+	v[3].tex = thisQuad.tex[0];
+	v[3].pos = thisQuad.vertex[0];
 
-		neighbourPoints[0] = neighbourQuads[0].vertex[3];
-		neighbourPoints[1] = neighbourQuads[1].vertex[3];
-		neighbourPoints[2] = thisQuad.vertex[2];
-		neighbourPoints[3] = thisQuad.vertex[0];
+	neighbourPoints[0] = neighbourQuads[0].vertex[0];
+	neighbourPoints[1] = thisQuad.vertex[3];
+	neighbourPoints[2] = thisQuad.vertex[1];
+	neighbourPoints[3] = neighbourQuads[3].vertex[0];
 
-		ComputeVertexNormalAndTangent(neighbourPoints, v[5]);
+	ComputeVertexNormalAndTangent(neighbourPoints, v[3]);
 
-		//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	//}
-	
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 4  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	v[4].normal = thisQuad.t[1].n;
+	v[4].tex = thisQuad.tex[2];
+	v[4].pos = thisQuad.vertex[2];
+
+	neighbourPoints[0] = thisQuad.vertex[3];
+	neighbourPoints[1] = neighbourQuads[1].vertex[2];
+	neighbourPoints[2] = neighbourQuads[2].vertex[2];
+	neighbourPoints[3] = thisQuad.vertex[1];
+
+
+	ComputeVertexNormalAndTangent(neighbourPoints, v[4]);
+
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 5  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	v[5].normal = thisQuad.t[1].n;
+	v[5].tex = thisQuad.tex[3];
+	v[5].pos = thisQuad.vertex[3];
+
+	neighbourPoints[0] = neighbourQuads[0].vertex[3];
+	neighbourPoints[1] = neighbourQuads[1].vertex[3];
+	neighbourPoints[2] = thisQuad.vertex[2];
+	neighbourPoints[3] = thisQuad.vertex[0];
+
+	ComputeVertexNormalAndTangent(neighbourPoints, v[5]);
+
+	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	for (int iVertex = 0; iVertex < 6; iVertex++)
 	{
 		data.vertices[iVertex] = v[iVertex];
-//		data.indices[iVertex] = iVertex;
 	}
 
 	data.indices[0] = 0;

@@ -176,6 +176,16 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 	return _implementation->GetVisibleObjectID(index);
 }
 
+void CTerrainManager::SetDataReady(TerrainObjectID ID)
+{
+	_implementation->SetDataReady(ID);
+}
+
+void CTerrainManager::SetAwaitVisibleForDataReady(bool in_bAwait)
+{
+	_implementation->SetAwaitVisibleForDataReady(in_bAwait);
+}
+
 //@}
 
 
@@ -193,6 +203,9 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 {
 	if (_pResourceManager)
 		delete _pResourceManager;
+
+	if (_pTerrainVisibilityManager)
+		delete _pTerrainVisibilityManager;
 
 	if (_pVisibilityManager)
 		delete _pVisibilityManager;
@@ -226,10 +239,10 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
 
 
-	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
+	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
+	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
 
-	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
+	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 }
 
 void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
@@ -249,10 +262,10 @@ void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDe
 	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
 	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
 
-	CTerrainVisibilityManager* pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5f, depth);
+	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
+	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5f, depth);
 
-	_pVisibilityManager->InstallPlugin(pTerrainVisibilityManager);
+	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 }
 
 void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldConverter * in_pHeightfieldConverter)
@@ -622,10 +635,26 @@ void CTerrainManager::CTerrainManagerImpl::RequestUnloadResource(C3DBaseResource
 {
 	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(in_pResource);
 
+	pTerrainObject->InvalidateData();
+
 	std::lock_guard<std::mutex> lock(_containersMutex);
 	_vecObjectsToDelete.push_back(pTerrainObject->GetID());
 }
 
+void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID)
+{
+	auto it = _mapId2Object.find(ID);
+
+	if (it != _mapId2Object.end())
+	{
+		it->second->SetDataReady();
+	}
+}
+
+void CTerrainManager::CTerrainManagerImpl::SetAwaitVisibleForDataReady(bool in_bAwait)
+{
+	_pTerrainVisibilityManager->SetAwaitVisibleForDataReady(in_bAwait);
+}
 
 float CTerrainManager::CTerrainManagerImpl::GetWorldRadius() const
 {

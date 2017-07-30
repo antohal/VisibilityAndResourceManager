@@ -25,6 +25,15 @@ public:
 		return _pBlockDesc;
 	}
 
+	void InvalidateData() {
+		_bTriangulationsReady = false;
+		_bOtherDataReady = false;
+	}
+
+	void SetDataReady() {
+		_bOtherDataReady = true;
+	}
+
 protected:
 
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
@@ -49,6 +58,10 @@ protected:
 
 	virtual C3DBaseManager*					GetManager() const { return _pOwner; }
 
+	virtual bool							IsDataReady() const {
+		return _bTriangulationsReady && _bOtherDataReady;
+	}
+
 
 private:
 
@@ -60,6 +73,9 @@ private:
 	D3DXMATRIX					_mTransform;
 	D3DXVECTOR3					_vBBoxMin;
 	D3DXVECTOR3					_vBBoxMax;
+
+	bool						_bTriangulationsReady = false;
+	bool						_bOtherDataReady = false;
 };
 
 
@@ -127,6 +143,10 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
+	void SetDataReady(TerrainObjectID ID);
+
+	void SetAwaitVisibleForDataReady(bool in_bAwait);
+
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
@@ -177,6 +197,7 @@ private:
 	//@{ Main objects
 	CResourceManager*		_pResourceManager = nullptr;
 	CVisibilityManager*		_pVisibilityManager = nullptr;
+	CTerrainVisibilityManager* _pTerrainVisibilityManager = nullptr;
 
 	CTerrainBlockDesc*		_pPlanetTerrainData = nullptr;
 	CTerrainDataManager*	_pTerrainDataManager = nullptr;

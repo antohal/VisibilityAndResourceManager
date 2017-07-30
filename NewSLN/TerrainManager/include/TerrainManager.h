@@ -107,6 +107,14 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
+	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
+	void SetDataReady(TerrainObjectID ID);
+	//@}
+
+	//@{ Ожидать пока для объекта будут готовы данные, перед тем как делать его видимым [по умолчанию - выключено!]
+	void SetAwaitVisibleForDataReady(bool in_bAwait);
+	//@}
+
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
 
