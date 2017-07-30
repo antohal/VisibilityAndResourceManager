@@ -124,7 +124,7 @@ void CTerrainManager::GetTerrainObjectTriangulation(TerrainObjectID ID, STriangu
 	_implementation->GetTerrainObjectTriangulation(ID, out_ppTriangulation);
 }
 
-void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
+void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4])
 {
 	_implementation->GetTerrainObjectNeighbours(ID, outNeighbours);
 }
@@ -198,6 +198,7 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 		delete _pVisibilityManager;
 
 	DestroyObjects();
+	ReleaseTriangulationsAndHeightmaps();
 
 	if (_pPlanetTerrainData)
 		_pTerrainDataManager->ReleaseTerrainDataInfo(_pPlanetTerrainData);
@@ -305,6 +306,9 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 		objHF._heightfield.Config.Coords.fMaxLattitude = pParams->fMaxLattitude;
 		objHF._heightfield.Config.Coords.fMinLongitude = pParams->fMinLongitude;
 		objHF._heightfield.Config.Coords.fMaxLongitude = pParams->fMaxLongitude;
+
+		objHF._heightfield.fLattitudeCutCoeff = pParams->fLattitudeCutCoeff;
+		objHF._heightfield.fLongitudeCutCoeff = pParams->fLongitude—utCoeff;
 
 		return &objHF._heightfield;
 	}
@@ -420,12 +424,12 @@ void CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		SHeightfield* pHeightfield = RequestObjectHeightfield(ID);
 
-		TerrainObjectID neighbours[8];
+		TerrainObjectID neighbours[4];
 		GetTerrainObjectNeighbours(ID, neighbours);
 
-		const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		const SHeightfield* neighbourHeightfields[4] = { nullptr, nullptr, nullptr, nullptr };
 
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 4; i++)
 		{
 
 			if (neighbours[i] != (TerrainObjectID)(-1))
@@ -471,7 +475,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectTriangulation(Terrain
 	*out_ppTriangulation = &(it->second._triangulation);
 }
 
-void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4])
 {
 	const CTerrainBlockDesc* desc = GetTerrainDataForObject(_mapId2Object[ID]);
 	if (!desc)
@@ -480,7 +484,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObj
 		return;
 	}
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		if (_mapDesc2ID.find(desc->GetNeighbour(i)) != _mapDesc2ID.end())
 			outNeighbours[i] = _mapDesc2ID[desc->GetNeighbour(i)];
@@ -753,4 +757,28 @@ void CTerrainManager::CTerrainManagerImpl::DestroyObjects()
 	}
 
 	_vecObjects.clear();
+}
+
+void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
+{
+	std::lock_guard<std::mutex> lock(_triangulationsMutex);
+
+	for (auto it = _mapObjectHeightfields.begin(); it != _mapObjectHeightfields.end(); it++)
+	{
+		if (_pHeightfieldConverter)
+		{
+			_pHeightfieldConverter->ReleaseHeightfield(&it->second._heightfield);
+		}
+	}
+
+	_mapObjectHeightfields.clear();
+
+
+	for (auto it = _mapObjectTriangulations.begin(); it != _mapObjectTriangulations.end(); it++)
+	{
+		if (_pHeightfieldConverter)
+			_pHeightfieldConverter->ReleaseTriangulation(&it->second._triangulation);
+	}
+
+	_mapObjectTriangulations.clear();
 }

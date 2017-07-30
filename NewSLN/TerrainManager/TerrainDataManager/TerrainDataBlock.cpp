@@ -67,7 +67,7 @@ const CTerrainBlockDesc* CTerrainBlockDesc::GetNeighbour(unsigned int id) const
 CTerrainBlockDesc::CTerrainBlockDescImplementation::CTerrainBlockDescImplementation(CTerrainBlockDesc* in_pHolder)
 	:	_pHolder(in_pHolder)
 {
-	for (int i = 0; i < 9; i++)
+	for (int i = 0; i < 4; i++)
 		_neighbours[i] = nullptr;
 }
 

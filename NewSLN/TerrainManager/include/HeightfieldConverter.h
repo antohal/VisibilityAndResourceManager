@@ -33,6 +33,9 @@ struct SHeightfield
 
 	unsigned long long			ID = 0;						// идентификатор
 	SConfig						Config;						// конфигурация
+
+	float						fLongitudeCutCoeff = 1.f;	
+	float						fLattitudeCutCoeff = 1.f;
 	
 	ID3D11ShaderResourceView*	pTextureSRV = nullptr;		// текстура с данными [формат текстуры - float]
 };

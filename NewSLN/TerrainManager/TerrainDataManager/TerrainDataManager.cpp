@@ -184,12 +184,16 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 
 		std::vector<CTerrainBlockDesc*> vecDepthBlocks = _mapLodLevelBlocks[uiDepth];
 
-		for (CTerrainBlockDesc* blockA : vecDepthBlocks)
+		//for (CTerrainBlockDesc* blockA : vecDepthBlocks)
+		for (size_t iBlockA = 0; iBlockA < vecDepthBlocks.size(); iBlockA++)
 		{
-			for (CTerrainBlockDesc* blockB : vecDepthBlocks)
+			CTerrainBlockDesc* blockA = vecDepthBlocks[iBlockA];
+
+			//for (CTerrainBlockDesc* blockB : vecDepthBlocks)
+			for (size_t iBlockB = iBlockA + 1; iBlockB < vecDepthBlocks.size(); iBlockB++)
 			{
-				if (blockA == blockB)
-					continue;
+	
+				CTerrainBlockDesc* blockB = vecDepthBlocks[iBlockB];
 
 				// horizontal
 				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMinLattitude) && EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMaxLattitude))
@@ -198,7 +202,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) ||
 						(EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2*M_PI)))
 					{
-						blockA->_implementation->_neighbours[6] = blockB;
+						blockA->_implementation->_neighbours[3] = blockB;
+						blockB->_implementation->_neighbours[1] = blockA;
 						continue;
 					}
 
@@ -206,7 +211,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) ||
 						(EQUALS(blockA->GetParams()->fMaxLongitude, 2*M_PI) && EQUALS(blockB->GetParams()->fMaxLongitude, 0)))
 					{
-						blockA->_implementation->_neighbours[2] = blockB;
+						blockA->_implementation->_neighbours[1] = blockB;
+						blockB->_implementation->_neighbours[3] = blockA;
 						continue;
 					}
 				}
@@ -220,48 +226,20 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude))
 					{
 						blockA->_implementation->_neighbours[0] = blockB;
+						blockB->_implementation->_neighbours[2] = blockA;
 					}
 
 
 					//bottom
 					if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude))
 					{
-						blockA->_implementation->_neighbours[4] = blockB;
+						blockA->_implementation->_neighbours[2] = blockB;
+						blockB->_implementation->_neighbours[0] = blockA;
 					}
 
 				}
 
-				// left top
-				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
-					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
-
-				{
-					blockA->_implementation->_neighbours[7] = blockB;
-				}
-
-				// right top
-				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
-					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2*M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
-
-				{
-					blockA->_implementation->_neighbours[2] = blockB;
-				}
-
-				// right bottom
-				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
-					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2 * M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
-
-				{
-					blockA->_implementation->_neighbours[3] = blockB;
-				}
-
-				// left bottom
-				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
-					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
-
-				{
-					blockA->_implementation->_neighbours[5] = blockB;
-				}
+			
 			}
 		}
 

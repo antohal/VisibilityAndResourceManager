@@ -46,7 +46,22 @@ private:
 		float	fHeightScale = 1;
 
 		float	fNormalDivisionAngleCos = 0.96f;
-		float	fTemp3;
+
+		float	fNorthBlockLongCoeff = 1.f;
+		float	fNorthBlockLatCoeff = 1.f;
+
+		float	fEastBlockLongCoeff = 1.f;
+		float	fEastBlockLatCoeff = 1.f;
+
+		float	fSouthBlockLongCoeff = 1.f;
+		float	fSouthBlockLatCoeff = 1.f;
+
+		float	fWestBlockLongCoeff = 1.f;
+		float	fWestBlockLatCoeff = 1.f;
+
+		float	fNeighbourCoords[16];
+
+		float	fTemp3 = 0;
 	};
 
 	struct STriangulationTask

@@ -105,7 +105,7 @@ public:
 
 	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation);
 
-	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
+	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4]);
 
 	size_t GetTriangulationsCount() const;
 
@@ -170,6 +170,8 @@ private:
 	void CreateObject(const CTerrainBlockDesc* in_pData);
 	void DestroyObjects();
 
+	void ReleaseTriangulationsAndHeightmaps();
+
 	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 
 	//@{ Main objects
@@ -220,6 +222,7 @@ private:
 	SHeightfield*		RequestObjectHeightfield(TerrainObjectID ID);
 
 	mutable std::mutex									_triangulationsMutex;
+
 	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
 	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
 };
