@@ -443,7 +443,8 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.fLongitudeCoeff = _fLongitudeCoeff;
 	constantData.fLattitudeCoeff = _fLattitudeCoeff;
 	
-	constantData.fNormalDivisionAngleCos = cos(_owner->_owner->GetNormalDivisionAngleDeg() * D2R);
+	constantData.fNormalDivisionAngleCos1 = cos(_owner->_owner->GetNormalDivisionAngle1Deg() * D2R);
+	constantData.fNormalDivisionAngleCos2 = cos(_owner->_owner->GetNormalDivisionAngle2Deg() * D2R);
 
 	if (_neighbours)
 	{

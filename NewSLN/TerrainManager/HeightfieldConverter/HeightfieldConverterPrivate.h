@@ -21,7 +21,7 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 
 	void	SetHeightScale(float in_fHeightScale);
 
-	void	SetNormalDivisionAngle(float in_fAngleInDeg);
+	void	SetNormalDivisionAngles(float in_fAngle1InDeg, float in_fAngle2InDeg);
 
 	void	ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 
@@ -50,8 +50,12 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 		return _fHeightScale;
 	}
 
-	float	GetNormalDivisionAngleDeg() const {
-		return _fNormalDivisionAngle;
+	float	GetNormalDivisionAngle1Deg() const {
+		return _fNormalDivisionAngle1;
+	}
+
+	float	GetNormalDivisionAngle2Deg() const {
+		return _fNormalDivisionAngle2;
 	}
 
 private:
@@ -63,5 +67,7 @@ private:
 
 	float							_fScale = 1;
 	float							_fHeightScale = 1;
-	float							_fNormalDivisionAngle = 30;
+
+	float							_fNormalDivisionAngle1 = 30;
+	float							_fNormalDivisionAngle2 = 90;
 };
