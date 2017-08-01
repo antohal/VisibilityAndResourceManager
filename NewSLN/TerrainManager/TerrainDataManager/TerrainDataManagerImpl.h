@@ -14,6 +14,8 @@ public:
 	// «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
 	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth/* = nullptr*/);
 
+	void	LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth);
+
 	void	GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth);
 
 	// ќсвободить загруженное описание данных

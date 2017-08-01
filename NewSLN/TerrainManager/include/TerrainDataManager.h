@@ -40,6 +40,24 @@ struct STerrainBlockParams
 	STerrainBlockIndex	aTreePosition[MAX_TERRAIN_TREE_DEPTH];
 };
 
+// Структуры, считываемые из файла, описывающие лоды Земли
+struct DataBaseInfo
+{
+	unsigned char Major;
+	unsigned char Minor;
+	unsigned char Reserved;
+	unsigned char LodCount; // кол-во лодов
+	int DeltaX;				// кол-во доп пикселей по X дл¤ выравнивани¤ текстуры
+	int DeltaY;				//  кол-во доп пикселей по Y дл¤ выравнивани¤ текстуры
+};
+
+struct LodInfoStruct
+{
+	short Width;			// ширины тексутры
+	short Height;			// высота тексутры
+	short CountX;			// кол-во текстур по X
+	short CountY;			// кол-во текстур по Y
+};
 
 // Описание блока Земли
 class TERRAINDATAMANAGER_API CTerrainBlockDesc
@@ -95,6 +113,9 @@ public:
 	// in_uiM, in_uiN - количество разбиений каждого уровня по широте и долготе
 	// in_uiDepth - глубина дерева
 	void	GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth);
+
+
+	void	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, const DataBaseInfo& dbInfo, const LodInfoStruct* in_pLodInfoArray, unsigned int in_uiMaxDepth);
 
 	// Освободить загруженное описание данных
 	void	ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock);

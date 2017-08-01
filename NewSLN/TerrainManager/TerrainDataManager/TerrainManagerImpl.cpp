@@ -4,6 +4,7 @@
 #include "wgs84.h"
 
 #include <d3dx10math.h>
+#include <algorithm>
 
 #define USE_ENGINE_SCALE
 
@@ -65,6 +66,11 @@ void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* i
 	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fWorldSize, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff);
 }
 
+void CTerrainManager::InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+{
+	_implementation->InitFromFile(in_pD3DDevice11, in_pDeviceContext, in_pcwszFileName, in_uiMaxDepth, in_fWorldScale, in_fWorldSize);
+}
+
 void CTerrainManager::SetHeightfieldConverter(HeightfieldConverter * p)
 {
 	_implementation->SetHeightfieldConverter(p);
@@ -124,7 +130,7 @@ void CTerrainManager::GetTerrainObjectTriangulation(TerrainObjectID ID, STriangu
 	_implementation->GetTerrainObjectTriangulation(ID, out_ppTriangulation);
 }
 
-void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4])
+void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
 {
 	_implementation->GetTerrainObjectNeighbours(ID, outNeighbours);
 }
@@ -243,6 +249,84 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
 
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
+}
+
+void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+{
+	_pTerrainDataManager = new CTerrainDataManager();
+	_pResourceManager = new CResourceManager();
+
+	_fWorldSize = in_fWorldSize;
+	_fWorldScale = g_fMasterScale*in_fWorldScale;
+
+	LogMessage("Loading planet terrain info");
+
+	// Read data 
+
+	DataBaseInfo dbInfo;
+	LodInfoStruct* aLods = nullptr;
+
+	std::wstring wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
+
+	bool bSuccessifulRead = true;
+
+	FILE* fp = nullptr;
+	
+	_wfopen_s(&fp, wsDbFileName.c_str(), L"rb");
+
+	if (fp)
+	{
+		if (fread_s(&dbInfo, sizeof(DataBaseInfo), sizeof(DataBaseInfo), 1, fp) != 1)
+		{
+			bSuccessifulRead = false;
+		}
+
+		if (bSuccessifulRead)
+		{
+			aLods = new LodInfoStruct[dbInfo.LodCount];
+
+			size_t nReadLods = fread_s(aLods, sizeof(LodInfoStruct) * dbInfo.LodCount, sizeof(LodInfoStruct), dbInfo.LodCount, fp);
+
+			if (nReadLods != dbInfo.LodCount)
+			{
+				LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszFileName, nReadLods, dbInfo.LodCount);
+				bSuccessifulRead = false;
+			}
+		}
+
+		fclose(fp);
+	}
+	else
+	{
+		LogMessage("Cannot open database file %ls, aborting", in_pcwszFileName);
+		return;
+	}
+
+	if (!bSuccessifulRead)
+	{
+		LogMessage("Error reading earth database file %ls, aborting", in_pcwszFileName);
+		return;
+	}
+
+	unsigned int uiMaxDepth = std::max<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
+
+	// TODO: Read lods structure
+
+	_pTerrainDataManager->LoadTerrainDataInfo(ExtractFileDirectory(wsDbFileName).c_str(), dbInfo, aLods, uiMaxDepth);
+
+
+	CreateObjects();
+
+	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
+	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
+
+
+	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
+	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
+
+	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
+
+	delete[] aLods;
 }
 
 void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
@@ -437,12 +521,12 @@ void CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		SHeightfield* pHeightfield = RequestObjectHeightfield(ID);
 
-		TerrainObjectID neighbours[4];
+		TerrainObjectID neighbours[8];
 		GetTerrainObjectNeighbours(ID, neighbours);
 
-		const SHeightfield* neighbourHeightfields[4] = { nullptr, nullptr, nullptr, nullptr };
+		const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 8; i++)
 		{
 
 			if (neighbours[i] != (TerrainObjectID)(-1))
@@ -488,7 +572,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectTriangulation(Terrain
 	*out_ppTriangulation = &(it->second._triangulation);
 }
 
-void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4])
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
 {
 	const CTerrainBlockDesc* desc = GetTerrainDataForObject(_mapId2Object[ID]);
 	if (!desc)
@@ -497,7 +581,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObj
 		return;
 	}
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		if (_mapDesc2ID.find(desc->GetNeighbour(i)) != _mapDesc2ID.end())
 			outNeighbours[i] = _mapDesc2ID[desc->GetNeighbour(i)];

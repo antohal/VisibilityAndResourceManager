@@ -20,27 +20,49 @@ cbuffer HeightfieldSettings  : register(b0)
 	float	fWorldScale;				// Масштаб мира
 	float	fHeightScale;				// Масштаб высоты
 
-	float	fNormalDivisionAngleCos;	// Косинус минимального угла разделения нормалей
+	float	fNormalDivisionAngleCos1;	// Косинус минимального угла разделения нормалей
+	float	fNormalDivisionAngleCos2;	// Между этими 2мя значениями происходит интерполяция
 
+	// Cut coeffs
 	float	fNorthBlockLongCoeff;
 	float	fNorthBlockLatCoeff;
+
+	float	fNorthEastBlockLongCoeff;
+	float	fNorthEastBlockLatCoeff;
 
 	float	fEastBlockLongCoeff;
 	float	fEastBlockLatCoeff;
 
+	float	fSouthEastBlockLongCoeff;
+	float	fSouthEastBlockLatCoeff;
+
 	float	fSouthBlockLongCoeff;
 	float	fSouthBlockLatCoeff;
+
+	float	fSouthWestBlockLongCoeff;
+	float	fSouthWestBlockLatCoeff;
 
 	float	fWestBlockLongCoeff;
 	float	fWestBlockLatCoeff;
 
-	
+	float	fNorthWestBlockLongCoeff;
+	float	fNorthWestBlockLatCoeff;
+
+	// 0
 	float	fNorthMinLat;
 	float	fNorthMaxLat;
 
 	float	fNorthMinLong;
 	float	fNorthMaxLong;
 
+	// 1
+	float	fNorthEastMinLat;
+	float	fNorthEastMaxLat;
+
+	float	fNorthEastMinLong;
+	float	fNorthEastMaxLong;
+
+	//2
 
 	float	fEastMinLat;
 	float	fEastMaxLat;
@@ -48,21 +70,40 @@ cbuffer HeightfieldSettings  : register(b0)
 	float	fEastMinLong;
 	float	fEastMaxLong;
 
+	//3
+	float	fSouthEastMinLat;
+	float	fSouthEastMaxLat;
 
+	float	fSouthEastMinLong;
+	float	fSouthEastMaxLong;
+
+	//4
 	float	fSouthMinLat;
 	float	fSouthMaxLat;
 
 	float	fSouthMinLong;
 	float	fSouthMaxLong;
 
+	//5
+	float	fSouthWestMinLat;
+	float	fSouthWestMaxLat;
 
+	float	fSouthWestMinLong;
+	float	fSouthWestMaxLong;
+
+	//6
 	float	fWestMinLat;
 	float	fWestMaxLat;
 
 	float	fWestMinLong;
 	float	fWestMaxLong;
 
-	float	fTemp3;
+	//7
+	float	fNorthWestMinLat;
+	float	fNorthWestMaxLat;
+
+	float	fNorthWestMinLong;
+	float	fNorthWestMaxLong;
 };
 
 
@@ -76,9 +117,13 @@ SamplerState HeightTextureSampler
 Texture2D				InputHeightTexture				: register(t0);
 
 Texture2D				NorthNeighbourTexture			: register(t1);		// север
-Texture2D				EastNeighbourTexture			: register(t2);
-Texture2D				SouthNeighbourTexture			: register(t3);
-Texture2D				WestNeighbourTexture			: register(t4);
+Texture2D				NorthEastNeighbourTexture		: register(t2);
+Texture2D				EastNeighbourTexture			: register(t3);
+Texture2D				SouthEastNeighbourTexture		: register(t4);
+Texture2D				SouthNeighbourTexture			: register(t5);
+Texture2D				SouthWestNeighbourTexture		: register(t6);
+Texture2D				WestNeighbourTexture			: register(t7);
+Texture2D				NorthWestNeighbourTexture		: register(t8);
 
 
 RWByteAddressBuffer 	OutVertexBuffer 		: register(u0);
@@ -173,7 +218,11 @@ struct Triangle
 
 float3 ComputeTripleNormal(in float3 v0, in float3 v1, in float3 v2)
 {
-	return normalize(cross(v2 - v0, v1 - v0));
+	float3 n = normalize(cross(v1 - v0, v2 - v0));
+	if (dot(n, v0) < 0)
+		n = -n;
+
+	return n;
 }
 
 
@@ -199,25 +248,6 @@ struct QuadGeometry
 	float2	 tex[4];
 };
 
-void CopyQuad(out QuadGeometry a, in QuadGeometry b)
-{
-	int i = 0;
-
-	for (i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 3; j++)
-			a.t[i].v[j] = b.t[i].v[j];
-
-		a.t[i].n = b.t[i].n;
-	}
-
-	for (i = 0; i < 4; i++)
-	{
-		a.vertex[i] = b.vertex[i];
-		a.tex[i] = b.tex[i];
-	}
-}
-
 void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out QuadGeometry geom, float longCoeff, float latCoeff, float minLat, float maxLat, float minLong, float maxLong)
 {
 	uint	ix[4], iy[4];
@@ -234,10 +264,20 @@ void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out Qua
 	{
 		v[i] = GetVertexPos(ix[i], iy[i], tex, longCoeff, latCoeff, minLat, maxLat, minLong, maxLong);
 		texCoords[i] = CalcTexcoords(ix[i], iy[i], longCoeff, latCoeff);
-
-		geom.vertex[i] = v[i];
-		geom.tex[i] = texCoords[i];
 	}
+
+	geom.vertex[0] = v[0];
+	geom.tex[0] = texCoords[0];
+
+	geom.vertex[1] = v[1];
+	geom.tex[1] = texCoords[1];
+
+	geom.vertex[2] = v[2];
+	geom.tex[2] = texCoords[2];
+
+	geom.vertex[3] = v[3];
+	geom.tex[3] = texCoords[3];
+
 
 	geom.t[0].v[0] = v[0];
 	geom.t[0].v[1] = v[1];
@@ -252,7 +292,7 @@ void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out Qua
 	geom.t[1].n = ComputeTriangleNormal(geom.t[1]);
 }
 
-void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, out QuadGeometry neighbourQuadGeom)
+void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbourQuadGeom)
 {
 
 	if (iQuadX >= 0 && iQuadX < (int)nCountX - 1 &&
@@ -262,17 +302,52 @@ void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, out QuadGeometry neighbour
 	}
 	else
 	{
-		if (iQuadX < 0)
-			ComputeQuadGeometry((int)nCountX - 2, iQuadY, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
+	
+		if (iQuadX >= 0 && iQuadX < (int)nCountX - 1)
+		{
+			// left
+			if (iQuadY < 0)
+				ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
 
-		if (iQuadY < 0)
-			ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
+			// right
+			if (iQuadY >= (int)nCountX - 1)
+				ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
+		}
+		
+		else if (iQuadY >= 0 && iQuadY < (int)nCountY - 1)
+		{
+			// top
+			if (iQuadX >= (int)nCountX - 1)
+				ComputeQuadGeometry(0, iQuadY, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
 
-		if (iQuadX >= (int)nCountX - 1)
-			ComputeQuadGeometry(0, iQuadY, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
+			// bottom
+			if (iQuadX < 0)
+				ComputeQuadGeometry((int)nCountX - 2, iQuadY, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
+		}
 
-		if (iQuadY >= (int)nCountX - 1)
-			ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
+		else if ((iQuadX < 0) && (iQuadY < 0))
+		{
+			// left bottom
+			ComputeQuadGeometry((int)nCountX - 2, (int)nCountY - 2, SouthWestNeighbourTexture, neighbourQuadGeom, fSouthWestBlockLongCoeff, fSouthWestBlockLatCoeff, fSouthWestMinLat, fSouthWestMaxLat, fSouthWestMinLong, fSouthWestMaxLong);
+		}
+		
+		else if ((iQuadX < 0) && (iQuadY >= (int)nCountX - 1))
+		{
+			// right bottom
+			ComputeQuadGeometry((int)nCountX - 2, 0, SouthEastNeighbourTexture, neighbourQuadGeom, fSouthEastBlockLongCoeff, fSouthEastBlockLatCoeff, fSouthEastMinLat, fSouthEastMaxLat, fSouthEastMinLong, fSouthEastMaxLong);
+		}
+		
+		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY < 0))
+		{
+			// left top
+			ComputeQuadGeometry(0, (int)nCountY - 2, NorthWestNeighbourTexture, neighbourQuadGeom, fNorthWestBlockLongCoeff, fNorthWestBlockLatCoeff, fNorthWestMinLat, fNorthWestMaxLat, fNorthWestMinLong, fNorthWestMaxLong);
+		}
+
+		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY >= (int)nCountX - 1))
+		{
+			// right top
+			ComputeQuadGeometry(0, 0, NorthEastNeighbourTexture, neighbourQuadGeom, fNorthEastBlockLongCoeff, fNorthEastBlockLatCoeff, fNorthEastMinLat, fNorthEastMaxLat, fNorthEastMinLong, fNorthEastMaxLong);
+		}
 
 	}
 
@@ -292,36 +367,27 @@ struct OutputQuadData
 	uint	indices[6];
 };
 
-void ComputeVertexNormalAndTangent(in float3 neigbours[4], inout Vertex v)
+void ComputeVertexNormalAndTangent(inout Triangle neighbourTriangles[6], inout Vertex v)
 {
 	float3 middleNormal = float3(0, 0, 0);
 
-	bool smoothNormal = true;
-
-	Triangle neighbourTriangles[4];
-
-	neighbourTriangles[0] = MakeTriangle(v.pos, neigbours[1], neigbours[0]);
-	neighbourTriangles[1] = MakeTriangle(v.pos, neigbours[2], neigbours[1]);
-	neighbourTriangles[2] = MakeTriangle(v.pos, neigbours[3], neigbours[2]);
-	neighbourTriangles[3] = MakeTriangle(v.pos, neigbours[0], neigbours[3]);
-
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		if (dot(v.normal, neighbourTriangles[i].n) < 0)
-			neighbourTriangles[i].n = -neighbourTriangles[i].n;
-
-		if (dot(v.normal, neighbourTriangles[i].n) < fNormalDivisionAngleCos)
-			smoothNormal = false;
-
 		middleNormal += neighbourTriangles[i].n;
 	}
 
-	middleNormal *= 0.25f;
-
 	middleNormal = normalize(middleNormal);
 
-	if (smoothNormal)
+	float cosAngle = dot(v.normal, middleNormal);
+
+	if (cosAngle > fNormalDivisionAngleCos1)
+	{
 		v.normal = middleNormal;
+	}
+	else if (cosAngle >= fNormalDivisionAngleCos2 && cosAngle <= fNormalDivisionAngleCos1)
+	{
+		v.normal = lerp(v.normal, middleNormal, (cosAngle - fNormalDivisionAngleCos2) / (fNormalDivisionAngleCos1 - fNormalDivisionAngleCos2));
+	}
 
 	v.tangent = -cross(float3(1, 0, 0), v.normal);
 }
@@ -331,19 +397,24 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	QuadGeometry thisQuad;
 	ComputeQuadGeometry(iQuadX, iQuadY, InputHeightTexture, thisQuad, fLongitudeCoeff, fLattitudeCoeff, fMinLattitude, fMaxLattitude, fMinLongitude, fMaxLongitude);
 
-	QuadGeometry neighbourQuads[4];
-	for (int i = 0; i < 4; i++)
-		CopyQuad(neighbourQuads[i], thisQuad);
+	QuadGeometry neighbourQuads[8];
+	for (int i = 0; i < 8; i++)
+		neighbourQuads[i] = thisQuad;
 
-	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY, neighbourQuads[0]);
-	ComputeNeighbourQuadGeom(iQuadX, iQuadY + 1, neighbourQuads[1]);
-	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY, neighbourQuads[2]);
-	ComputeNeighbourQuadGeom(iQuadX, iQuadY - 1, neighbourQuads[3]);
+	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY,		neighbourQuads[0]);
+	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY + 1,	neighbourQuads[1]);
+	ComputeNeighbourQuadGeom(iQuadX,	 iQuadY + 1,	neighbourQuads[2]);
+	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY + 1,	neighbourQuads[3]);
+
+	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY,		neighbourQuads[4]);
+	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY - 1,	neighbourQuads[5]);
+	ComputeNeighbourQuadGeom(iQuadX,     iQuadY - 1,	neighbourQuads[6]);
+	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY - 1,	neighbourQuads[7]);
 
 
 	Vertex v[6];
 
-	float3 neighbourPoints[4];
+	Triangle neighbourTriangles[6];
 
 	//@{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -351,12 +422,14 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[0].tex = thisQuad.tex[0];
 	v[0].pos = thisQuad.vertex[0];
 
-	neighbourPoints[0] = neighbourQuads[0].vertex[0];
-	neighbourPoints[1] = thisQuad.vertex[3];
-	neighbourPoints[2] = thisQuad.vertex[1];
-	neighbourPoints[3] = neighbourQuads[3].vertex[0];
+	neighbourTriangles[0] = neighbourQuads[7].t[0];
+	neighbourTriangles[1] = neighbourQuads[7].t[1];
+	neighbourTriangles[2] = neighbourQuads[0].t[0];
+	neighbourTriangles[3] = thisQuad.t[1];
+	neighbourTriangles[4] = thisQuad.t[0];
+	neighbourTriangles[5] = neighbourQuads[6].t[1];
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[0]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[0]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 0  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -368,12 +441,14 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[1].tex = thisQuad.tex[1];
 	v[1].pos = thisQuad.vertex[1];
 
-	neighbourPoints[0] = thisQuad.vertex[0];
-	neighbourPoints[1] = thisQuad.vertex[2];
-	neighbourPoints[2] = neighbourQuads[2].vertex[1];
-	neighbourPoints[3] = neighbourQuads[3].vertex[1];
+	neighbourTriangles[0] = neighbourQuads[6].t[0];
+	neighbourTriangles[1] = neighbourQuads[6].t[1];
+	neighbourTriangles[2] = thisQuad.t[0];
+	neighbourTriangles[3] = neighbourQuads[4].t[1];
+	neighbourTriangles[4] = neighbourQuads[4].t[0];
+	neighbourTriangles[5] = neighbourQuads[5].t[1];
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[1]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[1]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 1  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -384,13 +459,15 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[2].tex = thisQuad.tex[2];
 	v[2].pos = thisQuad.vertex[2];
 
-	neighbourPoints[0] = thisQuad.vertex[3];
-	neighbourPoints[1] = neighbourQuads[1].vertex[2];
-	neighbourPoints[2] = neighbourQuads[2].vertex[2];
-	neighbourPoints[3] = thisQuad.vertex[1];
+	neighbourTriangles[0] = thisQuad.t[0];
+	neighbourTriangles[1] = thisQuad.t[1];
+	neighbourTriangles[2] = neighbourQuads[2].t[0];
+	neighbourTriangles[3] = neighbourQuads[3].t[1];
+	neighbourTriangles[4] = neighbourQuads[3].t[0];
+	neighbourTriangles[5] = neighbourQuads[4].t[1];
 
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[2]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[2]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -400,12 +477,14 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[3].tex = thisQuad.tex[0];
 	v[3].pos = thisQuad.vertex[0];
 
-	neighbourPoints[0] = neighbourQuads[0].vertex[0];
-	neighbourPoints[1] = thisQuad.vertex[3];
-	neighbourPoints[2] = thisQuad.vertex[1];
-	neighbourPoints[3] = neighbourQuads[3].vertex[0];
+	neighbourTriangles[0] = neighbourQuads[7].t[0];
+	neighbourTriangles[1] = neighbourQuads[7].t[1];
+	neighbourTriangles[2] = neighbourQuads[0].t[0];
+	neighbourTriangles[3] = thisQuad.t[1];
+	neighbourTriangles[4] = thisQuad.t[0];
+	neighbourTriangles[5] = neighbourQuads[6].t[1];
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[3]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[3]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -415,13 +494,15 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[4].tex = thisQuad.tex[2];
 	v[4].pos = thisQuad.vertex[2];
 
-	neighbourPoints[0] = thisQuad.vertex[3];
-	neighbourPoints[1] = neighbourQuads[1].vertex[2];
-	neighbourPoints[2] = neighbourQuads[2].vertex[2];
-	neighbourPoints[3] = thisQuad.vertex[1];
+	neighbourTriangles[0] = thisQuad.t[0];
+	neighbourTriangles[1] = thisQuad.t[1];
+	neighbourTriangles[2] = neighbourQuads[2].t[0];
+	neighbourTriangles[3] = neighbourQuads[3].t[1];
+	neighbourTriangles[4] = neighbourQuads[3].t[0];
+	neighbourTriangles[5] = neighbourQuads[4].t[1];
 
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[4]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[4]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -431,19 +512,24 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	v[5].tex = thisQuad.tex[3];
 	v[5].pos = thisQuad.vertex[3];
 
-	neighbourPoints[0] = neighbourQuads[0].vertex[3];
-	neighbourPoints[1] = neighbourQuads[1].vertex[3];
-	neighbourPoints[2] = thisQuad.vertex[2];
-	neighbourPoints[3] = thisQuad.vertex[0];
+	neighbourTriangles[0] = neighbourQuads[0].t[0];
+	neighbourTriangles[1] = neighbourQuads[0].t[1];
+	neighbourTriangles[2] = neighbourQuads[1].t[0];
+	neighbourTriangles[3] = neighbourQuads[2].t[1];
+	neighbourTriangles[4] = neighbourQuads[2].t[0];
+	neighbourTriangles[5] = thisQuad.t[1];
 
-	ComputeVertexNormalAndTangent(neighbourPoints, v[5]);
+	ComputeVertexNormalAndTangent(neighbourTriangles, v[5]);
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	for (int iVertex = 0; iVertex < 6; iVertex++)
-	{
-		data.vertices[iVertex] = v[iVertex];
-	}
+	data.vertices[0] = v[0];
+	data.vertices[1] = v[1];
+	data.vertices[2] = v[2];
+	data.vertices[3] = v[3];
+	data.vertices[4] = v[4];
+	data.vertices[5] = v[5];
+
 
 	data.indices[0] = 0;
 	data.indices[1] = 2;

@@ -78,9 +78,13 @@ void HeightfieldConverter::HeightfieldConverterPrivate::SetHeightScale(float in_
 	_fHeightScale = in_fHeightScale ;
 }
 
-void HeightfieldConverter::HeightfieldConverterPrivate::SetNormalDivisionAngle(float in_fAngleInDeg)
+void HeightfieldConverter::HeightfieldConverterPrivate::SetNormalDivisionAngles(float in_fAngle1InDeg, float in_fAngle2InDeg)
 {
-	_fNormalDivisionAngle = in_fAngleInDeg;
+	_fNormalDivisionAngle1 = in_fAngle1InDeg;
+	_fNormalDivisionAngle2 = in_fAngle2InDeg;
+
+	if (_fNormalDivisionAngle2 < _fNormalDivisionAngle1)
+		_fNormalDivisionAngle2 = _fNormalDivisionAngle1;
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)

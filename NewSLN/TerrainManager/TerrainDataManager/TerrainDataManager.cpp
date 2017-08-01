@@ -30,6 +30,11 @@ void CTerrainDataManager::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirecto
 	_implementation->GenerateTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock, in_uiM, in_uiN, in_uiDepth);
 }
 
+void CTerrainDataManager::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth)
+{
+	_implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, dbInfo, in_pLodInfoArray, in_uiMaxDepth);
+}
+
 // Освободить загруженное описание данных
 void CTerrainDataManager::ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock)
 {
@@ -88,6 +93,27 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 	return true;
 }
 
+void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth)
+{
+	double lastLodPixelsX = in_pLodInfoArray[dbInfo.LodCount - 1].CountX * in_pLodInfoArray[dbInfo.LodCount - 1].Width;
+	double lastLodPixelsY = in_pLodInfoArray[dbInfo.LodCount - 1].CountY * in_pLodInfoArray[dbInfo.LodCount - 1].Height;
+
+	float fLattitudeScaleCoeff = (lastLodPixelsX + dbInfo.DeltaX) / lastLodPixelsX;
+	float fLongitudeScaleCoeff = (lastLodPixelsY + dbInfo.DeltaY) / lastLodPixelsY;
+
+	float fLattitudeRange = static_cast<float>(M_PI) * fLattitudeScaleCoeff;
+
+	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
+		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
+
+	_uiTerrainBlocksCount = 0;
+
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLattitudeIndex = 0;
+	pRootBlock->_implementation->_params.aTreePosition[0].ucLongitudeIndex = 0;
+
+
+
+}
 
 void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth)
 {
@@ -202,8 +228,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) ||
 						(EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2*M_PI)))
 					{
-						blockA->_implementation->_neighbours[3] = blockB;
-						blockB->_implementation->_neighbours[1] = blockA;
+						blockA->_implementation->_neighbours[6] = blockB;
+						blockB->_implementation->_neighbours[2] = blockA;
 						continue;
 					}
 
@@ -211,8 +237,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) ||
 						(EQUALS(blockA->GetParams()->fMaxLongitude, 2*M_PI) && EQUALS(blockB->GetParams()->fMaxLongitude, 0)))
 					{
-						blockA->_implementation->_neighbours[1] = blockB;
-						blockB->_implementation->_neighbours[3] = blockA;
+						blockA->_implementation->_neighbours[2] = blockB;
+						blockB->_implementation->_neighbours[6] = blockA;
 						continue;
 					}
 				}
@@ -226,19 +252,54 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude))
 					{
 						blockA->_implementation->_neighbours[0] = blockB;
-						blockB->_implementation->_neighbours[2] = blockA;
+						blockB->_implementation->_neighbours[4] = blockA;
 					}
 
 
 					//bottom
 					if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude))
 					{
-						blockA->_implementation->_neighbours[2] = blockB;
+						blockA->_implementation->_neighbours[4] = blockB;
 						blockB->_implementation->_neighbours[0] = blockA;
 					}
 
 				}
 
+				// left top
+				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
+					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
+
+				{
+					blockA->_implementation->_neighbours[7] = blockB;
+					blockB->_implementation->_neighbours[3] = blockA;
+				}
+
+				// right top
+				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
+					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2 * M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
+
+				{
+					blockA->_implementation->_neighbours[1] = blockB;
+					blockB->_implementation->_neighbours[5] = blockA;
+				}
+
+				// right bottom
+				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
+					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2 * M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
+
+				{
+					blockA->_implementation->_neighbours[3] = blockB;
+					blockB->_implementation->_neighbours[7] = blockA;
+				}
+
+				// left bottom
+				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
+					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
+
+				{
+					blockA->_implementation->_neighbours[5] = blockB;
+					blockB->_implementation->_neighbours[1] = blockA;
+				}
 			
 			}
 		}

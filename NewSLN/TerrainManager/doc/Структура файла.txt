@@ -1,0 +1,22 @@
+»нформаци€ о лодах хранитс€ в файле DataBaseInfo (корень директории)
+
+—труктура файла така€:
+
+struct DataBaseInfo
+    {
+        public byte Major; 
+        public byte Minor;
+        public byte Reserved;
+        public byte LodCount; // кол-во лодов
+        public int DeltaX; // кол-во доп пикселей по X дл€ выравнивани€ текстуры
+        public int DeltaY; //  кол-во доп пикселей по Y дл€ выравнивани€ текстуры
+    }
+ƒалее идут блоки следующей структуры:
+ struct LodInfoStruct
+    {
+        public short Width; // ширины тексутры
+        public short Height; // высота тексутры
+        public short CountX; // кол-во текстур по X
+        public short CountY; // кол-во текстур по Y
+    }
+

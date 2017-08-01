@@ -60,3 +60,15 @@ std::wstring GetStartDir()
 
 	return std::wstring(wsStartDir);
 }
+
+std::wstring	ExtractFileDirectory(const std::wstring& in_Str)
+{
+	size_t pos = in_Str.find_last_of('/');
+	if (pos == size_t(-1))
+	{
+		pos = in_Str.find_last_of('\\');
+		if (pos == size_t(-1))
+			return std::wstring();
+	}
+	return std::wstring(in_Str, 0, pos) + std::wstring(L"/");
+}

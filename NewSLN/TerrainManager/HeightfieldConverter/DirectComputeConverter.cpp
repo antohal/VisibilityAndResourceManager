@@ -401,14 +401,14 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	createOutputBuffers();
 	createInputBuffers();
 
-	ID3D11ShaderResourceView* aRViews[5] = { _heightfield.pTextureSRV, nullptr,  nullptr, nullptr, nullptr };
+	ID3D11ShaderResourceView* aRViews[9] = { _heightfield.pTextureSRV, nullptr,  nullptr, nullptr, nullptr, nullptr,  nullptr, nullptr, nullptr };
 
 	ConstantBufferData constantData;
 
 
 	if (_neighbours)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			if (_neighbours[i])
 			{
@@ -443,7 +443,8 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	constantData.fLongitudeCoeff = _fLongitudeCoeff;
 	constantData.fLattitudeCoeff = _fLattitudeCoeff;
 	
-	constantData.fNormalDivisionAngleCos = cos(_owner->_owner->GetNormalDivisionAngleDeg() * D2R);
+	constantData.fNormalDivisionAngleCos1 = cos(_owner->_owner->GetNormalDivisionAngle1Deg() * D2R);
+	constantData.fNormalDivisionAngleCos2 = cos(_owner->_owner->GetNormalDivisionAngle2Deg() * D2R);
 
 	if (_neighbours)
 	{
@@ -452,27 +453,49 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 			constantData.fNorthBlockLongCoeff = _neighbours[0]->fLongitudeCutCoeff;
 			constantData.fNorthBlockLatCoeff = _neighbours[0]->fLattitudeCutCoeff;
 		}
-
 		if (_neighbours[1])
 		{
-			constantData.fEastBlockLongCoeff = _neighbours[1]->fLongitudeCutCoeff;
-			constantData.fEastBlockLatCoeff = _neighbours[1]->fLattitudeCutCoeff;
+			constantData.fNorthEastBlockLongCoeff = _neighbours[1]->fLongitudeCutCoeff;
+			constantData.fNorthEastBlockLatCoeff = _neighbours[1]->fLattitudeCutCoeff;
 		}
 
 		if (_neighbours[2])
 		{
-			constantData.fSouthBlockLongCoeff = _neighbours[2]->fLongitudeCutCoeff;
-			constantData.fSouthBlockLatCoeff = _neighbours[2]->fLattitudeCutCoeff;
+			constantData.fEastBlockLongCoeff = _neighbours[2]->fLongitudeCutCoeff;
+			constantData.fEastBlockLatCoeff = _neighbours[2]->fLattitudeCutCoeff;
 		}
-
 		if (_neighbours[3])
 		{
-			constantData.fWestBlockLongCoeff = _neighbours[3]->fLongitudeCutCoeff;
-			constantData.fWestBlockLatCoeff = _neighbours[3]->fLattitudeCutCoeff;
+			constantData.fSouthEastBlockLongCoeff = _neighbours[3]->fLongitudeCutCoeff;
+			constantData.fSouthEastBlockLatCoeff = _neighbours[3]->fLattitudeCutCoeff;
+		}
+
+		if (_neighbours[4])
+		{
+			constantData.fSouthBlockLongCoeff = _neighbours[4]->fLongitudeCutCoeff;
+			constantData.fSouthBlockLatCoeff = _neighbours[4]->fLattitudeCutCoeff;
+		}
+
+		if (_neighbours[5])
+		{
+			constantData.fSouthWestBlockLongCoeff = _neighbours[5]->fLongitudeCutCoeff;
+			constantData.fSouthWestBlockLatCoeff = _neighbours[5]->fLattitudeCutCoeff;
+		}
+
+		if (_neighbours[6])
+		{
+			constantData.fWestBlockLongCoeff = _neighbours[6]->fLongitudeCutCoeff;
+			constantData.fWestBlockLatCoeff = _neighbours[6]->fLattitudeCutCoeff;
+		}
+
+		if (_neighbours[7])
+		{
+			constantData.fNorthWestBlockLongCoeff = _neighbours[7]->fLongitudeCutCoeff;
+			constantData.fNorthWestBlockLatCoeff = _neighbours[7]->fLattitudeCutCoeff;
 		}
 	}
 
-	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 5, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
+	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 9, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX - 1, 
 		_heightfield.Config.nCountY - 1,
 		1);

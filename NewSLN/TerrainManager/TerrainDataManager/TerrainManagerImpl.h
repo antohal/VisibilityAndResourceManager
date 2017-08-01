@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 
+
 class CInternalTerrainObject : public C3DBaseObject
 {
 public:
@@ -89,6 +90,8 @@ public:
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
+	void InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
+
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
 
@@ -121,7 +124,7 @@ public:
 
 	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation);
 
-	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4]);
+	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
 
 	size_t GetTriangulationsCount() const;
 

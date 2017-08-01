@@ -45,23 +45,35 @@ private:
 		float	fWorldScale = 1;
 		float	fHeightScale = 1;
 
-		float	fNormalDivisionAngleCos = 0.96f;
+		float	fNormalDivisionAngleCos1 = 0.86f;
+		float	fNormalDivisionAngleCos2 = 0.5f;
 
 		float	fNorthBlockLongCoeff = 1.f;
 		float	fNorthBlockLatCoeff = 1.f;
 
+		float	fNorthEastBlockLongCoeff = 1.f;
+		float	fNorthEastBlockLatCoeff = 1.f;
+
 		float	fEastBlockLongCoeff = 1.f;
 		float	fEastBlockLatCoeff = 1.f;
+
+		float	fSouthEastBlockLongCoeff = 1.f;
+		float	fSouthEastBlockLatCoeff = 1.f;
 
 		float	fSouthBlockLongCoeff = 1.f;
 		float	fSouthBlockLatCoeff = 1.f;
 
+		float	fSouthWestBlockLongCoeff = 1.f;
+		float	fSouthWestBlockLatCoeff = 1.f;
+
 		float	fWestBlockLongCoeff = 1.f;
 		float	fWestBlockLatCoeff = 1.f;
 
-		float	fNeighbourCoords[16];
+		float	fNorthWestBlockLongCoeff = 1.f;
+		float	fNorthWestBlockLatCoeff = 1.f;
 
-		float	fTemp3 = 0;
+		float	fNeighbourCoords[32];
+
 	};
 
 	struct STriangulationTask
