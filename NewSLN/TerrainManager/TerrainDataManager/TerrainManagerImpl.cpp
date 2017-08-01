@@ -66,9 +66,9 @@ void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* i
 	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fWorldSize, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff);
 }
 
-void CTerrainManager::InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+void CTerrainManager::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
 {
-	_implementation->InitFromFile(in_pD3DDevice11, in_pDeviceContext, in_pcwszFileName, in_uiMaxDepth, in_fWorldScale, in_fWorldSize);
+	_implementation->InitFromDatabaseInfo(in_pD3DDevice11, in_pDeviceContext, in_pcwszFileName, in_uiMaxDepth, in_fWorldScale, in_fWorldSize);
 }
 
 void CTerrainManager::SetHeightfieldConverter(HeightfieldConverter * p)
@@ -251,7 +251,7 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 }
 
-void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
 {
 	_pTerrainDataManager = new CTerrainDataManager();
 	_pResourceManager = new CResourceManager();
@@ -312,8 +312,10 @@ void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDe
 
 	// TODO: Read lods structure
 
-	_pTerrainDataManager->LoadTerrainDataInfo(ExtractFileDirectory(wsDbFileName).c_str(), dbInfo, aLods, uiMaxDepth);
-
+	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);
+	
+	unsigned int uiResultingMaxDepth = 0;
+	_pTerrainDataManager->LoadTerrainDataInfo(_wsPlanetRootDirectory.c_str(), dbInfo, aLods, uiMaxDepth, &_pPlanetTerrainData, &uiResultingMaxDepth);
 
 	CreateObjects();
 
@@ -322,7 +324,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDe
 
 
 	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
+	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
 
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 
@@ -621,6 +623,10 @@ const wchar_t* CTerrainManager::CTerrainManagerImpl::GetTextureFileName(TerrainO
 		return nullptr;
 	}
 
+	//static std::wstring wsTexFileName;
+	//wsTexFileName = _wsPlanetRootDirectory + it->second->GetDesc()->GetTextureFileName();
+	//return wsTexFileName.c_str();
+
 	return it->second->GetDesc()->GetTextureFileName();
 }
 
@@ -634,6 +640,11 @@ const wchar_t* CTerrainManager::CTerrainManagerImpl::GetHeightmapFileName(Terrai
 		LogMessage("CTerrainManager::CTerrainManagerImpl::GetTerrainObjectDesc: cannot find object by ID = %d", ID);
 		return nullptr;
 	}
+
+	/*static std::wstring wsTexFileName;
+	wsTexFileName = _wsPlanetRootDirectory + it->second->GetDesc()->GetHeightmapFileName();
+
+	return wsTexFileName.c_str();*/
 
 	return it->second->GetDesc()->GetHeightmapFileName();
 }

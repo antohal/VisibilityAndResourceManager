@@ -72,3 +72,11 @@ std::wstring	ExtractFileDirectory(const std::wstring& in_Str)
 	}
 	return std::wstring(in_Str, 0, pos) + std::wstring(L"/");
 }
+
+bool DirectoryExists(const std::wstring& szPath)
+{
+	DWORD dwAttrib = GetFileAttributesW(szPath.c_str());
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}

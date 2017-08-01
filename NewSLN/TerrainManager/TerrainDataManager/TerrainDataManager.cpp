@@ -30,9 +30,9 @@ void CTerrainDataManager::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirecto
 	_implementation->GenerateTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock, in_uiM, in_uiN, in_uiDepth);
 }
 
-void CTerrainDataManager::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth)
+void CTerrainDataManager::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth)
 {
-	_implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, dbInfo, in_pLodInfoArray, in_uiMaxDepth);
+	_implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, dbInfo, in_pLodInfoArray, in_uiMaxDepth, out_ppRootDataBlock, out_uiMaximumDepth);
 }
 
 // Освободить загруженное описание данных
@@ -63,7 +63,7 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 
 
 	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
-		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
+		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * in_fLongitudeScaleCoeff, nullptr);
 
 	_uiTerrainBlocksCount = 0;
 
@@ -93,32 +93,56 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 	return true;
 }
 
-void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth)
+void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth)
 {
-	double lastLodPixelsX = in_pLodInfoArray[dbInfo.LodCount - 1].CountX * in_pLodInfoArray[dbInfo.LodCount - 1].Width;
-	double lastLodPixelsY = in_pLodInfoArray[dbInfo.LodCount - 1].CountY * in_pLodInfoArray[dbInfo.LodCount - 1].Height;
+	double totalPixelsX = in_pLodInfoArray[dbInfo.LodCount - 1].Width;
+	double totalPixelsY = in_pLodInfoArray[dbInfo.LodCount - 1].Height;
 
-	float fLattitudeScaleCoeff = (lastLodPixelsX + dbInfo.DeltaX) / lastLodPixelsX;
-	float fLongitudeScaleCoeff = (lastLodPixelsY + dbInfo.DeltaY) / lastLodPixelsY;
+	for (size_t iLodLevel = 0; iLodLevel < dbInfo.LodCount; iLodLevel++)
+	{
+		totalPixelsX *= in_pLodInfoArray[iLodLevel].CountX;
+		totalPixelsY *= in_pLodInfoArray[iLodLevel].CountY;
+	}
+
+	float fLongitudeScaleCoeff = (totalPixelsX) / (totalPixelsX - dbInfo.DeltaX);
+	float fLattitudeScaleCoeff = (totalPixelsY) / (totalPixelsY - dbInfo.DeltaY);
 
 	float fLattitudeRange = static_cast<float>(M_PI) * fLattitudeScaleCoeff;
 
 	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
-		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * fLongitudeScaleCoeff, std::wstring(), std::wstring(), nullptr);
+		static_cast<float>(M_PI*0.5) - fLattitudeRange, static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI) * fLongitudeScaleCoeff, nullptr);
 
 	_uiTerrainBlocksCount = 0;
 
 	pRootBlock->_implementation->_params.aTreePosition[0].ucLattitudeIndex = 0;
 	pRootBlock->_implementation->_params.aTreePosition[0].ucLongitudeIndex = 0;
 
+	// TODO: read structure
+	pRootBlock->_implementation->ReadDataStructure(in_pcwszDirectoryName, in_pLodInfoArray, in_uiMaxDepth);
+	*out_ppRootDataBlock = pRootBlock;
 
+	unsigned int uiMaxDepth = 0;
+	GetDepthRecursive(pRootBlock, uiMaxDepth);
 
+	if (out_uiMaximumDepth)
+	{
+		*out_uiMaximumDepth = uiMaxDepth;
+	}
+
+	_uiMaxDepth = uiMaxDepth;
+
+	unsigned int uiMemUsage = 0;
+	GetMemoryUsageRecursive(pRootBlock, uiMemUsage);
+
+	LogMessage("Readed %d blocks, maximum tree depth is %d, bytes: %d", _uiTerrainBlocksCount, uiMaxDepth, uiMemUsage);
+
+	GenerateAdjacency();
 }
 
 void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth)
 {
 	CTerrainBlockDesc* pRootBlock = CTerrainBlockDesc::CTerrainBlockDescImplementation::CreateTerrainBlockDataInstance(this,
-		-static_cast<float>(M_PI*0.5), static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI), std::wstring(), std::wstring(), nullptr);
+		-static_cast<float>(M_PI*0.5), static_cast<float>(M_PI*0.5), 0.f, static_cast<float>(2 * M_PI), nullptr);
 
 	_uiTerrainBlocksCount = 0;
 

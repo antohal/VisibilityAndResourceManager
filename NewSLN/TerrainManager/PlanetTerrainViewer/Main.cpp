@@ -149,8 +149,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	LodInfoStruct aLods[2];
 
 	dbInfo.LodCount = 2;
-	dbInfo.DeltaX = 2700;
-	dbInfo.DeltaY = 716;
+	dbInfo.DeltaX = 1395;
+	dbInfo.DeltaY = 697;
 	
 
 	aLods[0].CountX = 4;
@@ -158,7 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	aLods[0].Width = 512;
 	aLods[0].Height = 512;
 
-	aLods[1].CountX = 4;
+	aLods[1].CountX = 2;
 	aLods[1].CountY = 2;
 	aLods[1].Width = 512;
 	aLods[1].Height = 512;
@@ -180,12 +180,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
-	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1, 1);
+//	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 
 	// Это если нужно сгенерить планету
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
-	pTerrainManager->InitFromFile(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 

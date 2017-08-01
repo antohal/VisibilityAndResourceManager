@@ -7,3 +7,4 @@ void GetFileListFromDirectory(const std::wstring& in_wsDirectory, std::vector<st
 std::wstring		ExtractFileDirectory(const std::wstring& in_Str);
 
 std::wstring GetStartDir();
+bool DirectoryExists(const std::wstring& szPath);

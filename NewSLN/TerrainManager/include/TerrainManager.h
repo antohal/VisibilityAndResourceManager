@@ -46,7 +46,7 @@ public:
 		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
 	// Инициализировать из файла-описания, согласно заданному формату
-	void InitFromFile(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
+	void InitFromDatabaseInfo(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
 
 	// Установить триангулятор
 	void SetHeightfieldConverter(HeightfieldConverter*);

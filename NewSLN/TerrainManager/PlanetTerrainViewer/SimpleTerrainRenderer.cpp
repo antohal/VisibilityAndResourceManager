@@ -18,33 +18,9 @@
 CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * in_pRenderer, const STerrainBlockParams* in_pParams, TerrainObjectID ID)
 	: _owner(in_pRenderer), _ID(ID)
 {
-
 	// получаем имена текстур из TerrainManager:
 	std::wstring wsTextureFileName = _owner->GetTerrainManager()->GetTextureFileName(ID);
 	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
-
-	//// получаем конвертер карт высот для дальнейших операций с ним
-	//HeightfieldConverter* pHeightfieldConverter = _owner->GetHeightfieldConverter();
-
-	//// создадим объект в котором будет храниться карта высот и ее параметры
-	//SHeightfield heightfield;
-
-	//// считаем данные карты высот из файла
-	//pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), heightfield, 1);
-
-	//LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
-
-	//// заполним граничные данные
-	//heightfield.Config.Coords.fMinLattitude = in_pParams->fMinLattitude;
-	//heightfield.Config.Coords.fMaxLattitude = in_pParams->fMaxLattitude;
-	//heightfield.Config.Coords.fMinLongitude = in_pParams->fMinLongitude;
-	//heightfield.Config.Coords.fMaxLongitude = in_pParams->fMaxLongitude;
-
-	//// Создадим триангуляцию с помощью ComputeShader. В объекте _triangulation лежат индексные и вертексные буферы
-	//pHeightfieldConverter->CreateTriangulationImmediate(&heightfield, in_pParams->fLongitudeСutCoeff, in_pParams->fLattitudeCutCoeff, &_triangulation);
-
-	//// карта высот нам больше не нужна, освобождаем ее
-	//pHeightfieldConverter->ReleaseHeightfield(&heightfield);
 
 	LogMessage("Loading texture '%ls'", wsTextureFileName.c_str());
 	_wsTextureFileName = wsTextureFileName;
@@ -56,7 +32,6 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 		LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", wsTextureFileName.c_str());
 		return;
 	}
-
 }
 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()

@@ -90,7 +90,7 @@ public:
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
-	void InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
+	void InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
 
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
@@ -219,6 +219,8 @@ private:
 	std::vector<CInternalTerrainObject*>				_vecObjects;
 	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
 	std::map<const CTerrainBlockDesc*, TerrainObjectID>	_mapDesc2ID;
+
+	std::wstring										_wsPlanetRootDirectory;
 
 	mutable std::mutex									_containersMutex;
 

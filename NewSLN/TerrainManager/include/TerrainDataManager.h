@@ -106,7 +106,7 @@ public:
 	~CTerrainDataManager();
 
 	// «агрузить описание данных поверхности «емли [out_ppRootDataBlock] из указанной директории [in_pcwszDirectoryName]
-	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth = nullptr);
+	bool	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff, unsigned int* out_uiMaximumDepth);
 
 	// —генерировать данные планеты. “екстуры и карты нормалей будут братьс€ из директории [in_pcwszDirectoryName] случайным образом 
 	//  арты нормалей из HeightMaps, текстуры из Textures
@@ -115,7 +115,7 @@ public:
 	void	GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth);
 
 
-	void	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, const DataBaseInfo& dbInfo, const LodInfoStruct* in_pLodInfoArray, unsigned int in_uiMaxDepth);
+	void	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, const DataBaseInfo& dbInfo, const LodInfoStruct* in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth);
 
 	// ќсвободить загруженное описание данных
 	void	ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock);
