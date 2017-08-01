@@ -144,7 +144,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//@{ Prepare terrain rendering pipeline
 
+
+	DataBaseInfo dbInfo;
+	LodInfoStruct aLods[2];
+
+	dbInfo.LodCount = 2;
+	dbInfo.DeltaX = 2700;
+	dbInfo.DeltaY = 716;
 	
+
+	aLods[0].CountX = 4;
+	aLods[0].CountY = 2;
+	aLods[0].Width = 512;
+	aLods[0].Height = 512;
+
+	aLods[1].CountX = 4;
+	aLods[1].CountY = 2;
+	aLods[1].Width = 512;
+	aLods[1].Height = 512;
+
+	FILE* fp = fopen("PlanetViewerData\\Earth_2\\earth.db", "wb");
+
+	fwrite(&dbInfo, sizeof(DataBaseInfo), 1, fp);
+
+	fwrite(aLods, sizeof(LodInfoStruct), 2, fp);
+
+	fclose(fp);
+
 
 	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pApplication->GetGraphicsContext()->GetSystem()->GetDeviceContext();
@@ -153,11 +179,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
-	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
+	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1, 1);
 
 	// Это если нужно сгенерить планету
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
+
+	pTerrainManager->InitFromFile(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 

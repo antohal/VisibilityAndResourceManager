@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 
+
 class CInternalTerrainObject : public C3DBaseObject
 {
 public:

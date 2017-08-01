@@ -4,6 +4,7 @@
 #include "wgs84.h"
 
 #include <d3dx10math.h>
+#include <algorithm>
 
 #define USE_ENGINE_SCALE
 
@@ -252,7 +253,6 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 
 void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
 {
-
 	_pTerrainDataManager = new CTerrainDataManager();
 	_pResourceManager = new CResourceManager();
 
@@ -263,7 +263,57 @@ void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDe
 
 	// Read data 
 
-	unsigned int uiMaxDepth = 0;
+	DataBaseInfo dbInfo;
+	LodInfoStruct* aLods = nullptr;
+
+	std::wstring wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
+
+	bool bSuccessifulRead = true;
+
+	FILE* fp = nullptr;
+	
+	_wfopen_s(&fp, wsDbFileName.c_str(), L"rb");
+
+	if (fp)
+	{
+		if (fread_s(&dbInfo, sizeof(DataBaseInfo), sizeof(DataBaseInfo), 1, fp) != 1)
+		{
+			bSuccessifulRead = false;
+		}
+
+		if (bSuccessifulRead)
+		{
+			aLods = new LodInfoStruct[dbInfo.LodCount];
+
+			size_t nReadLods = fread_s(aLods, sizeof(LodInfoStruct) * dbInfo.LodCount, sizeof(LodInfoStruct), dbInfo.LodCount, fp);
+
+			if (nReadLods != dbInfo.LodCount)
+			{
+				LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszFileName, nReadLods, dbInfo.LodCount);
+				bSuccessifulRead = false;
+			}
+		}
+
+		fclose(fp);
+	}
+	else
+	{
+		LogMessage("Cannot open database file %ls, aborting", in_pcwszFileName);
+		return;
+	}
+
+	if (!bSuccessifulRead)
+	{
+		LogMessage("Error reading earth database file %ls, aborting", in_pcwszFileName);
+		return;
+	}
+
+	unsigned int uiMaxDepth = std::max<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
+
+	// TODO: Read lods structure
+
+	_pTerrainDataManager->LoadTerrainDataInfo(ExtractFileDirectory(wsDbFileName).c_str(), dbInfo, aLods, uiMaxDepth);
+
 
 	CreateObjects();
 
@@ -275,6 +325,8 @@ void CTerrainManager::CTerrainManagerImpl::InitFromFile(ID3D11Device * in_pD3DDe
 	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
 
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
+
+	delete[] aLods;
 }
 
 void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
