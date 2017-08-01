@@ -47,7 +47,7 @@ public:
 		return nullptr;
 	}
 
-	virtual bool IsDataReady() const { return true; }
+	virtual bool IsDataReady() const;
 
 protected:
 

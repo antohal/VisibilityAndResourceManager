@@ -500,6 +500,11 @@ C3DBaseResource* C3DBaseMaterial::GetChildResourceById(size_t id) const
 	return nullptr;
 }
 
+bool C3DBaseObject::IsDataReady() const
+{
+	return true;
+}
+
 void C3DBaseObject::SetPotentiallyVisible()
 {
 	if (!GetResourceManager())
