@@ -45,8 +45,8 @@ public:
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
-	void GetConfig(TerrainManagerConfig* out_Config) const;
-	void SetConfig(const TerrainManagerConfig* in_Config);
+	// Инициализировать из файла-описания, согласно заданному формату
+	void InitFromFile(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
 
 	// Установить триангулятор
 	void SetHeightfieldConverter(HeightfieldConverter*);
@@ -84,7 +84,7 @@ public:
 	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation) const;
 
 	// Получить соседей данного блока [возвращаются 8 соседних блоков, начиная с северного по часовой стрелке. Если сосед отсутствует - возвращает -1]
-	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[4]);
+	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
 
 	// Получить количество готовых триангуляций
 	size_t GetTriangulationsCount() const;

@@ -51,16 +51,28 @@ private:
 		float	fNorthBlockLongCoeff = 1.f;
 		float	fNorthBlockLatCoeff = 1.f;
 
+		float	fNorthEastBlockLongCoeff = 1.f;
+		float	fNorthEastBlockLatCoeff = 1.f;
+
 		float	fEastBlockLongCoeff = 1.f;
 		float	fEastBlockLatCoeff = 1.f;
+
+		float	fSouthEastBlockLongCoeff = 1.f;
+		float	fSouthEastBlockLatCoeff = 1.f;
 
 		float	fSouthBlockLongCoeff = 1.f;
 		float	fSouthBlockLatCoeff = 1.f;
 
+		float	fSouthWestBlockLongCoeff = 1.f;
+		float	fSouthWestBlockLatCoeff = 1.f;
+
 		float	fWestBlockLongCoeff = 1.f;
 		float	fWestBlockLatCoeff = 1.f;
 
-		float	fNeighbourCoords[16];
+		float	fNorthWestBlockLongCoeff = 1.f;
+		float	fNorthWestBlockLatCoeff = 1.f;
+
+		float	fNeighbourCoords[32];
 
 	};
 

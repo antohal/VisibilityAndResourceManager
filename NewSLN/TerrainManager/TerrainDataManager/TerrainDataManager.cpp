@@ -202,8 +202,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) ||
 						(EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2*M_PI)))
 					{
-						blockA->_implementation->_neighbours[3] = blockB;
-						blockB->_implementation->_neighbours[1] = blockA;
+						blockA->_implementation->_neighbours[6] = blockB;
+						blockB->_implementation->_neighbours[2] = blockA;
 						continue;
 					}
 
@@ -211,8 +211,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) ||
 						(EQUALS(blockA->GetParams()->fMaxLongitude, 2*M_PI) && EQUALS(blockB->GetParams()->fMaxLongitude, 0)))
 					{
-						blockA->_implementation->_neighbours[1] = blockB;
-						blockB->_implementation->_neighbours[3] = blockA;
+						blockA->_implementation->_neighbours[2] = blockB;
+						blockB->_implementation->_neighbours[6] = blockA;
 						continue;
 					}
 				}
@@ -226,19 +226,54 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateAdjacency()
 					if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude))
 					{
 						blockA->_implementation->_neighbours[0] = blockB;
-						blockB->_implementation->_neighbours[2] = blockA;
+						blockB->_implementation->_neighbours[4] = blockA;
 					}
 
 
 					//bottom
 					if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude))
 					{
-						blockA->_implementation->_neighbours[2] = blockB;
+						blockA->_implementation->_neighbours[4] = blockB;
 						blockB->_implementation->_neighbours[0] = blockA;
 					}
 
 				}
 
+				// left top
+				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
+					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
+
+				{
+					blockA->_implementation->_neighbours[7] = blockB;
+					blockB->_implementation->_neighbours[3] = blockA;
+				}
+
+				// right top
+				if (EQUALS(blockA->GetParams()->fMaxLattitude, blockB->GetParams()->fMinLattitude) &&
+					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2 * M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
+
+				{
+					blockA->_implementation->_neighbours[1] = blockB;
+					blockB->_implementation->_neighbours[5] = blockA;
+				}
+
+				// right bottom
+				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
+					(EQUALS(blockA->GetParams()->fMaxLongitude, blockB->GetParams()->fMinLongitude) || (EQUALS(blockA->GetParams()->fMaxLongitude, 2 * M_PI) && EQUALS(blockB->GetParams()->fMinLongitude, 0))))
+
+				{
+					blockA->_implementation->_neighbours[3] = blockB;
+					blockB->_implementation->_neighbours[7] = blockA;
+				}
+
+				// left bottom
+				if (EQUALS(blockA->GetParams()->fMinLattitude, blockB->GetParams()->fMaxLattitude) &&
+					(EQUALS(blockA->GetParams()->fMinLongitude, blockB->GetParams()->fMaxLongitude) || (EQUALS(blockA->GetParams()->fMinLongitude, 0) && EQUALS(blockB->GetParams()->fMaxLongitude, 2 * M_PI))))
+
+				{
+					blockA->_implementation->_neighbours[5] = blockB;
+					blockB->_implementation->_neighbours[1] = blockA;
+				}
 			
 			}
 		}

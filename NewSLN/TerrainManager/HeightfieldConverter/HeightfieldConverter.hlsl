@@ -21,27 +21,48 @@ cbuffer HeightfieldSettings  : register(b0)
 	float	fHeightScale;				// Масштаб высоты
 
 	float	fNormalDivisionAngleCos1;	// Косинус минимального угла разделения нормалей
-	float	fNormalDivisionAngleCos2;
+	float	fNormalDivisionAngleCos2;	// Между этими 2мя значениями происходит интерполяция
 
+	// Cut coeffs
 	float	fNorthBlockLongCoeff;
 	float	fNorthBlockLatCoeff;
+
+	float	fNorthEastBlockLongCoeff;
+	float	fNorthEastBlockLatCoeff;
 
 	float	fEastBlockLongCoeff;
 	float	fEastBlockLatCoeff;
 
+	float	fSouthEastBlockLongCoeff;
+	float	fSouthEastBlockLatCoeff;
+
 	float	fSouthBlockLongCoeff;
 	float	fSouthBlockLatCoeff;
+
+	float	fSouthWestBlockLongCoeff;
+	float	fSouthWestBlockLatCoeff;
 
 	float	fWestBlockLongCoeff;
 	float	fWestBlockLatCoeff;
 
-	
+	float	fNorthWestBlockLongCoeff;
+	float	fNorthWestBlockLatCoeff;
+
+	// 0
 	float	fNorthMinLat;
 	float	fNorthMaxLat;
 
 	float	fNorthMinLong;
 	float	fNorthMaxLong;
 
+	// 1
+	float	fNorthEastMinLat;
+	float	fNorthEastMaxLat;
+
+	float	fNorthEastMinLong;
+	float	fNorthEastMaxLong;
+
+	//2
 
 	float	fEastMinLat;
 	float	fEastMaxLat;
@@ -49,19 +70,40 @@ cbuffer HeightfieldSettings  : register(b0)
 	float	fEastMinLong;
 	float	fEastMaxLong;
 
+	//3
+	float	fSouthEastMinLat;
+	float	fSouthEastMaxLat;
 
+	float	fSouthEastMinLong;
+	float	fSouthEastMaxLong;
+
+	//4
 	float	fSouthMinLat;
 	float	fSouthMaxLat;
 
 	float	fSouthMinLong;
 	float	fSouthMaxLong;
 
+	//5
+	float	fSouthWestMinLat;
+	float	fSouthWestMaxLat;
 
+	float	fSouthWestMinLong;
+	float	fSouthWestMaxLong;
+
+	//6
 	float	fWestMinLat;
 	float	fWestMaxLat;
 
 	float	fWestMinLong;
 	float	fWestMaxLong;
+
+	//7
+	float	fNorthWestMinLat;
+	float	fNorthWestMaxLat;
+
+	float	fNorthWestMinLong;
+	float	fNorthWestMaxLong;
 };
 
 
@@ -75,9 +117,13 @@ SamplerState HeightTextureSampler
 Texture2D				InputHeightTexture				: register(t0);
 
 Texture2D				NorthNeighbourTexture			: register(t1);		// север
-Texture2D				EastNeighbourTexture			: register(t2);
-Texture2D				SouthNeighbourTexture			: register(t3);
-Texture2D				WestNeighbourTexture			: register(t4);
+Texture2D				NorthEastNeighbourTexture		: register(t2);
+Texture2D				EastNeighbourTexture			: register(t3);
+Texture2D				SouthEastNeighbourTexture		: register(t4);
+Texture2D				SouthNeighbourTexture			: register(t5);
+Texture2D				SouthWestNeighbourTexture		: register(t6);
+Texture2D				WestNeighbourTexture			: register(t7);
+Texture2D				NorthWestNeighbourTexture		: register(t8);
 
 
 RWByteAddressBuffer 	OutVertexBuffer 		: register(u0);
@@ -218,10 +264,20 @@ void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out Qua
 	{
 		v[i] = GetVertexPos(ix[i], iy[i], tex, longCoeff, latCoeff, minLat, maxLat, minLong, maxLong);
 		texCoords[i] = CalcTexcoords(ix[i], iy[i], longCoeff, latCoeff);
-
-		geom.vertex[i] = v[i];
-		geom.tex[i] = texCoords[i];
 	}
+
+	geom.vertex[0] = v[0];
+	geom.tex[0] = texCoords[0];
+
+	geom.vertex[1] = v[1];
+	geom.tex[1] = texCoords[1];
+
+	geom.vertex[2] = v[2];
+	geom.tex[2] = texCoords[2];
+
+	geom.vertex[3] = v[3];
+	geom.tex[3] = texCoords[3];
+
 
 	geom.t[0].v[0] = v[0];
 	geom.t[0].v[1] = v[1];
@@ -246,19 +302,53 @@ void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbo
 	}
 	else
 	{
+	
+		if (iQuadX >= 0 && iQuadX < (int)nCountX - 1)
+		{
+			// left
+			if (iQuadY < 0)
+				ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
+
+			// right
+			if (iQuadY >= (int)nCountX - 1)
+				ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
+		}
 		
-		if (iQuadX < 0)
-			ComputeQuadGeometry((int)nCountX - 2, iQuadY, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
+		else if (iQuadY >= 0 && iQuadY < (int)nCountY - 1)
+		{
+			// top
+			if (iQuadX >= (int)nCountX - 1)
+				ComputeQuadGeometry(0, iQuadY, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
 
-		if (iQuadY < 0)
-			ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
+			// bottom
+			if (iQuadX < 0)
+				ComputeQuadGeometry((int)nCountX - 2, iQuadY, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
+		}
 
-		if (iQuadX >= (int)nCountX - 1)
-			ComputeQuadGeometry(0, iQuadY, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
+		else if ((iQuadX < 0) && (iQuadY < 0))
+		{
+			// left bottom
+			ComputeQuadGeometry((int)nCountX - 2, (int)nCountY - 2, SouthWestNeighbourTexture, neighbourQuadGeom, fSouthWestBlockLongCoeff, fSouthWestBlockLatCoeff, fSouthWestMinLat, fSouthWestMaxLat, fSouthWestMinLong, fSouthWestMaxLong);
+		}
+		
+		else if ((iQuadX < 0) && (iQuadY >= (int)nCountX - 1))
+		{
+			// right bottom
+			ComputeQuadGeometry((int)nCountX - 2, 0, SouthEastNeighbourTexture, neighbourQuadGeom, fSouthEastBlockLongCoeff, fSouthEastBlockLatCoeff, fSouthEastMinLat, fSouthEastMaxLat, fSouthEastMinLong, fSouthEastMaxLong);
+		}
+		
+		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY < 0))
+		{
+			// left top
+			ComputeQuadGeometry(0, (int)nCountY - 2, NorthWestNeighbourTexture, neighbourQuadGeom, fNorthWestBlockLongCoeff, fNorthWestBlockLatCoeff, fNorthWestMinLat, fNorthWestMaxLat, fNorthWestMinLong, fNorthWestMaxLong);
+		}
 
-		if (iQuadY >= (int)nCountX - 1)
-			ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
-			
+		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY >= (int)nCountX - 1))
+		{
+			// right top
+			ComputeQuadGeometry(0, 0, NorthEastNeighbourTexture, neighbourQuadGeom, fNorthEastBlockLongCoeff, fNorthEastBlockLatCoeff, fNorthEastMinLat, fNorthEastMaxLat, fNorthEastMinLong, fNorthEastMaxLong);
+		}
+
 	}
 
 }
@@ -281,30 +371,23 @@ void ComputeVertexNormalAndTangent(inout Triangle neighbourTriangles[6], inout V
 {
 	float3 middleNormal = float3(0, 0, 0);
 
-	//bool smoothNormal = true;
-
 	for (int i = 0; i < 6; i++)
 	{
-		//if (dot(v.normal, neighbourTriangles[i].n) < 0)
-		//	neighbourTriangles[i].n = -neighbourTriangles[i].n;
-
-//		if (dot(v.normal, neighbourTriangles[i].n) < fNormalDivisionAngleCos)
-//			smoothNormal = false;
-
 		middleNormal += neighbourTriangles[i].n;
 	}
 
 	middleNormal = normalize(middleNormal);
 
-	//if (smoothNormal)
-	//	v.normal = middleNormal;
-
 	float cosAngle = dot(v.normal, middleNormal);
 
 	if (cosAngle > fNormalDivisionAngleCos1)
+	{
 		v.normal = middleNormal;
+	}
 	else if (cosAngle >= fNormalDivisionAngleCos2 && cosAngle <= fNormalDivisionAngleCos1)
+	{
 		v.normal = lerp(v.normal, middleNormal, (cosAngle - fNormalDivisionAngleCos2) / (fNormalDivisionAngleCos1 - fNormalDivisionAngleCos2));
+	}
 
 	v.tangent = -cross(float3(1, 0, 0), v.normal);
 }
@@ -440,10 +523,13 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 
 	//@} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end: vertex 5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	for (int iVertex = 0; iVertex < 6; iVertex++)
-	{
-		data.vertices[iVertex] = v[iVertex];
-	}
+	data.vertices[0] = v[0];
+	data.vertices[1] = v[1];
+	data.vertices[2] = v[2];
+	data.vertices[3] = v[3];
+	data.vertices[4] = v[4];
+	data.vertices[5] = v[5];
+
 
 	data.indices[0] = 0;
 	data.indices[1] = 2;
