@@ -499,6 +499,32 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		}
 	}
 
+	static std::vector<TerrainObjectID> vecVisID;
+	vecVisID.clear();
+
+	bool bAllReady = true;
+
+	for (size_t iVisObj = 0; iVisObj < _pVisibilityManager->GetVisibleObjectsCount(); iVisObj++)
+	{
+		CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(iVisObj));
+
+		if (pTerrainObject && pTerrainObject->IsDataReady())
+		{
+			vecVisID.push_back(pTerrainObject->GetID());
+		}
+		else
+		{
+			bAllReady = false;
+			break;
+		}
+	}
+
+
+	if (bAllReady)
+	{
+		_vecReadyVisibleObjects = vecVisID;
+	}
+
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
@@ -543,6 +569,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		{
 			itExisting->second._alive = true;
 			itExisting->second._timeSinceDead = 0;
+
+			pInternalObject->SetTriangulationReady();
 
 			continue;
 		}
@@ -722,17 +750,22 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetObjectToDeleteID(size_t
 
 size_t CTerrainManager::CTerrainManagerImpl::GetVisibleObjectsCount() const
 {
-	return _pVisibilityManager->GetVisibleObjectsCount();
+	//return _pVisibilityManager->GetVisibleObjectsCount();
+
+	return _vecReadyVisibleObjects.size();
 }
 
 TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetVisibleObjectID(size_t index) const
 {
-	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(index));
+	/*CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(index));
 
 	if (!pTerrainObject)
 		return -1;
 
-	return pTerrainObject->GetID();
+	return pTerrainObject->GetID();*/
+
+
+	return _vecReadyVisibleObjects[index];
 }
 
 CResourceManager * CTerrainManager::CTerrainManagerImpl::GetResourceManager()

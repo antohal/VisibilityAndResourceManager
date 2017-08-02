@@ -43,6 +43,10 @@ public:
 		_bTriangulationsReady = true;
 	}
 
+	virtual bool							IsDataReady() const {
+		return _bTriangulationsReady && _bOtherDataReady;
+	}
+
 protected:
 
 	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
@@ -66,10 +70,6 @@ protected:
 	virtual C3DBaseFaceSet*					GetFaceSetById(size_t id) const { return nullptr; }
 
 	virtual C3DBaseManager*					GetManager() const { return _pOwner; }
-
-	virtual bool							IsDataReady() const {
-		return _bTriangulationsReady && _bOtherDataReady;
-	}
 
 
 private:
@@ -239,6 +239,8 @@ private:
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
 	std::vector<TerrainObjectID>						_vecNotCheckedForTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
+
+	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
 
 	//@}
 
