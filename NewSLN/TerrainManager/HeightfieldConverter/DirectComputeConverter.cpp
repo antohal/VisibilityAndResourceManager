@@ -495,10 +495,14 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 		}
 	}
 
+	_owner->_owner->LockDeviceContext();
+
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 9, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
 		_heightfield.Config.nCountX - 1, 
 		_heightfield.Config.nCountY - 1,
 		1);
+
+	_owner->_owner->UnlockDeviceContext();
 }
 
 void DirectComputeHeightfieldConverter::STriangulationTask::computeBasis()

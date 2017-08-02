@@ -70,6 +70,19 @@ void CD3DScene::Update(CD3DGraphicsContext* in_pContext, float deltaTime)
 	}
 }
 
+
+void CD3DScene::LockDeviceContext()
+{
+	for (auto it = _setRenderers.begin(); it != _setRenderers.end(); it++)
+		(*it)->LockDeviceContext();
+}
+
+void CD3DScene::UnlockDeviceContext()
+{
+	for (auto it = _setRenderers.begin(); it != _setRenderers.end(); it++)
+		(*it)->UnlockDeviceContext();
+}
+
 void CD3DScene::Render(CD3DGraphicsContext* in_pContext)
 {
 	_nRenderedPrimitives = 0;

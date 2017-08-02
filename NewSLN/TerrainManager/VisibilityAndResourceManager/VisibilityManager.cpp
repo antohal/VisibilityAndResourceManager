@@ -981,7 +981,7 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 		bHavePlugins = true;
 	}
 
-	/*if (bHavePlugins)
+	if (bHavePlugins)
 	{
 
 		for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
@@ -998,13 +998,27 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 				CVisibilityManager::VisibilityManagerPrivate::SObject& internalObject = _private->_mapObjects[pObj];
 
+				// TODO: check in camera
 
+				if (!internalObject._bTexturesInited)
+					internalObject.InitTextures();
+
+#ifdef TEXTURE_VISIBILITY
+
+				if (_private->_bUpdateTextureVisibility)
+				{
+					_private->UpdateTextureVisibilityForObject(&internalObject);
+				}
+#endif
+				
+				_private->_vecVisibleObjects.push_back(internalObject._pObject);
+				_private->SetObjectVisibleOnThisFrame(internalObject);
 
 			}
 		}
 
 	}
-	else*/
+	else
 	{
 
 		for (; !GI.IsEnd(); GI.Next())
@@ -1016,14 +1030,14 @@ void CVisibilityManager::UpdateVisibleObjectsSet ()
 
 			bool bPluginVisible = true;
 
-			for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
+			/*for (IVisibilityManagerPlugin* plugin : _private->_setPlugins)
 			{
 				if (!plugin->IsObjectVisible(pInternalObject->_pObject))
 				{
 					bPluginVisible = false;
 					break;
 				}
-			}
+			}*/
 
 			if (!bPluginVisible)
 				continue;
@@ -1170,37 +1184,75 @@ void	CVisibilityManager::VisibilityManagerPrivate::MarkPotentiallyVisibleObjects
 {
 	for (const CollectObjectsData& collectData : in_vecCloud)
 	{
+		bool bHavePlugins = false;
+
 		for (IVisibilityManagerPlugin* plugin : _setPlugins)
-			plugin->UpdateObjectsVisibility(FromVec3(collectData.GetPos()), FromVec3(_Camera.GetDir()), FromVec3(_Camera.GetUp()), &_mProjection);
-
-		IGridIterator& GI = _ptrOkTree->GetIterator(collectData.GetBoundBox(), &collectData.GetFrustum());
-
-		for (; !GI.IsEnd(); GI.Next())
 		{
-			CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
+			plugin->UpdateObjectsVisibility(FromVec3(collectData.GetPos()), FromVec3(_Camera.GetDir()), FromVec3(_Camera.GetUp()), &_mProjection);
+			bHavePlugins = true;
+		}
 
-			bool bPluginVisible = true;
-
+		if (bHavePlugins)
+		{
 			for (IVisibilityManagerPlugin* plugin : _setPlugins)
 			{
-				if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+				unsigned int visCount = plugin->GetVisibleObjectsCount();
+
+				for (unsigned int iObj = 0; iObj < visCount; iObj++)
 				{
-					bPluginVisible = false;
-					break;
+
+					C3DBaseObject* pObj = plugin->GetVisibleObject(iObj);
+
+					if (!pObj)
+						continue;
+
+					CVisibilityManager::VisibilityManagerPrivate::SObject& internalObject = _mapObjects[pObj];
+
+					// TODO: check in camera
+
+					if (internalObject._bAlwaysVisible)
+						continue;
+
+				//	if (!IsObjectInFrustum(GI, pInternalObject, collectData.GetBoundBox(), collectData.GetFrustum(), collectData.GetPos()))
+				//		continue;
+
+					if (internalObject._pObject)
+						internalObject._pObject->SetPotentiallyVisible();
+
 				}
 			}
+		}
+		else
+		{
+			IGridIterator& GI = _ptrOkTree->GetIterator(collectData.GetBoundBox(), &collectData.GetFrustum());
 
-			if (!bPluginVisible)
-				continue;
+			for (; !GI.IsEnd(); GI.Next())
+			{
+				CVisibilityManager::VisibilityManagerPrivate::SObject* pInternalObject = reinterpret_cast<CVisibilityManager::VisibilityManagerPrivate::SObject*>(GI.Get());
 
-			if (pInternalObject->_bAlwaysVisible)
-				continue;
+				//bool bPluginVisible = true;
 
-			if (!IsObjectInFrustum(GI, pInternalObject, collectData.GetBoundBox(), collectData.GetFrustum(), collectData.GetPos()))
-				continue;
+				/*for (IVisibilityManagerPlugin* plugin : _setPlugins)
+				{
+					if (!plugin->IsObjectVisible(pInternalObject->_pObject))
+					{
+						bPluginVisible = false;
+						break;
+					}
+				}
 
-			if (pInternalObject->_pObject)
-				pInternalObject->_pObject->SetPotentiallyVisible();
+				if (!bPluginVisible)
+					continue;*/
+
+				if (pInternalObject->_bAlwaysVisible)
+					continue;
+
+				if (!IsObjectInFrustum(GI, pInternalObject, collectData.GetBoundBox(), collectData.GetFrustum(), collectData.GetPos()))
+					continue;
+
+				if (pInternalObject->_pObject)
+					pInternalObject->_pObject->SetPotentiallyVisible();
+			}
 		}
 	}
 

@@ -116,11 +116,16 @@ const CDirect3DSystem * CD3DGraphicsContext::GetSystem() const
 
 void CD3DGraphicsContext::Render()
 {
+	_pScene->LockDeviceContext();
 	// Clear the buffers to begin the scene.
 	_pD3DSystem->BeginScene(0.0f, 0.0f, 1.0f, 1.0f);
+
+	_pScene->UnlockDeviceContext();
 
 	_pScene->Render(this);
 
 	// Present the rendered scene to the screen.
+	_pScene->LockDeviceContext();
 	_pD3DSystem->EndScene();
+	_pScene->UnlockDeviceContext();
 }

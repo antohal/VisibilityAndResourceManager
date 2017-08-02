@@ -532,6 +532,8 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::LoadChildsFromDirectory
 
 					pChildBlock->_implementation->_params.uiDepth = _params.uiDepth + 1;
 
+					pChildBlock->_implementation->_wsTextureFileName = wsTexturePath;
+					pChildBlock->_implementation->_wsHeightmapFileName = wsHeightmapPath;
 
 					pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLattitudeIndex = uiXX;
 					pChildBlock->_implementation->_params.aTreePosition[_params.uiDepth + 1].ucLongitudeIndex = uiYY;

@@ -5,6 +5,7 @@
 #include "HeightfieldConverter.h"
 
 #include <map>
+#include <thread>
 
 class CSimpleTerrainRenderer;
 
@@ -22,11 +23,14 @@ protected:
 
 	ID3D11ShaderResourceView* GetTextureResourceView() { return _pTextureSRV; }
 
+	
 private:
 
 	TerrainObjectID					_ID;
 
 	std::wstring					_wsTextureFileName;
+
+	std::thread*					_pLoadThread = nullptr;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
 
 	CSimpleTerrainRenderer*			_owner = nullptr;
@@ -70,6 +74,13 @@ public:
 	CTerrainManager*				GetTerrainManager() { return _pTerrainManager; };
 
 	HeightfieldConverter*			GetHeightfieldConverter() { return _pHeightfieldConverter; }
+
+	void							StartUpdateTriangulationsThread();
+
+
+	virtual void					LockDeviceContext() override;
+	virtual void					UnlockDeviceContext() override;
+
 
 private:
 
@@ -117,6 +128,9 @@ private:
 
 	UINT							_uiTriangulationsCountParam = -1;
 	UINT							_uiHeightfieldsCountParam = -1;
+
+	std::thread*					_pTriangulationsThread = nullptr;
+	bool							_bTriangulationThreadFinished = false;
 
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
 

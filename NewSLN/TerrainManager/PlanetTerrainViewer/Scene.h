@@ -19,6 +19,10 @@ public:
 	// return num primitives
 	virtual int						Render(CD3DGraphicsContext* in_pContext) = 0;
 	virtual int						GetVisibleObjectsCount() const = 0;
+
+	virtual void					LockDeviceContext() = 0;
+	virtual void					UnlockDeviceContext() = 0;
+
 };
 
 class CD3DScene
@@ -27,6 +31,9 @@ public:
 
 	CD3DScene();
 	~CD3DScene();
+
+	void							LockDeviceContext();
+	void							UnlockDeviceContext();
 
 	void							Shutdown();
 

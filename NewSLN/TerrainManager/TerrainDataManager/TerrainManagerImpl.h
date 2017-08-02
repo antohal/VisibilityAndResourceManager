@@ -10,7 +10,7 @@
 #include <set>
 #include <map>
 #include <mutex>
-
+#include <thread>
 
 class CInternalTerrainObject : public C3DBaseObject
 {
@@ -33,6 +33,14 @@ public:
 
 	void SetDataReady() {
 		_bOtherDataReady = true;
+	}
+
+	bool IsTriangulationReady() const {
+		return _bTriangulationsReady;
+	}
+
+	void SetTriangulationReady() {
+		_bTriangulationsReady = true;
 	}
 
 protected:
@@ -110,7 +118,7 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
-	void UpdateTriangulations();
+	bool UpdateTriangulations();
 
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
@@ -149,6 +157,9 @@ public:
 	void SetDataReady(TerrainObjectID ID);
 
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
+
+	// Проверить - готова ли триангуляция для объекта Земли
+	bool IsTriangulationReady(TerrainObjectID ID) const;
 
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
@@ -226,6 +237,7 @@ private:
 
 	//@{ following containers are guarded by mutex (_containersMutex)
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
+	std::vector<TerrainObjectID>						_vecNotCheckedForTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 
 	//@}
@@ -251,4 +263,5 @@ private:
 
 	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
 	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
+
 };

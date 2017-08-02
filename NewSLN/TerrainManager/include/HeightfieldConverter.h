@@ -131,6 +131,11 @@ public:
 	// Получить буферы вершин и индексов в памяти
 	void	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
 
+	// В случае, если триангуляции создаются в другом потоке, необходимо блокировать контекст во время других обращений к нему
+	void	LockDeviceContext();
+
+	void	UnlockDeviceContext();
+
 private:
 
 	struct HeightfieldConverterPrivate;

@@ -4,6 +4,7 @@
 #include "AbstractConverter.h"
 
 #include <atlbase.h>
+#include <mutex>
 
 struct HeightfieldConverter::HeightfieldConverterPrivate
 {
@@ -58,12 +59,18 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 		return _fNormalDivisionAngle2;
 	}
 
+	void	LockDeviceContext();
+
+	void	UnlockDeviceContext();
+
 private:
 
 	IAbstractHeightfieldConverter*	_pAbstractConverter = nullptr;
 
 	CComPtr<ID3D11Device>			_ptrD3DDevice;
 	CComPtr<ID3D11DeviceContext>	_ptrDeviceContext;
+
+	std::mutex						_contextMutex;
 
 	float							_fScale = 1;
 	float							_fHeightScale = 1;

@@ -76,6 +76,16 @@ void HeightfieldConverter::ReadHeightfieldDataFromMemory(const unsigned char* in
 
 }
 
+void HeightfieldConverter::LockDeviceContext()
+{
+	_private->LockDeviceContext();
+}
+
+void HeightfieldConverter::UnlockDeviceContext()
+{
+	_private->UnlockDeviceContext();
+}
+
 // ќсвободить буферы триангул€ции
 void HeightfieldConverter::ReleaseTriangulation(STriangulation* triangulation)
 {

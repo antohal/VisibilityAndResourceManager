@@ -67,9 +67,8 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
-	// Обновить набор триангуляций для потенциально видимых объектов
-	// Эту функцию можно вызвать в потоке, отличном от Update, но обязательно до следующего Update
-	void UpdateTriangulations();
+	// Рассчитать триангуляции [Функция может вызываться в другом потоке, она дергает ComputeShader, поэтому вызов должен находится вне пределов Present]
+	bool UpdateTriangulations();
 
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
@@ -110,6 +109,10 @@ public:
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
 	void SetDataReady(TerrainObjectID ID);
 	//@}
+
+	// Проверить - готова ли триангуляция для объекта Земли
+	bool IsTriangulationReady(TerrainObjectID ID) const;
+
 
 	//@{ Ожидать пока для объекта будут готовы данные, перед тем как делать его видимым [по умолчанию - выключено!]
 	void SetAwaitVisibleForDataReady(bool in_bAwait);

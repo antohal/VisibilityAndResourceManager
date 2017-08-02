@@ -230,3 +230,13 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 			debugbuf->Release();
 	}
 }
+
+void HeightfieldConverter::HeightfieldConverterPrivate::LockDeviceContext()
+{
+	_contextMutex.lock();
+}
+
+void HeightfieldConverter::HeightfieldConverterPrivate::UnlockDeviceContext()
+{
+	_contextMutex.unlock();
+}

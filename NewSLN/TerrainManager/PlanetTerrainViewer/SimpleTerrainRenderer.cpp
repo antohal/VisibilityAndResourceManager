@@ -10,6 +10,7 @@
 #include "Log.h"
 
 #include <string>
+#include <chrono>
 
 //
 // CSimpleTerrainRenderObject
@@ -25,17 +26,34 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	LogMessage("Loading texture '%ls'", wsTextureFileName.c_str());
 	_wsTextureFileName = wsTextureFileName;
 
-	// Загружаем текстуру
-	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), wsTextureFileName.c_str(), NULL, NULL, &_pTextureSRV, NULL);
-	if (FAILED(result))
-	{
-		LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", wsTextureFileName.c_str());
-		return;
-	}
+	_pLoadThread = new std::thread([this]() {
+
+		ID3D11ShaderResourceView* pResourceView = nullptr;
+
+		// Загружаем текстуру
+		HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceView, NULL);
+		if (FAILED(result))
+		{
+			LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", _wsTextureFileName.c_str());
+			return;
+		}
+
+		_pTextureSRV = pResourceView;
+		_owner->GetTerrainManager()->SetDataReady(_ID);
+
+	});
+
 }
 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 {
+	if (_pLoadThread)
+	{
+		_pLoadThread->detach();
+
+		delete _pLoadThread;
+	}
+
 	// освобождаем текстуру
 	if (_pTextureSRV)
 	{
@@ -65,11 +83,17 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 	if (pVertexBuffer && pIndexBuffer)
 	{
+
+		_owner->GetHeightfieldConverter()->LockDeviceContext();
+
 		// Set the vertex buffer to active in the input assembler so it can be rendered.
 		in_pContext->GetSystem()->GetDeviceContext()->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
 
 		// Set the index buffer to active in the input assembler so it can be rendered.
 		in_pContext->GetSystem()->GetDeviceContext()->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+
+		_owner->GetHeightfieldConverter()->UnlockDeviceContext();
 
 	}
 }
@@ -94,6 +118,22 @@ unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 
 CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 {
+
+	if (_pTriangulationsThread)
+	{
+
+		_bTriangulationThreadFinished = true;
+
+		if (_pTriangulationsThread->joinable() && _pTriangulationsThread->native_handle())
+		{
+			_pTriangulationsThread->join();
+		}
+
+		_pTriangulationsThread->detach();
+
+		delete _pTriangulationsThread;
+	}
+
 	if (_pHeightfieldConverter)
 		delete _pHeightfieldConverter;
 
@@ -120,11 +160,13 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	//_pHeightfieldConverter->SetHeightScale(1000.f);
-	_pHeightfieldConverter->SetHeightScale(20.f);
+	//_pHeightfieldConverter->SetHeightScale(20.f);
 
 	_pHeightfieldConverter->SetNormalDivisionAngles(15, 60);
 
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
+
+	StartUpdateTriangulationsThread();
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)
@@ -169,6 +211,9 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
 
+
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -181,6 +226,8 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	// Set the sampler state in the pixel shader.
 	deviceContext->PSSetSamplers(0, 1, &_pSampleState);
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
 
 	int numPrimitives = 0;
 
@@ -202,6 +249,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 			continue;
 
 		pObj->SetIndexAndVertexBuffers(in_pContext);
+
 		DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), pObj->GetTextureResourceView(), pObj->GetIndexCount());
 
 		numPrimitives += pObj->GetIndexCount() / 3;
@@ -252,8 +300,13 @@ bool CSimpleTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContex
 	if (!_pMatrixBuffer)
 		return false;
 
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Lock the constant buffer so it can be written to.
 	result = in_pContext->GetSystem()->GetDeviceContext()->Map(_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
+
 	if (FAILED(result))
 	{
 		return false;
@@ -267,20 +320,33 @@ bool CSimpleTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContex
 	dataPtr->projection = projectionMatrix;
 
 
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Unlock the constant buffer.
 	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pMatrixBuffer, 0);
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
 
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Now set the constant buffer in the vertex shader with the updated values.
 	in_pContext->GetSystem()->GetDeviceContext()->VSSetConstantBuffers(bufferNumber, 1, &_pMatrixBuffer);
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
 
 	if (!_pLightBuffer)
 		return false;
 
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Lock the light constant buffer so it can be written to.
 	result = in_pContext->GetSystem()->GetDeviceContext()->Map(_pLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
+
 	if (FAILED(result))
 	{
 		return false;
@@ -294,6 +360,8 @@ bool CSimpleTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContex
 	dataPtr2->lightDirection = lightDirection;
 	dataPtr2->mode = _RenderingMode;
 
+	GetHeightfieldConverter()->LockDeviceContext();
+
 	// Unlock the constant buffer.
 	in_pContext->GetSystem()->GetDeviceContext()->Unmap(_pLightBuffer, 0);
 
@@ -303,12 +371,16 @@ bool CSimpleTerrainRenderer::SetShaderParameters(CD3DGraphicsContext* in_pContex
 	// Finally set the light constant buffer in the pixel shader with the updated values.
 	in_pContext->GetSystem()->GetDeviceContext()->PSSetConstantBuffers(bufferNumber, 1, &_pLightBuffer);
 
+	GetHeightfieldConverter()->UnlockDeviceContext();
+
 	return true;
 }
 
 void CSimpleTerrainRenderer::DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount)
 {
 	// Set shader texture resource in the pixel shader.
+
+	GetHeightfieldConverter()->LockDeviceContext();
 
 	ID3D11ShaderResourceView* resourceViews[1] = { texture };
 	deviceContext->PSSetShaderResources(0, 1, resourceViews);
@@ -317,7 +389,35 @@ void CSimpleTerrainRenderer::DrawIndexedByShader(ID3D11DeviceContext* deviceCont
 	// Render the triangle.
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
+
+	GetHeightfieldConverter()->UnlockDeviceContext();
+
 	return;
+}
+
+void CSimpleTerrainRenderer::LockDeviceContext()
+{
+	GetHeightfieldConverter()->LockDeviceContext();
+}
+
+void CSimpleTerrainRenderer::UnlockDeviceContext()
+{
+	GetHeightfieldConverter()->UnlockDeviceContext();
+}
+
+void CSimpleTerrainRenderer::StartUpdateTriangulationsThread()
+{
+	_pTriangulationsThread = new std::thread([this]() {
+
+		while (!_bTriangulationThreadFinished)
+		{
+			if (!_pTerrainManager->UpdateTriangulations())
+			{
+				std::this_thread::sleep_for(1ms);
+			}
+		}
+
+	});
 }
 
 bool CSimpleTerrainRenderer::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename)
