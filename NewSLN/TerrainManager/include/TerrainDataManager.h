@@ -115,7 +115,7 @@ public:
 	void	GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth);
 
 
-	void	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, const DataBaseInfo& dbInfo, const LodInfoStruct* in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth);
+	void	LoadTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, const DataBaseInfo& dbInfo, const LodInfoStruct* in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth, bool in_bCalculateAdjacency);
 
 	// Освободить загруженное описание данных
 	void	ReleaseTerrainDataInfo(CTerrainBlockDesc* in_pTerrainDataBlock);

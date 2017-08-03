@@ -7,8 +7,6 @@
 	// Проверить - готова ли триангуляция для объекта Земли
 	bool IsTriangulationReady(TerrainObjectID ID) const;
 	
-	// Установить асинхронный режим триангуляций (по умолчанию - выкл)
-	void SetTriangulationsAsync(bool in_bAsync);
 
 	//@{ Ожидать пока для объекта будут готовы данные, перед тем как делать его видимым [по умолчанию - выключено!]
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
@@ -17,8 +15,10 @@
 	// Рассчитать триангуляции [Функция может вызываться в другом потоке, она дергает ComputeShader, поэтому вызов должен находится вне пределов Present]
 	void UpdateTriangulations();
 	
+
+
 	
-	Для HeightfieldConverter:
+Для HeightfieldConverter, который передается в TerrainManager:
 	
 	// В случае, если триангуляции создаются в другом потоке, необходимо блокировать контекст во время других обращений к нему
 	void	LockDeviceContext();

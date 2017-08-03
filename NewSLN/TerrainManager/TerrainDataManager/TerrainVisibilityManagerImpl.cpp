@@ -20,10 +20,6 @@ void CTerrainVisibilityManager::Init(C3DBaseTerrainObjectManager* in_pMeshTree, 
 	_implementation->Init(in_pMeshTree, in_fWorldScale, in_fMaximumDistance, in_fLodDistCoeff, in_uiMaxDepth);
 }
 
-void CTerrainVisibilityManager::SetAwaitVisibleForDataReady(bool in_bSetAwaitVisibleForReady)
-{
-	_implementation->SetAwaitVisibleForDataReady(in_bSetAwaitVisibleForReady);
-}
 
 //@{ IVisibilityManagerPlugin
 bool CTerrainVisibilityManager::IsObjectVisible(C3DBaseObject* in_pObject) const
@@ -306,50 +302,50 @@ CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResul
 	return CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::EUpdateVisibilityResult::INVISIBLE;
 }
 
-bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEarth(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos) const
-{
-
-	// TODO: здесь можно поместить обработку параметра по определению того какие блоки мы рисуем - либо фронтальные, либо задние
-
-	double dfMinLat = in_pTerrainBlock->GetParams()->fMinLattitude;
-	double dfMaxLat = in_pTerrainBlock->GetParams()->fMaxLattitude;
-	double dfMinLong = in_pTerrainBlock->GetParams()->fMinLongitude;
-	double dfMaxLong = in_pTerrainBlock->GetParams()->fMaxLongitude;
-
-	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
-	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
-
-	double dfMinHeight = (-10000.0);
-	double dfMaxHeight = (10000.0);
-
-
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
-
-	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
-	{
-		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
-		{
-			vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLat);
-
-			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint))
-			//	return false;
-
-			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
-				return false;
-
-			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
-				return false;
-		}
-	}
-
-	return true;
-}
+//bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsBlockBehindEarth(const CTerrainBlockDesc* in_pTerrainBlock, const vm::Vector3df& in_vPos) const
+//{
+//
+//	// TODO: здесь можно поместить обработку параметра по определению того какие блоки мы рисуем - либо фронтальные, либо задние
+//
+//	double dfMinLat = in_pTerrainBlock->GetParams()->fMinLattitude;
+//	double dfMaxLat = in_pTerrainBlock->GetParams()->fMaxLattitude;
+//	double dfMinLong = in_pTerrainBlock->GetParams()->fMinLongitude;
+//	double dfMaxLong = in_pTerrainBlock->GetParams()->fMaxLongitude;
+//
+//	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+//	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+//
+//	double dfMinHeight = (-10000.0);
+//	double dfMaxHeight = (10000.0);
+//
+//
+//	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
+//	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
+//
+//	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+//	{
+//		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+//		{
+//			vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLat);
+//
+//			//if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint))
+//			//	return false;
+//
+//			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMinHeight))
+//				return false;
+//
+//			if (!IsSegmentIntersectsEarthMinRadius(in_vPos, vRefPoint + vm::normalize(vRefPoint) * dfMaxHeight))
+//				return false;
+//		}
+//	}
+//
+//	return true;
+//}
 
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::AddVisibleBlock(const CTerrainBlockDesc* pBlock, const vm::Vector3df& in_vPos)
 {
-	if (!IsBlockBehindEarth(pBlock, in_vPos))
-		_setVisibleObjects.insert(_mapObjects[pBlock]);
+	//if (!IsBlockBehindEarth(pBlock, in_vPos))
+	_setVisibleObjects.insert(_mapObjects[pBlock]);
 }
 
 unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisibleObjectsCount() const

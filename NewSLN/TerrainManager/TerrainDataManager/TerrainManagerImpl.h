@@ -7,6 +7,8 @@
 #include "ResourceManager.h"
 #include "TerrainVisibilityManager.h"
 
+
+
 #include <set>
 #include <map>
 #include <mutex>
@@ -46,6 +48,8 @@ public:
 	virtual bool							IsDataReady() const {
 		return _bTriangulationsReady && _bOtherDataReady;
 	}
+
+	void CalculateReferencePoints(std::vector<vm::Vector3df>& out_vecPoints, std::vector<vm::Vector3df>& out_vecNormals);
 
 protected:
 
@@ -98,7 +102,7 @@ public:
 	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
-	void InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize);
+	void InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency);
 
 	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
 		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
@@ -208,6 +212,10 @@ private:
 
 	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
 
+	void CalculateReadyAndVisibleSet();
+
+	bool CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const;
+
 	//@{ Main objects
 	CResourceManager*		_pResourceManager = nullptr;
 	CVisibilityManager*		_pVisibilityManager = nullptr;
@@ -239,9 +247,10 @@ private:
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
 	std::vector<TerrainObjectID>						_vecNotCheckedForTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
+	std::vector<TerrainObjectID>						_vecPreliminaryObjectsToDelete;
 
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
-
+	std::set<CInternalTerrainObject*>					_setPreliminaryVisibleObjects;
 	//@}
 
 	//@}
@@ -265,5 +274,18 @@ private:
 
 	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
 	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
+
+	bool			_bAwaitingVisibleForDataReady = true;
+
+	struct SCameraParams
+	{
+		vm::Vector3df		vPos = vm::Vector3df(0, 0, 0);
+		vm::Vector3df		vDir = vm::Vector3df(1, 0, 0);
+		vm::Vector3df		vUp = vm::Vector3df(0, 1, 0);
+
+		D3DMATRIX			mProjection;
+	};
+
+	SCameraParams			_cameraParams;
 
 };

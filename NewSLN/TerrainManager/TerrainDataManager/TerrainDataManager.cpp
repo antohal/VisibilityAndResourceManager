@@ -30,9 +30,9 @@ void CTerrainDataManager::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirecto
 	_implementation->GenerateTerrainDataInfo(in_pcwszDirectoryName, out_ppRootDataBlock, in_uiM, in_uiN, in_uiDepth);
 }
 
-void CTerrainDataManager::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth)
+void CTerrainDataManager::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth, bool in_bCalculateAdjacency)
 {
-	_implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, dbInfo, in_pLodInfoArray, in_uiMaxDepth, out_ppRootDataBlock, out_uiMaximumDepth);
+	_implementation->LoadTerrainDataInfo(in_pcwszDirectoryName, dbInfo, in_pLodInfoArray, in_uiMaxDepth, out_ppRootDataBlock, out_uiMaximumDepth, in_bCalculateAdjacency);
 }
 
 // Освободить загруженное описание данных
@@ -93,7 +93,7 @@ bool CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 	return true;
 }
 
-void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth)
+void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo(const wchar_t * in_pcwszDirectoryName, const DataBaseInfo & dbInfo, const LodInfoStruct * in_pLodInfoArray, unsigned int in_uiMaxDepth, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int* out_uiMaximumDepth, bool in_bCalculateAdjacency)
 {
 	double totalPixelsX = in_pLodInfoArray[dbInfo.LodCount - 1].Width;
 	double totalPixelsY = in_pLodInfoArray[dbInfo.LodCount - 1].Height;
@@ -136,7 +136,8 @@ void CTerrainDataManager::CTerrainDataManagerImplementation::LoadTerrainDataInfo
 
 	LogMessage("Readed %d blocks, maximum tree depth is %d, bytes: %d", _uiTerrainBlocksCount, uiMaxDepth, uiMemUsage);
 
-	GenerateAdjacency();
+	if (in_bCalculateAdjacency)
+		GenerateAdjacency();
 }
 
 void CTerrainDataManager::CTerrainDataManagerImplementation::GenerateTerrainDataInfo(const wchar_t* in_pcwszDirectoryName, CTerrainBlockDesc** out_ppRootDataBlock, unsigned int in_uiM, unsigned int in_uiN, unsigned int in_uiDepth)

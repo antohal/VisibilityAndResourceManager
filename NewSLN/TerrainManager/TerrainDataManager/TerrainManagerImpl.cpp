@@ -66,9 +66,9 @@ void CTerrainManager::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* i
 	_implementation->Init(in_pD3DDevice11, in_pDeviceContext, in_pcwszPlanetDirectory, in_fWorldScale, in_fWorldSize, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff);
 }
 
-void CTerrainManager::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+void CTerrainManager::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
 {
-	_implementation->InitFromDatabaseInfo(in_pD3DDevice11, in_pDeviceContext, in_pcwszFileName, in_uiMaxDepth, in_fWorldScale, in_fWorldSize);
+	_implementation->InitFromDatabaseInfo(in_pD3DDevice11, in_pDeviceContext, in_pcwszFileName, in_uiMaxDepth, in_fWorldScale, in_fWorldSize, in_bCalculateAdjacency);
 }
 
 void CTerrainManager::SetHeightfieldConverter(HeightfieldConverter * p)
@@ -256,7 +256,7 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 }
 
-void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize)
+void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
 {
 	_pTerrainDataManager = new CTerrainDataManager();
 	_pResourceManager = new CResourceManager();
@@ -320,7 +320,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);
 	
 	unsigned int uiResultingMaxDepth = 0;
-	_pTerrainDataManager->LoadTerrainDataInfo(_wsPlanetRootDirectory.c_str(), dbInfo, aLods, uiMaxDepth, &_pPlanetTerrainData, &uiResultingMaxDepth);
+	_pTerrainDataManager->LoadTerrainDataInfo(_wsPlanetRootDirectory.c_str(), dbInfo, aLods, uiMaxDepth, &_pPlanetTerrainData, &uiResultingMaxDepth, in_bCalculateAdjacency);
 
 	CreateObjects();
 
@@ -376,9 +376,17 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	vDir.y = (float)in_vDir->y;
 	vDir.z = (float)in_vDir->z;
 
-	vUp.x = (float)in_vDir->x;
-	vUp.y = (float)in_vDir->y;
-	vUp.z = (float)in_vDir->z;
+	vUp.x = (float)in_vUp->x;
+	vUp.y = (float)in_vUp->y;
+	vUp.z = (float)in_vUp->z;
+
+
+	if (in_pmProjection)
+		_cameraParams.mProjection = *in_pmProjection;
+
+	_cameraParams.vPos = vm::Vector3df(vPos.x / _fWorldScale, vPos.y / _fWorldScale, vPos.z / _fWorldScale);
+	_cameraParams.vDir = vm::Vector3df(vDir.x, vDir.y, vDir.z);
+	_cameraParams.vUp = vm::Vector3df(vUp.x, vUp.y, vUp.z);
 
 	_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
@@ -485,22 +493,10 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 				it++;
 			}
 		}
-
-		for (TerrainObjectID deadObj : _vecObjectsToDelete)
-		{
-			auto itTri = _mapObjectTriangulations.find(deadObj);
-			if (itTri == _mapObjectTriangulations.end())
-			{
-				LogMessage("Object %d has no triangulation while was alive", deadObj);
-				continue;
-			}
-
-			itTri->second._alive = false;
-		}
 	}
 
-	static std::vector<TerrainObjectID> vecVisID;
-	vecVisID.clear();
+	static std::set<CInternalTerrainObject*> setVisObjs;
+	setVisObjs.clear();
 
 	bool bAllReady = true;
 
@@ -508,9 +504,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	{
 		CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(iVisObj));
 
-		if (pTerrainObject && pTerrainObject->IsDataReady())
+		if (pTerrainObject->IsDataReady() || !_bAwaitingVisibleForDataReady)
 		{
-			vecVisID.push_back(pTerrainObject->GetID());
+			setVisObjs.insert(pTerrainObject);
 		}
 		else
 		{
@@ -522,9 +518,110 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 	if (bAllReady)
 	{
-		_vecReadyVisibleObjects = vecVisID;
+		_setPreliminaryVisibleObjects = setVisObjs;
+		//_vecReadyVisibleObjects = vecVisID;
+
+		_containersMutex.lock();
+
+		_vecObjectsToDelete = _vecPreliminaryObjectsToDelete;
+		_vecPreliminaryObjectsToDelete.clear();
+
+		for (TerrainObjectID deadObj : _vecObjectsToDelete)
+		{
+			std::lock_guard<std::mutex> lock(_triangulationsMutex);
+
+			auto itTri = _mapObjectTriangulations.find(deadObj);
+			if (itTri == _mapObjectTriangulations.end())
+			{
+				LogMessage("Object %d has no triangulation while was alive", deadObj);
+				continue;
+			}
+
+			itTri->second._alive = false;
+		}
+
+		_containersMutex.unlock();
 	}
 
+	CalculateReadyAndVisibleSet();
+}
+
+void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>& out_vecPoints, std::vector<vm::Vector3df>& out_vecNormals)
+{
+	out_vecPoints.clear();
+	out_vecNormals.clear();
+
+	const STerrainBlockParams* pParams = _pBlockDesc->GetParams();
+	double dfMinLat = pParams->fMinLattitude;
+	double dfMaxLat = pParams->fMaxLattitude;
+	double dfMinLong = pParams->fMinLongitude;
+	double dfMaxLong = pParams->fMaxLongitude;
+
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
+
+	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	{
+		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		{
+			vm::Vector3df vPoint = GetWGS84SurfacePoint(dfLong, dfLat);
+			vm::Vector3df vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
+
+			out_vecPoints.push_back(vPoint);
+			out_vecNormals.push_back(vNormal);
+		}
+	}
+
+
+}
+
+bool CTerrainManager::CTerrainManagerImpl::CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const
+{
+	bool bAllPointsOutOfFrustum = true;
+
+	for (const vm::Vector3df& vPoint : vecPoints)
+	{
+		if (dot(vPoint - _cameraParams.vPos, _cameraParams.vDir) >= 0)
+		{
+			bAllPointsOutOfFrustum = false;
+			break;
+		}
+		// TODO: other checks
+	}
+
+	return !bAllPointsOutOfFrustum;
+}
+
+void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
+{
+	_vecReadyVisibleObjects.clear();
+
+	std::vector<vm::Vector3df> vecRefPoints;
+	std::vector<vm::Vector3df> vecRefNormals;
+
+	for (CInternalTerrainObject* pObj : _setPreliminaryVisibleObjects)
+	{
+		pObj->CalculateReferencePoints(vecRefPoints, vecRefNormals);
+
+		if (!CheckPointsInFrustum(vecRefPoints))
+			continue;
+
+
+		// check backfaces
+		bool bFullBackSided = true;
+
+		for (size_t i = 0; i < vecRefNormals.size(); i++)
+		{
+			if (dot(normalize(vecRefPoints[i] - _cameraParams.vPos), normalize(vecRefPoints[i])) < 0.2)
+			{
+				bFullBackSided = false;
+				break;
+			}
+		}
+
+		if (!bFullBackSided)
+			_vecReadyVisibleObjects.push_back(pObj->GetID());
+	}
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
@@ -806,6 +903,9 @@ void CTerrainManager::CTerrainManagerImpl::RequestLoadResource(C3DBaseResource* 
 {
 	CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(in_pResource);
 
+	if (!_pHeightfieldConverter)
+		pTerrainObject->SetTriangulationReady();
+
 	std::lock_guard<std::mutex> lock(_containersMutex);
 	_vecNewObjectIDs.push_back(pTerrainObject->GetID());
 	_vecNotCheckedForTriangulations.push_back(pTerrainObject->GetID());
@@ -818,8 +918,9 @@ void CTerrainManager::CTerrainManagerImpl::RequestUnloadResource(C3DBaseResource
 	pTerrainObject->InvalidateData();
 
 	std::lock_guard<std::mutex> lock(_containersMutex);
-	_vecObjectsToDelete.push_back(pTerrainObject->GetID());
+	_vecPreliminaryObjectsToDelete.push_back(pTerrainObject->GetID());
 }
+
 
 void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID)
 {
@@ -833,7 +934,7 @@ void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID)
 
 void CTerrainManager::CTerrainManagerImpl::SetAwaitVisibleForDataReady(bool in_bAwait)
 {
-	_pTerrainVisibilityManager->SetAwaitVisibleForDataReady(in_bAwait);
+	_bAwaitingVisibleForDataReady = in_bAwait;
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsTriangulationReady(TerrainObjectID ID) const

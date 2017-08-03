@@ -39,7 +39,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 		}
 
 
-		std::this_thread::sleep_for(1s);
+		//std::this_thread::sleep_for(1s);
 
 		_pTextureSRV = pResourceView;
 		_owner->GetTerrainManager()->SetDataReady(_ID);

@@ -143,7 +143,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	//@{ Prepare terrain rendering pipeline
 
 
-	DataBaseInfo dbInfo;
+	/*DataBaseInfo dbInfo;
 	LodInfoStruct aLods[2];
 
 	dbInfo.LodCount = 2;
@@ -167,7 +167,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	fwrite(aLods, sizeof(LodInfoStruct), 2, fp);
 
-	fclose(fp);
+	fclose(fp);*/
 
 
 	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
@@ -178,15 +178,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
-	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
+	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 
 	// Это если нужно сгенерить планету
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
-	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
+
+
+	//pTerrainManager->SetAwaitVisibleForDataReady(false);
 
 	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();
