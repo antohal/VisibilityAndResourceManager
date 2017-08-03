@@ -132,8 +132,6 @@ CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 			_pTriangulationsThread->join();
 		}
 
-		_pTriangulationsThread->detach();
-
 		delete _pTriangulationsThread;
 	}
 

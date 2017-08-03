@@ -44,6 +44,11 @@ public:
 		{
 			_pTerrainRenderer->SetRenderingMode(CSimpleTerrainRenderer::PSRenderingMode::GREY);
 		}
+
+		if (in_wKey == VK_F5)
+		{
+			_pTerrainRenderer->SetRenderingMode(CSimpleTerrainRenderer::PSRenderingMode::WITHOUT_LIGHTING);
+		}
 	}
 
 	virtual void OnFrame(float in_fFrameTime) override
@@ -178,12 +183,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
-	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
+	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 
 	// Это если нужно сгенерить планету
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Y:\\Barkalov\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\DataBase\\DataBaseInfo", 4, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());

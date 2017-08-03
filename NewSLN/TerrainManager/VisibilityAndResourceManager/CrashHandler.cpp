@@ -538,4 +538,4 @@ struct CrashHandlerInstaller
 	}
 };
 
-CrashHandlerInstaller g_CrashHandlerInstaller;
+//CrashHandlerInstaller g_CrashHandlerInstaller;

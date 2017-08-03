@@ -1,3 +1,5 @@
+#include <Shlwapi.h>
+
 #include "TerrainManagerImpl.h"
 #include "Log.h"
 #include "FileUtil.h"
@@ -5,6 +7,7 @@
 
 #include <d3dx10math.h>
 #include <algorithm>
+
 
 #define USE_ENGINE_SCALE
 
@@ -271,7 +274,18 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	DataBaseInfo dbInfo;
 	LodInfoStruct* aLods = nullptr;
 
-	std::wstring wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
+	//std::wstring wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
+
+	std::wstring wsDbFileName = in_pcwszFileName;
+
+	if (!PathFileExistsW(wsDbFileName.c_str()))
+		wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
+
+	if (!PathFileExistsW(wsDbFileName.c_str()))
+	{
+		LogMessage("Cannot open database file %ls", wsDbFileName.c_str());
+		return;
+	}
 
 	bool bSuccessifulRead = true;
 
@@ -313,7 +327,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 		return;
 	}
 
-	unsigned int uiMaxDepth = std::max<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
+	unsigned int uiMaxDepth = std::min<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
 
 	// TODO: Read lods structure
 

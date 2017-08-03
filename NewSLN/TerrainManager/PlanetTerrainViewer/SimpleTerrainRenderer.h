@@ -46,7 +46,8 @@ public:
 	{
 		STANDARD = 0,
 		SHOW_NORMALS,
-		GREY
+		GREY,
+		WITHOUT_LIGHTING
 	};
 
 	~CSimpleTerrainRenderer();
