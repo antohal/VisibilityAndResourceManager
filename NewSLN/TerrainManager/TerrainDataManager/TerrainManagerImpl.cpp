@@ -503,8 +503,10 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 	if (_bRecalculateLodsDistances)
 	{
-		_pTerrainVisibilityManager->_implementation->CalculateLodDistances(0.5f*(_cameraParams.fHFovAngleRad + _cameraParams.fVFovAngleRad), _vecLODResolution, _vecLODDiameter,
-			(_cameraParams.uiScreenResolutionX + _cameraParams.uiScreenResolutionY) / 2, _fMaxPixelsPerTexel);
+		_pTerrainVisibilityManager->_implementation->CalculateLodDistances(_cameraParams.fVFovAngleRad, _vecLODResolution, _vecLODDiameter,
+			_cameraParams.uiScreenResolutionY, _fMaxPixelsPerTexel);
+
+		_bRecalculateLodsDistances = false;
 	}
 
 	_containersMutex.lock();
@@ -1064,9 +1066,12 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	double middleLongitude = (in_Coords.fMinLongitude + in_Coords.fMaxLongitude)*0.5;
 
 	const double Rmin = 6356752.3142;
-	double diam = Rmin * ((in_Coords.fMaxLongitude - in_Coords.fMinLongitude) + (in_Coords.fMaxLattitude - in_Coords.fMinLattitude))*0.5;
 
-	_vecLODDiameter[nLod - 1] = std::max<float>(_vecLODDiameter[nLod], (float)diam);
+	double anglesDist = (in_Coords.fMaxLattitude - in_Coords.fMinLattitude);
+
+	double diam = Rmin * anglesDist;
+
+	_vecLODDiameter[nLod] = std::max<float>(_vecLODDiameter[nLod], (float)diam);
 
 	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
 	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
