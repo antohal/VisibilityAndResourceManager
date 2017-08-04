@@ -8,6 +8,7 @@
 #include <d3dx10math.h>
 #include <algorithm>
 
+#include "TerrainVisibilityManagerImpl.h"
 
 #define USE_ENGINE_SCALE
 
@@ -200,6 +201,21 @@ void CTerrainManager::SetAwaitVisibleForDataReady(bool in_bAwait)
 	_implementation->SetAwaitVisibleForDataReady(in_bAwait);
 }
 
+void CTerrainManager::SetLodDistancesKM(double * aLodDistances, size_t NLods)
+{
+	_implementation->SetLodDistancesKM(aLodDistances, NLods);
+}
+
+void CTerrainManager::GetLodDistancesKM(double* aLodDistances, size_t NLods)
+{
+	_implementation->GetLodDistancesKM(aLodDistances, NLods);
+}
+
+void CTerrainManager::CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY)
+{
+	_implementation->CalculateLodDistances(in_fMaxPixelsPerTexel, in_uiScreenResolutionX, in_uiScreenResolutionY);
+}
+
 //@}
 
 
@@ -212,6 +228,21 @@ CResourceManager* CTerrainManager::GetResourceManager()
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
 //		CTerrainManager::CTerrainManagerImpl
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CTerrainManager::CTerrainManagerImpl::CTerrainManagerImpl()
+{
+	_vecLODResolution.resize(20);
+	_vecLODDiameter.resize(20);
+
+	for (size_t i = 0; i < 20; i++)
+	{
+		_vecLODDiameter[i] = 0;
+		_vecLODResolution[i] = 512;
+	}
+
+	const double Rmin = 6356752.3142;
+	_vecLODDiameter[0] = 2 * Rmin;
+}
 
 CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 {
@@ -326,6 +357,15 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 		LogMessage("Error reading earth database file %ls, aborting", in_pcwszFileName);
 		return;
 	}
+	else
+	{
+
+		for (int i = 0; i < dbInfo.LodCount; i++)
+		{
+			_vecLODResolution[i] = std::max<short>(aLods[i].Width, aLods[i].Height);
+		}
+
+	}
 
 	unsigned int uiMaxDepth = std::min<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
 
@@ -404,6 +444,11 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 
 	_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
+
+	_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);
+
+	_cameraParams.fHFovAngleRad *= D2R;
+	_cameraParams.fVFovAngleRad *= D2R;
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
@@ -455,6 +500,12 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 
 void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 {
+
+	if (_bRecalculateLodsDistances)
+	{
+		_pTerrainVisibilityManager->_implementation->CalculateLodDistances(0.5f*(_cameraParams.fHFovAngleRad + _cameraParams.fVFovAngleRad), _vecLODResolution, _vecLODDiameter,
+			(_cameraParams.uiScreenResolutionX + _cameraParams.uiScreenResolutionY) / 2, _fMaxPixelsPerTexel);
+	}
 
 	_containersMutex.lock();
 
@@ -1007,10 +1058,15 @@ void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float lat
 }
 
 
-void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords)
+void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords, unsigned int nLod)
 {
 	double middleLattitude = (in_Coords.fMinLattitude + in_Coords.fMaxLattitude)*0.5;
 	double middleLongitude = (in_Coords.fMinLongitude + in_Coords.fMaxLongitude)*0.5;
+
+	const double Rmin = 6356752.3142;
+	double diam = Rmin * ((in_Coords.fMaxLongitude - in_Coords.fMinLongitude) + (in_Coords.fMaxLattitude - in_Coords.fMinLattitude))*0.5;
+
+	_vecLODDiameter[nLod - 1] = std::max<float>(_vecLODDiameter[nLod], (float)diam);
 
 	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
 	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
@@ -1051,6 +1107,7 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vBoundBoxMaximum, &vBoundBox._vMax[0], 3 * sizeof(double));
 
+
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		out_TriangulationCoords.vPosition[i] *= _fWorldScale;
@@ -1069,7 +1126,7 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(const CTerrainBlockDesc*
 	coords.fMaxLongitude = in_pData->GetParams()->fMaxLongitude;
 
 	STriangulationCoordsInfo coordsInfo;
-	ComputeTriangulationCoords(coords, coordsInfo);
+	ComputeTriangulationCoords(coords, coordsInfo, in_pData->GetParams()->uiDepth);
 
 	CInternalTerrainObject* pObject = new CInternalTerrainObject(static_cast<C3DBaseManager*>(this), _idCurrentIDForNewObject, in_pData, coordsInfo);
 
@@ -1123,3 +1180,30 @@ void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
 	_mapObjectHeightfields.clear();
 	_triangulationsMutex.unlock();
 }
+
+//@{ Функции установки линейки расстояний лодов
+
+// Установить линейку расстояний для NLods лодов
+void CTerrainManager::CTerrainManagerImpl::SetLodDistancesKM(double* aLodDistances, size_t NLods)
+{
+	_pTerrainVisibilityManager->_implementation->SetLodDistancesKM(aLodDistances, NLods);
+}
+
+// Считать линейку расстояний для NLods лодов
+void CTerrainManager::CTerrainManagerImpl::GetLodDistancesKM(double* aLodDistances, size_t NLods)
+{
+	_pTerrainVisibilityManager->_implementation->GetLodDistancesKM(aLodDistances, NLods);
+}
+
+// Рассчитать автоматически линейку расстояний исходя из максимального количества пикселей на тексель
+// (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
+void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY)
+{
+	_cameraParams.uiScreenResolutionX = in_uiScreenResolutionX;
+	_cameraParams.uiScreenResolutionY = in_uiScreenResolutionY;
+	_fMaxPixelsPerTexel = in_fMaxPixelsPerTexel;
+
+	_bRecalculateLodsDistances = true;
+}
+
+//@}

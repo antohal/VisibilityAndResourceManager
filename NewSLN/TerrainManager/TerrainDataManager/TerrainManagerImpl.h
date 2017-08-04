@@ -96,6 +96,7 @@ class CTerrainManager::CTerrainManagerImpl : public C3DBaseTerrainObjectManager
 {
 public:
 
+	CTerrainManagerImpl();
 	~CTerrainManagerImpl();
 
 	// инициализация. Параметр - имя дериктории, где лежат данные Земли
@@ -198,6 +199,22 @@ public:
 
 	//@} C3DBaseManager
 
+
+	//@{ Функции установки линейки расстояний лодов
+
+	// Установить линейку расстояний для NLods лодов
+	void SetLodDistancesKM(double* aLodDistances, size_t NLods);
+
+	// Считать линейку расстояний для NLods лодов
+	void GetLodDistancesKM(double* aLodDistances, size_t NLods);
+
+	// Рассчитать автоматически линейку расстояний исходя из максимального количества пикселей на тексель
+	// (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
+	// После вызова этой функции, на следующем вызове Update произойдет пересчет линейки лодов.
+	void CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY);
+
+	//@}
+
 private:
 
 	float GetWorldRadius() const;
@@ -210,7 +227,7 @@ private:
 
 	void ReleaseTriangulationsAndHeightmaps();
 
-	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords);
+	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords, unsigned int nLod);
 
 	void CalculateReadyAndVisibleSet();
 
@@ -284,8 +301,17 @@ private:
 		vm::Vector3df		vUp = vm::Vector3df(0, 1, 0);
 
 		D3DMATRIX			mProjection;
+
+		float				fHFovAngleRad, fVFovAngleRad;
+		unsigned int		uiScreenResolutionX, uiScreenResolutionY;
 	};
 
 	SCameraParams			_cameraParams;
+
+	std::vector<size_t>		_vecLODResolution;
+	std::vector<float>		_vecLODDiameter;
+
+	float					_fMaxPixelsPerTexel = 10;
+	bool					_bRecalculateLodsDistances = false;
 
 };

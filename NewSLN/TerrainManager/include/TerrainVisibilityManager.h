@@ -47,7 +47,7 @@ public:
 
 	//@}
 
-private:
+
 
 	class CTerrainVisibilityManagerImpl;
 	CTerrainVisibilityManagerImpl*	_implementation = nullptr;

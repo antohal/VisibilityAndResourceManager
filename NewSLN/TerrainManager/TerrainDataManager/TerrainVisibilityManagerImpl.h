@@ -2,6 +2,8 @@
 
 #include "TerrainVisibilityManager.h"
 
+#define MAX_LODS 20
+
 class CTerrainVisibilityManager::CTerrainVisibilityManagerImpl
 {
 public:
@@ -16,6 +18,10 @@ public:
 	C3DBaseObject* GetVisibleObject(unsigned int i);
 
 	//@}
+
+	void CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFResolution, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel);
+	void SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods);
+	void GetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods);
 
 private:
 
@@ -46,9 +52,11 @@ private:
 
 	const CTerrainBlockDesc* _pRoot = nullptr;
 
+	double			_aLodDistances[MAX_LODS];
+
 	float			_fWorldScale = 1;
 	unsigned int	_uiMaxDepth = 0;
 
-	float			_fMaximumDistance = 2 * 6400000.f;
-	float			_fLodDistCoeff = 0.5f;
+	//float			_fMaximumDistance = 2 * 6400000.f;
+	//float			_fLodDistCoeff = 0.5f;
 };

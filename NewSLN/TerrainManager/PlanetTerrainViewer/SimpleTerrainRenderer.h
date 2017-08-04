@@ -5,6 +5,7 @@
 #include "HeightfieldConverter.h"
 
 #include <map>
+#include <mutex>
 #include <thread>
 
 class CSimpleTerrainRenderer;
@@ -83,6 +84,9 @@ public:
 	virtual void					UnlockDeviceContext() override;
 
 
+	void							LockLoadMutex();
+	void							UnlockLoadMutex();
+
 private:
 
 	bool InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
@@ -137,4 +141,6 @@ private:
 
 	int								_visibleObjsCount = 0;
 	std::list<TerrainObjectID>		_lstRenderQueue;
+
+	std::mutex						_loadMutex;
 };

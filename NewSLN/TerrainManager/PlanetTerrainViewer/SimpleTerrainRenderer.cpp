@@ -28,13 +28,20 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 
 	_pLoadThread = new std::thread([this]() {
 
+		_owner->LockLoadMutex();
+
 		ID3D11ShaderResourceView* pResourceView = nullptr;
 
 		// Загружаем текстуру
 		HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceView, NULL);
 		if (FAILED(result))
 		{
+
+			_owner->GetTerrainManager()->SetDataReady(_ID);
+
 			LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", _wsTextureFileName.c_str());
+
+			_owner->UnlockLoadMutex();
 			return;
 		}
 
@@ -44,6 +51,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 		_pTextureSRV = pResourceView;
 		_owner->GetTerrainManager()->SetDataReady(_ID);
 
+		_owner->UnlockLoadMutex();
 	});
 
 }
@@ -161,7 +169,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	//_pHeightfieldConverter->SetHeightScale(1000.f);
-	//_pHeightfieldConverter->SetHeightScale(20.f);
+	_pHeightfieldConverter->SetHeightScale(20.f);
 
 	_pHeightfieldConverter->SetNormalDivisionAngles(15, 60);
 
@@ -404,6 +412,16 @@ void CSimpleTerrainRenderer::LockDeviceContext()
 void CSimpleTerrainRenderer::UnlockDeviceContext()
 {
 	GetHeightfieldConverter()->UnlockDeviceContext();
+}
+
+void CSimpleTerrainRenderer::LockLoadMutex()
+{
+	_loadMutex.lock();
+}
+
+void CSimpleTerrainRenderer::UnlockLoadMutex()
+{
+	_loadMutex.unlock();
 }
 
 void CSimpleTerrainRenderer::StartUpdateTriangulationsThread()

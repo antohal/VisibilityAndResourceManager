@@ -121,6 +121,22 @@ public:
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
 	CResourceManager* GetResourceManager();
 
+
+
+	//@{ Функции установки линейки расстояний лодов
+
+	// Установить линейку расстояний для NLods лодов
+	void SetLodDistancesKM(double* aLodDistances, size_t NLods);
+
+	// Считать линейку расстояний для NLods лодов
+	void GetLodDistancesKM(double* aLodDistances, size_t NLods);
+
+	// Рассчитать автоматически линейку расстояний исходя из максимального количества пикселей на тексель
+	// (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
+	void CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY);
+
+	//@}
+
 private:
 
 	class CTerrainManagerImpl;

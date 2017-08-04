@@ -244,6 +244,11 @@ struct CVisibilityManager::VisibilityManagerPrivate : public IVisibilityManagerP
 	float									_fWorldRadius = 10000000;
 	float									_fMinCellSize = 100;
 
+
+	float									 _fHorizontalFOVDeg = 75;
+	float									 _fVerticalFOVDeg = 75;
+
+
 	unsigned int							_uiEyeID = 0;
 
 	std::set<IVisibilityManagerPlugin*>		_setPlugins;
@@ -656,9 +661,6 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 	float fNearPlane = 99999.f;
 	float fFarPlane = 0;
 
-	float fHorizontalFOVDeg = 75;
-	float fVerticalFOVDeg = 75;
-
 	if (D3DXMatrixInverse(&mInvProjection, &fDet, &md3dProj) != NULL)
 	{
 
@@ -693,7 +695,7 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 		Vector2f vHorizontalBase2(vXZBase2.x, vXZBase2.z);
 
 		float fCosHor = DotProduct(Normalize(vHorizontalBase1), Normalize(vHorizontalBase2));
-		fHorizontalFOVDeg = acosf(fCosHor)*R2D;
+		_private->_fHorizontalFOVDeg = acosf(fCosHor)*R2D;
 
 
 		D3DXVECTOR3 vYZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
@@ -703,7 +705,7 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 		Vector2f vVerticalBase2(vYZBase2.y, vYZBase2.z);
 
 		float fCosVer = DotProduct(Normalize(vVerticalBase1), Normalize(vVerticalBase2));
-		fVerticalFOVDeg = acosf(fCosVer)*R2D;
+		_private->_fVerticalFOVDeg = acosf(fCosVer)*R2D;
 
 		if (vViewSpaceFrustumPoints[0].z > vViewSpaceFrustumPoints[4].z)
 		{
@@ -724,7 +726,7 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 			bLog = true;
 		}
 
-		_private->_Camera.CreateFromFrustumPoints(vPos, vDir, vUp, fHorizontalFOVDeg, fVerticalFOVDeg, fNearPlane, fFarPlane, vViewSpaceFrustumPoints);
+		_private->_Camera.CreateFromFrustumPoints(vPos, vDir, vUp, _private->_fHorizontalFOVDeg, _private->_fVerticalFOVDeg, fNearPlane, fFarPlane, vViewSpaceFrustumPoints);
 
 	}
 	else
@@ -738,6 +740,12 @@ void CVisibilityManager::SetViewProjection(const Vector3& in_vPos, const Vector3
 	_private->_setVisibleTextures.clear();
 	_private->_mapTexturePriority.clear();
 
+}
+
+void CVisibilityManager::GetFOVAnglesDeg(float& out_fHFovDeg, float& out_fVFovDeg)
+{
+	out_fHFovDeg = _private->_fHorizontalFOVDeg;
+	out_fVFovDeg = _private->_fVerticalFOVDeg;
 }
 
 void CVisibilityManager::SetCamera (const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, 

@@ -162,6 +162,9 @@ public:
 	// Удалить плагин
 	void UninstallPlugin(IVisibilityManagerPlugin*);
 
+
+	void GetFOVAnglesDeg(float& out_fHFovDeg, float& out_fVFovDeg);
+
 protected:
 
 	void SetPredictionModeEnabled(bool enabled);

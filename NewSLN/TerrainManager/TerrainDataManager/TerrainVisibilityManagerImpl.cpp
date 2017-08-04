@@ -175,8 +175,15 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerra
 	_fWorldScale = in_fWorldScale;
 	_uiMaxDepth = in_uiMaxDepth;
 
-	_fLodDistCoeff = in_fLodDistCoeff;
-	_fMaximumDistance = in_fWorldScale * in_fMaximumDistance;
+	//_fLodDistCoeff = in_fLodDistCoeff;
+	//_fMaximumDistance = in_fWorldScale * in_fMaximumDistance;
+
+	_aLodDistances[0] = in_fMaximumDistance;
+
+	for (size_t i = 1; i < MAX_LODS; i++)
+	{
+		_aLodDistances[i] = _aLodDistances[i - 1] * in_fLodDistCoeff;
+	}
 
 	_pRoot = in_pMeshTree->GetRootTerrainData();
 
@@ -198,16 +205,16 @@ bool CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::IsObjectVisible(C
 
 unsigned int CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetLodDepth(double dist) const
 {
-	unsigned int uiMaxDepth = 0;
-	double dfCurrentLodDist = _fMaximumDistance;
+	unsigned int uiDepth = 0;
 
-	while (dist*_fWorldScale <= dfCurrentLodDist)
+	for (size_t i = 0; i < _uiMaxDepth; i++)
 	{
-		uiMaxDepth++;
-		dfCurrentLodDist *= _fLodDistCoeff;
-	}
+		if (dist > _aLodDistances[i])
+			break;
 
-	return std::min<unsigned int>(_uiMaxDepth, uiMaxDepth);
+		uiDepth++;
+	}
+	return uiDepth;
 }
 
 void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::UpdateObjectsVisibility(const Vector3& in_vPos, const Vector3& in_vDir, const Vector3& in_vUp, D3DMATRIX* in_pmProjection)
@@ -371,4 +378,40 @@ C3DBaseObject* CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetVisi
 	}
 
 	return nullptr;
+}
+
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFDimensions, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel)
+{
+	size_t i;
+
+	for (i = 0; i < in_vecHFDimensions.size(); i++)
+	{
+		if (in_vecLodDiameter[i] == 0)
+			break;
+
+		double dist = (double)in_vecLodDiameter[i] * in_uiMeanScreenResolution / (in_vecHFDimensions[i] * in_fCameraMeanFOV * in_uiPixelsPerTexel);
+
+		_aLodDistances[i] = dist;
+	}
+
+	for (int j = i; j < MAX_LODS; j++)
+	{
+		_aLodDistances[j] = _aLodDistances[j - 1] * 0.5;
+	}
+}
+
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods)
+{
+	for (size_t i = 0; i < in_nNLods; i++)
+	{
+		_aLodDistances[i] = in_aLodDistances[i] * 1000.0;
+	}
+}
+
+void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::GetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods)
+{
+	for (size_t i = 0; i < in_nNLods; i++)
+	{
+		in_aLodDistances[i] = _aLodDistances[i] * 0.001;
+	}
 }
