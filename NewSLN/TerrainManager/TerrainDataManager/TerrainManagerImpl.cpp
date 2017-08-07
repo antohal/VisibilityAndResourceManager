@@ -18,6 +18,8 @@ const float g_fMasterScale = 100.f;
 const float g_fMasterScale = 1.f;
 #endif
 
+const float g_fMaxHFAliveTime = 1.f;
+
 CInternalTerrainObject::CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, 
 	const CTerrainBlockDesc* in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo)
 	: _pOwner(in_pOwner), _ID(ID), _pBlockDesc(in_pBlockDesc)
@@ -525,7 +527,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 		for (auto it = _mapObjectHeightfields.begin(); it != _mapObjectHeightfields.end();)
 		{
-			if (it->second._timeSinceLastRequest > 10.0)
+			if (it->second._timeSinceLastRequest > g_fMaxHFAliveTime)
 			{
 				_pHeightfieldConverter->ReleaseHeightfield(&it->second._heightfield);
 
@@ -546,7 +548,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 				continue;
 			}
 
-			if (it->second._timeSinceDead > 10.f)
+			if (it->second._timeSinceDead > g_fMaxHFAliveTime)
 			{
 				_pHeightfieldConverter->ReleaseTriangulation(&it->second._triangulation);
 

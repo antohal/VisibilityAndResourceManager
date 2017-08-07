@@ -185,6 +185,11 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::Init(C3DBaseTerra
 		_aLodDistances[i] = _aLodDistances[i - 1] * in_fLodDistCoeff;
 	}
 
+	for (size_t i = 1; i < MAX_LODS; i++)
+	{
+		_aLodDistances[i] += 3000.0;
+	}
+
 	_pRoot = in_pMeshTree->GetRootTerrainData();
 
 	for (size_t i = 0; i < in_pMeshTree->GetObjectsCount(); i++)
@@ -397,6 +402,11 @@ void CTerrainVisibilityManager::CTerrainVisibilityManagerImpl::CalculateLodDista
 	for (int j = i; j < MAX_LODS; j++)
 	{
 		_aLodDistances[j] = _aLodDistances[j - 1] * 0.5;
+	}
+
+	for (size_t i = 1; i < MAX_LODS; i++)
+	{
+		_aLodDistances[i] += 3000.0;
 	}
 }
 
