@@ -39,7 +39,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 
 			_owner->GetTerrainManager()->SetDataReady(_ID);
 
-			LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", _wsTextureFileName.c_str());
+			//LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", _wsTextureFileName.c_str());
 
 			_owner->UnlockLoadMutex();
 			return;

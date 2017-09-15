@@ -70,7 +70,7 @@ std::wstring	ExtractFileDirectory(const std::wstring& in_Str)
 		if (pos == size_t(-1))
 			return std::wstring();
 	}
-	return std::wstring(in_Str, 0, pos) + std::wstring(L"/");
+	return std::wstring(in_Str, 0, pos);// +std::wstring(L"/");
 }
 
 bool DirectoryExists(const std::wstring& szPath)

@@ -150,16 +150,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	//@{ Prepare terrain rendering pipeline
 
 
-	/*DataBaseInfo dbInfo;
-	LodInfoStruct aLods[2];
+	DataBaseInfo dbInfo;
+	LodInfoStruct aLods[7];
 
-	dbInfo.LodCount = 2;
+	dbInfo.LodCount = 7;
 	dbInfo.DeltaX = 1395;
 	dbInfo.DeltaY = 697;
 	
 
 	aLods[0].CountX = 4;
-	aLods[0].CountY = 2;
+	aLods[0].CountY = 4;
 	aLods[0].Width = 512;
 	aLods[0].Height = 512;
 
@@ -168,13 +168,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	aLods[1].Width = 512;
 	aLods[1].Height = 512;
 
+	aLods[2].CountX = 2;
+	aLods[2].CountY = 2;
+	aLods[2].Width = 512;
+	aLods[2].Height = 512;
+	
+	aLods[3].CountX = 2;
+	aLods[3].CountY = 2;
+	aLods[3].Width = 512;
+	aLods[3].Height = 512;
+
+	aLods[4].CountX = 2;
+	aLods[4].CountY = 2;
+	aLods[4].Width = 512;
+	aLods[4].Height = 512;
+
+	aLods[5].CountX = 2;
+	aLods[5].CountY = 2;
+	aLods[5].Width = 512;
+	aLods[5].Height = 512;
+
+	aLods[6].CountX = 2;
+	aLods[6].CountY = 2;
+	aLods[6].Width = 512;
+	aLods[6].Height = 512;
+
+
 	FILE* fp = fopen("PlanetViewerData\\Earth_2\\earth.db", "wb");
 
 	fwrite(&dbInfo, sizeof(DataBaseInfo), 1, fp);
 
-	fwrite(aLods, sizeof(LodInfoStruct), 2, fp);
+	fwrite(&aLods[0], sizeof(LodInfoStruct)*7, 1, fp);
 
-	fclose(fp);*/
+	fclose(fp);
 
 
 	ID3D11Device* pDevice = pApplication->GetGraphicsContext()->GetSystem()->GetDevice();
@@ -193,9 +219,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	//pTerrainManager->InitGenerated(pDevice, pDeviceContext, L"PlanetViewerData\\RandomPlanet", 2, 2, 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
 
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, true);
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Y:\\Barkalov\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Y:\\Barkalov\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\DataBase\\DataBaseInfo", 4, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
-
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 

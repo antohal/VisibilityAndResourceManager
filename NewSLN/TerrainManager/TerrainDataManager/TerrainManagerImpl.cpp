@@ -312,12 +312,14 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	std::wstring wsDbFileName = in_pcwszFileName;
 
 	if (!PathFileExistsW(wsDbFileName.c_str()))
+	{
 		wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
 
-	if (!PathFileExistsW(wsDbFileName.c_str()))
-	{
-		LogMessage("Cannot open database file %ls", wsDbFileName.c_str());
-		return;
+		if (!PathFileExistsW(wsDbFileName.c_str()))
+		{
+			LogMessage("Cannot open database file %ls", wsDbFileName.c_str());
+			return;
+		}
 	}
 
 	bool bSuccessifulRead = true;
@@ -444,10 +446,13 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	_cameraParams.vDir = vm::Vector3df(vDir.x, vDir.y, vDir.z);
 	_cameraParams.vUp = vm::Vector3df(vUp.x, vUp.y, vUp.z);
 
-	_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
-	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
+	if (_pVisibilityManager)
+		_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 
-	_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);
+	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
+	
+	if (_pVisibilityManager)
+		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);
 
 	_cameraParams.fHFovAngleRad *= D2R;
 	_cameraParams.fVFovAngleRad *= D2R;
@@ -1206,11 +1211,11 @@ void CTerrainManager::CTerrainManagerImpl::GetLodDistancesKM(double* aLodDistanc
 // (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
 void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY)
 {
-	_cameraParams.uiScreenResolutionX = in_uiScreenResolutionX;
+	/*_cameraParams.uiScreenResolutionX = in_uiScreenResolutionX;
 	_cameraParams.uiScreenResolutionY = in_uiScreenResolutionY;
 	_fMaxPixelsPerTexel = in_fMaxPixelsPerTexel;
 
-	_bRecalculateLodsDistances = true;
+	_bRecalculateLodsDistances = true;*/
 }
 
 //@}

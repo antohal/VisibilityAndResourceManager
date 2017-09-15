@@ -352,7 +352,7 @@ void CTerrainBlockDesc::CTerrainBlockDescImplementation::ReadDataStructure(const
 
 					_vecChildBlocks.push_back(pChildBlock);
 
-					//if (PathFileExistsW(wsChildsDirectory.c_str()))
+					if (PathFileExistsW(wsChildsDirectory.c_str()))
 					{
 						pChildBlock->_implementation->ReadDataStructure(wsChildsDirectory, in_pLodInfoArray, in_uiMaxDepth);
 					}
