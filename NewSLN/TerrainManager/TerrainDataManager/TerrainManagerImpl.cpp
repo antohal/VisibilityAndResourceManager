@@ -373,6 +373,9 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 
 	unsigned int uiMaxDepth = std::min<unsigned int>(dbInfo.LodCount, in_uiMaxDepth);
 
+	if (in_uiMaxDepth == 0)
+		uiMaxDepth = dbInfo.LodCount;
+
 	// TODO: Read lods structure
 
 	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);

@@ -21,6 +21,11 @@ void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceConte
 	_private->Init(in_pD3DDevice11, in_pDeviceContext, in_pcszComputeShaderFile);
 }
 
+void HeightfieldConverter::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, ID3DX11Effect* in_pEffect)
+{
+	_private->Init(in_pD3DDevice11, in_pDeviceContext, in_pEffect);
+}
+
 void HeightfieldConverter::SetHeightScale(float in_fHeightScale)
 {
 	_private->SetHeightScale(in_fHeightScale);

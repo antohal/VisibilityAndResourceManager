@@ -14,6 +14,8 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	// инициализация
 	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile);
 
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, ID3DX11Effect* in_pEffect);
+
 	// Задать глобальный коэффициент масштаба.
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
 	void	SetWorldScale(float in_fScale);

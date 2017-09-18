@@ -41,6 +41,15 @@ void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD
 
 }
 
+
+void HeightfieldConverter::HeightfieldConverterPrivate::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, ID3DX11Effect* in_pEffect)
+{
+	_ptrD3DDevice = in_pD3DDevice11;
+	_ptrDeviceContext = in_pDeviceContext;
+
+	_pAbstractConverter = new DirectComputeHeightfieldConverter(in_pD3DDevice11, in_pDeviceContext, in_pEffect, this);
+}
+
 // —оздать триангул€цию немедленно и дождатьс€ готовности
 void HeightfieldConverter::HeightfieldConverterPrivate::CreateTriangulationImmediate(const SHeightfield* in_pHeightfield, float in_fLongitudeCutCoeff, float in_fLattitudeCutCoeff, STriangulation* out_pTriangulation, const SHeightfield** in_ppNeighbours)
 {

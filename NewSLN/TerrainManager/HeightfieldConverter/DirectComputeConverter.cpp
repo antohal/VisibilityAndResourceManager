@@ -244,6 +244,52 @@ HRESULT CreateStructuredBuffer(ID3D11Device* pDevice, UINT uElementSize, UINT uC
 		return pDevice->CreateBuffer(&desc, nullptr, ppBufOut);
 }
 
+DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, ID3DX11Effect* in_pEffect, HeightfieldConverter::HeightfieldConverterPrivate* in_pOwner)
+{
+	_owner = in_pOwner;
+
+	_ptrD3DDevice = in_pD3DDevice11;
+	_ptrDeviceContext = in_pDeviceContext;
+
+
+	ID3DX11EffectTechnique* pTechnique = in_pEffect->GetTechniqueByName("HeightfieldConverter");
+	if (!pTechnique || !pTechnique->IsValid())
+	{
+		LogMessage("DirectComputeHeightfieldConverter Error: cannot find such valid technique 'HeightfieldConverter'");
+		return;
+	}
+
+	ID3DX11EffectPass* pPass = pTechnique->GetPassByIndex(0);
+	if (!pPass)
+	{
+		LogMessage("DirectComputeHeightfieldConverter Error: cannot find any passes in 'HeightfieldConverter' must be one!");
+		return;
+	}
+
+	D3DX11_PASS_SHADER_DESC computeShaderDesc;
+	HRESULT hr = pPass->GetComputeShaderDesc(&computeShaderDesc);
+
+	if (hr != S_OK)
+	{
+		LogMessage("DirectComputeHeightfieldConverter Error: pPass->GetComputeShaderDesc() call is invalid!");
+		return;
+	}
+
+	if (!computeShaderDesc.pShaderVariable)
+	{
+		LogMessage("DirectComputeHeightfieldConverter Error: computeShaderDesc.pShaderVariable is null!");
+		return;
+	}
+
+	hr = computeShaderDesc.pShaderVariable->GetComputeShader(0, &_ptrComputeShader);
+
+	if (hr != S_OK)
+	{
+		LogMessage("DirectComputeHeightfieldConverter Error: pPass->GetComputeShaderDesc() call is invalid!");
+		return;
+	}
+}
+
 DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile, HeightfieldConverter::HeightfieldConverterPrivate* in_pOwner)
 {
 	_owner = in_pOwner;

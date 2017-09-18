@@ -2,6 +2,8 @@
 
 #include <d3d11.h>
 #include <d3dx10math.h>
+#include <D3DX11.h>
+#include <d3dx11effect.h>
 
 #ifndef HEIGHTFIELD_CONVERTER_EXPORTS
 #define HEIGHFIELD_CONVERTER_API __declspec(dllimport)
@@ -89,6 +91,9 @@ public:
 	
 	// инициализация
 	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcszComputeShaderFile);
+
+	// Инициализировать через Эффект. Подразумевается, что техника носит название "HeightfieldConverter"
+	void	Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, ID3DX11Effect* in_pEffect);
 
 	// Задать глобальный коэффициент масштаба.
 	// По умолчанию все расчеты ведуться в привязке к эллипсоиду Земли в системе координат WGS-84 в метрах
