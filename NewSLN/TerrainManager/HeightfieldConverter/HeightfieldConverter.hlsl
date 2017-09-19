@@ -303,14 +303,14 @@ void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbo
 	else
 	{
 	
-		if (iQuadX >= 0 && iQuadX < (int)nCountX - 1)
+		if (iQuadX >= 0 && iQuadX < (int)nCountY - 1)
 		{
 			// left
 			if (iQuadY < 0)
 				ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
 
 			// right
-			if (iQuadY >= (int)nCountX - 1)
+			if (iQuadY >= (int)nCountY - 1)
 				ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
 		}
 		
@@ -331,7 +331,7 @@ void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbo
 			ComputeQuadGeometry((int)nCountX - 2, (int)nCountY - 2, SouthWestNeighbourTexture, neighbourQuadGeom, fSouthWestBlockLongCoeff, fSouthWestBlockLatCoeff, fSouthWestMinLat, fSouthWestMaxLat, fSouthWestMinLong, fSouthWestMaxLong);
 		}
 		
-		else if ((iQuadX < 0) && (iQuadY >= (int)nCountX - 1))
+		else if ((iQuadX < 0) && (iQuadY >= (int)nCountY - 1))
 		{
 			// right bottom
 			ComputeQuadGeometry((int)nCountX - 2, 0, SouthEastNeighbourTexture, neighbourQuadGeom, fSouthEastBlockLongCoeff, fSouthEastBlockLatCoeff, fSouthEastMinLat, fSouthEastMaxLat, fSouthEastMinLong, fSouthEastMaxLong);
@@ -343,7 +343,7 @@ void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbo
 			ComputeQuadGeometry(0, (int)nCountY - 2, NorthWestNeighbourTexture, neighbourQuadGeom, fNorthWestBlockLongCoeff, fNorthWestBlockLatCoeff, fNorthWestMinLat, fNorthWestMaxLat, fNorthWestMinLong, fNorthWestMaxLong);
 		}
 
-		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY >= (int)nCountX - 1))
+		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY >= (int)nCountY - 1))
 		{
 			// right top
 			ComputeQuadGeometry(0, 0, NorthEastNeighbourTexture, neighbourQuadGeom, fNorthEastBlockLongCoeff, fNorthEastBlockLatCoeff, fNorthEastMinLat, fNorthEastMaxLat, fNorthEastMinLong, fNorthEastMaxLong);
