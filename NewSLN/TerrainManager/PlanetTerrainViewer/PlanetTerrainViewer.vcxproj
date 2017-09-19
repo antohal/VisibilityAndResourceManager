@@ -194,7 +194,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
-      <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;Effects11d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <TreatOutputAsContent>true</TreatOutputAsContent>
@@ -279,7 +279,7 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;Effects11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>

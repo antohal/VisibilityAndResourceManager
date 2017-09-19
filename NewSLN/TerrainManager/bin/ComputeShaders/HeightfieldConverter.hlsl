@@ -541,7 +541,7 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 }
 
 [numthreads(1, 1, 1)]
-void CSMain(uint3 DTid : SV_DispatchThreadID)
+void HeightfieldConverterCS(uint3 DTid : SV_DispatchThreadID)
 {
 	int iQuadX = DTid.x;
 	int iQuadY = DTid.y;
@@ -576,5 +576,14 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 		OutVertexBuffer.Store(nVertexStartIndex * VERTEX_SIZE + 32,	asuint(outVertex.tangent.x));
 		OutVertexBuffer.Store(nVertexStartIndex * VERTEX_SIZE + 36,	asuint(outVertex.tangent.y));
 		OutVertexBuffer.Store(nVertexStartIndex * VERTEX_SIZE + 40,	asuint(outVertex.tangent.z));
+	}
+}
+
+
+technique11 HeightfieldConverter
+{
+	pass P0
+	{
+		SetComputeShader(CompileShader(cs_5_0, HeightfieldConverterCS()));
 	}
 }

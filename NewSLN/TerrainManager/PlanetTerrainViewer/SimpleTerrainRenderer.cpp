@@ -12,6 +12,8 @@
 #include <string>
 #include <chrono>
 
+#include <d3dcompiler.h>
+
 //
 // CSimpleTerrainRenderObject
 //
@@ -129,6 +131,9 @@ unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 
 CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 {
+	if (_pD3DXEffect)
+		_pD3DXEffect->Release();
+
 
 	if (_pTriangulationsThread)
 	{
@@ -162,10 +167,36 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	InitializeShader(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), L"PlanetTerrainViewerShaders\\SimpleTerrain.vs", L"PlanetTerrainViewerShaders\\SimpleTerrain.ps");
 
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_DEBUG;
+#endif
+
+	ID3DBlob* errorBlob = nullptr;
+
+	HRESULT hr = D3DX11CompileEffectFromFile(L"ComputeShaders\\HeightfieldConverter.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, flags, 0, GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(),
+		&_pD3DXEffect, &errorBlob);
+
+	if (FAILED(hr))
+	{
+		if (errorBlob)
+		{
+			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+			errorBlob->Release();
+		}
+
+		if (_pD3DXEffect)
+			_pD3DXEffect->Release();
+
+		_pD3DXEffect = nullptr;
+	}
 
 	_pHeightfieldConverter = new HeightfieldConverter;
 
-	_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
+	if (_pD3DXEffect)
+		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), _pD3DXEffect);
+	else
+		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
 	//_pHeightfieldConverter->SetHeightScale(1000.f);

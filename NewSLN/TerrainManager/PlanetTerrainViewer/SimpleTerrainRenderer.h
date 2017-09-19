@@ -7,6 +7,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <d3dx11effect.h>
 
 class CSimpleTerrainRenderer;
 
@@ -122,6 +123,8 @@ private:
 	ID3D11SamplerState*				_pSampleState = nullptr;
 	ID3D11Buffer*					_pMatrixBuffer = nullptr;
 	ID3D11Buffer*					_pLightBuffer = nullptr;
+
+	ID3DX11Effect*					_pD3DXEffect = nullptr;
 
 	//@}
 

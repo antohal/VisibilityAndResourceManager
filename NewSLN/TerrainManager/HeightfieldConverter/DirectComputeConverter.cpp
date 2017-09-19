@@ -314,7 +314,7 @@ DirectComputeHeightfieldConverter::DirectComputeHeightfieldConverter(ID3D11Devic
 
 	// Compile shader
 	ID3DBlob *csBlob = nullptr;
-	HRESULT hr = CompileComputeShader(std::wstring(GetStartDir() + in_pcszComputeShaderFile).c_str(), "CSMain", _ptrD3DDevice, &csBlob);
+	HRESULT hr = CompileComputeShader(std::wstring(GetStartDir() + in_pcszComputeShaderFile).c_str(), "HeightfieldConverterCS", _ptrD3DDevice, &csBlob);
 	if (FAILED(hr))
 	{
 		// TODO: log error here
