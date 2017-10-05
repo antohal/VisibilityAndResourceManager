@@ -311,6 +311,7 @@
     <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\TerrainDataManager.h" />
     <ClInclude Include="..\include\TerrainManager.h" />
+    <ClInclude Include="..\include\TerrainShaderParams.h" />
     <ClInclude Include="..\include\TerrainVisibilityManager.h" />
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />

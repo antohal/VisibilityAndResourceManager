@@ -96,6 +96,10 @@ public:
 		for (size_t iObj = 0; iObj < _pTerrainManager->GetVisibleObjectsCount(); iObj++)
 		{
 			TerrainObjectID visObjID = _pTerrainManager->GetVisibleObjectID(iObj);
+
+			STerrainBlockShaderParams terrainBlockParams;
+			_pTerrainManager->FillTerrainBlockShaderParams(visObjID, &terrainBlockParams);
+
 			_pTerrainRenderer->AddObjectToRenderQueue(visObjID);
 		}
 	}
@@ -210,7 +214,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	// Инициализируем террейн менеджер
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\TestPlanet", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f);
-	pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
+	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D_008", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1.517f, 1.517f);
 
 	//pTerrainManager->Init(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_3D", g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, 1, 1);
@@ -220,10 +224,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, true);
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Y:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
-	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\DataBase\\DataBaseInfo", 4, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 4, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, true);
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
+
+
+	SGlobalTerrainShaderParams globalShaderParams;
+	pTerrainManager->FillGlobalShaderParams(&globalShaderParams);
 
 
 	//pTerrainManager->CalculateLodDistances(5, 1280, 960);

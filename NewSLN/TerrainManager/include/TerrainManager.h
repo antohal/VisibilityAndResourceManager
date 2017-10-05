@@ -3,6 +3,7 @@
 #include <d3d11.h>
 
 #include "TerrainDataManager.h"
+#include "TerrainShaderParams.h"
 
 #ifndef TERRAINMANAGER_EXPORTS
 #define TERRAINOBJECTMANAGER_API __declspec(dllimport)
@@ -134,6 +135,18 @@ public:
 	// Рассчитать автоматически линейку расстояний исходя из максимального количества пикселей на тексель
 	// (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
 	void CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY);
+
+	//@}
+
+
+
+	//@{ Функции получения параметров для шейдеров
+	
+	// заполнить структуру с глобальными шейдерными параметрами
+	void FillGlobalShaderParams(SGlobalTerrainShaderParams* out_pGlobalShaderParams);
+
+	// заполнить структуру с параметрами для указанного блока
+	void FillTerrainBlockShaderParams(TerrainObjectID ID, STerrainBlockShaderParams* out_pTerrainBlockShaderParams);
 
 	//@}
 

@@ -74,5 +74,8 @@
     <ClInclude Include="TerrainManagerImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\TerrainShaderParams.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

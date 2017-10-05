@@ -97,6 +97,22 @@ void CTerrainManager::SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVE
 	_implementation->SetViewProjection(in_vPos, in_vDir, in_vUp, in_pmProjection);
 }
 
+//@{ Функции получения параметров для шейдеров
+
+// заполнить структуру с глобальными шейдерными параметрами
+void CTerrainManager::FillGlobalShaderParams(SGlobalTerrainShaderParams* out_pGlobalShaderParams)
+{
+	_implementation->FillGlobalShaderParams(out_pGlobalShaderParams);
+}
+
+// заполнить структуру с параметрами для указанного блока
+void CTerrainManager::FillTerrainBlockShaderParams(TerrainObjectID ID, STerrainBlockShaderParams* out_pTerrainBlockShaderParams)
+{
+	_implementation->FillTerrainBlockShaderParams(ID, out_pTerrainBlockShaderParams);
+}
+
+//@}
+
 // В момент вызова этой функции формируется 4 списка: 
 // объекты, которые нужно создать
 // объекты, которые стали видимыми
@@ -294,6 +310,8 @@ void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, I
 
 void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
 {
+	ZeroMemory(&_globalTerrainShaderParams, sizeof(SGlobalTerrainShaderParams));
+
 	_pTerrainDataManager = new CTerrainDataManager();
 	_pResourceManager = new CResourceManager();
 
@@ -367,6 +385,12 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 		for (int i = 0; i < dbInfo.LodCount; i++)
 		{
 			_vecLODResolution[i] = std::max<short>(aLods[i].Width, aLods[i].Height);
+
+			_globalTerrainShaderParams.aVertexCounts[i][0] = aLods[i].Width;
+			_globalTerrainShaderParams.aVertexCounts[i][1] = aLods[i].Height;
+
+			_globalTerrainShaderParams.aPartitionCoefficients[i][0] = aLods[i].CountX;
+			_globalTerrainShaderParams.aPartitionCoefficients[i][1] = aLods[i].CountY;
 		}
 
 	}
@@ -375,6 +399,8 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 
 	if (in_uiMaxDepth == 0)
 		uiMaxDepth = dbInfo.LodCount;
+
+	_globalTerrainShaderParams.uiLevelsCount = uiMaxDepth;
 
 	// TODO: Read lods structure
 
@@ -391,6 +417,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 
 	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
 	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
+
 
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 
@@ -416,7 +443,7 @@ void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDe
 
 	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
 	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5f, depth);
-
+	
 	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
 }
 
@@ -1219,6 +1246,194 @@ void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPi
 	_fMaxPixelsPerTexel = in_fMaxPixelsPerTexel;
 
 	_bRecalculateLodsDistances = true;*/
+}
+
+//@}
+
+
+//@{ Функции получения параметров для шейдеров
+
+// заполнить структуру с глобальными шейдерными параметрами
+void CTerrainManager::CTerrainManagerImpl::FillGlobalShaderParams(SGlobalTerrainShaderParams* out_pGlobalShaderParams)
+{
+	*out_pGlobalShaderParams = _globalTerrainShaderParams;
+}
+
+// заполнить структуру с параметрами для указанного блока
+void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainObjectID ID, STerrainBlockShaderParams* out_pTerrainBlockShaderParams)
+{
+	const STerrainBlockParams* pParams = GetTerrainObjectParams(ID);
+
+	SHeightfield* pHeightfield = RequestObjectHeightfield(ID);
+
+	if (!pHeightfield)
+	{
+		LogMessage("Error in FillTerrainBlockShaderParams: cannot find heightfield for object %d", ID);
+		return;
+	}
+
+	TerrainObjectID neighbours[8];
+	GetTerrainObjectNeighbours(ID, neighbours);
+
+	const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	for (int i = 0; i < 8; i++)
+	{
+
+		if (neighbours[i] != (TerrainObjectID)(-1))
+		{
+			neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
+		}
+
+	}
+
+	out_pTerrainBlockShaderParams->pHeightfield = pHeightfield->pTextureSRV;
+
+	STriangulation* objTri = nullptr;
+	GetTerrainObjectTriangulation(ID, &objTri);
+
+	out_pTerrainBlockShaderParams->pVertexBuffer = objTri->pVertexBuffer;
+
+	out_pTerrainBlockShaderParams->fMinLattitude = pParams->fMinLattitude;
+	out_pTerrainBlockShaderParams->fMaxLattitude = pParams->fMaxLattitude;
+
+	out_pTerrainBlockShaderParams->fMinLongitude = pParams->fMinLongitude;
+	out_pTerrainBlockShaderParams->fMaxLongitude = pParams->fMaxLongitude;
+
+	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX;
+	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY;
+
+
+	out_pTerrainBlockShaderParams->fLongitudeCoeff = pParams->fLongitudeСutCoeff;
+	out_pTerrainBlockShaderParams->fLattitudeCoeff = pParams->fLattitudeCutCoeff;
+
+	out_pTerrainBlockShaderParams->fWorldScale = _fWorldScale;
+
+	if (_pHeightfieldConverter)
+		out_pTerrainBlockShaderParams->fHeightScale = _pHeightfieldConverter->GetHeightScale();
+
+	if (neighbourHeightfields[0])
+	{
+		out_pTerrainBlockShaderParams->fNorthBlockLongCoeff = neighbourHeightfields[0]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fNorthBlockLatCoeff = neighbourHeightfields[0]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fNorthMinLat = neighbourHeightfields[0]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fNorthMaxLat = neighbourHeightfields[0]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fNorthMinLong = neighbourHeightfields[0]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fNorthMaxLong = neighbourHeightfields[0]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pNorthNeighbourHeightfield = neighbourHeightfields[0]->pTextureSRV;
+	}
+
+
+	if (neighbourHeightfields[1])
+	{
+		out_pTerrainBlockShaderParams->fNorthEastBlockLongCoeff = neighbourHeightfields[1]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fNorthEastBlockLatCoeff = neighbourHeightfields[1]->fLattitudeCutCoeff;
+
+
+		out_pTerrainBlockShaderParams->fNorthEastMinLat = neighbourHeightfields[1]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fNorthEastMaxLat = neighbourHeightfields[1]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fNorthEastMinLong = neighbourHeightfields[1]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fNorthEastMaxLong = neighbourHeightfields[1]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pNorthEastNeighbourHeightfield = neighbourHeightfields[1]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[2])
+	{
+		out_pTerrainBlockShaderParams->fEastBlockLongCoeff = neighbourHeightfields[2]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fEastBlockLatCoeff = neighbourHeightfields[2]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fEastMinLat = neighbourHeightfields[2]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fEastMaxLat = neighbourHeightfields[2]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fEastMinLong = neighbourHeightfields[2]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fEastMaxLong = neighbourHeightfields[2]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pEastNeighbourHeightfield = neighbourHeightfields[2]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[3])
+	{
+		out_pTerrainBlockShaderParams->fSouthEastBlockLongCoeff = neighbourHeightfields[3]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fSouthEastBlockLatCoeff = neighbourHeightfields[3]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fSouthEastMinLat = neighbourHeightfields[3]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fSouthEastMaxLat = neighbourHeightfields[3]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fSouthEastMinLong = neighbourHeightfields[3]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fSouthEastMaxLong = neighbourHeightfields[3]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pSouthEastNeighbourHeightfield = neighbourHeightfields[3]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[4])
+	{
+		out_pTerrainBlockShaderParams->fSouthBlockLongCoeff = neighbourHeightfields[4]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fSouthBlockLatCoeff = neighbourHeightfields[4]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fSouthMinLat = neighbourHeightfields[4]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fSouthMaxLat = neighbourHeightfields[4]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fSouthMinLong = neighbourHeightfields[4]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fSouthMaxLong = neighbourHeightfields[4]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pSouthNeighbourHeightfield = neighbourHeightfields[4]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[5])
+	{
+		out_pTerrainBlockShaderParams->fSouthWestBlockLongCoeff = neighbourHeightfields[5]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fSouthWestBlockLatCoeff = neighbourHeightfields[5]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fSouthWestMinLat = neighbourHeightfields[5]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fSouthWestMaxLat = neighbourHeightfields[5]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fSouthWestMinLong = neighbourHeightfields[5]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fSouthWestMaxLong = neighbourHeightfields[5]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pSouthWestNeighbourHeightfield = neighbourHeightfields[5]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[6])
+	{
+		out_pTerrainBlockShaderParams->fWestBlockLongCoeff = neighbourHeightfields[6]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fWestBlockLatCoeff = neighbourHeightfields[6]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fWestMinLat = neighbourHeightfields[6]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fWestMaxLat = neighbourHeightfields[6]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fWestMinLong = neighbourHeightfields[6]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fWestMaxLong = neighbourHeightfields[6]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pWestNeighbourHeightfield = neighbourHeightfields[6]->pTextureSRV;
+	}
+
+	if (neighbourHeightfields[7])
+	{
+		out_pTerrainBlockShaderParams->fNorthWestBlockLongCoeff = neighbourHeightfields[7]->fLongitudeCutCoeff;
+		out_pTerrainBlockShaderParams->fNorthWestBlockLatCoeff = neighbourHeightfields[7]->fLattitudeCutCoeff;
+
+		out_pTerrainBlockShaderParams->fNorthWestMinLat = neighbourHeightfields[7]->Config.Coords.fMinLattitude;
+		out_pTerrainBlockShaderParams->fNorthWestMaxLat = neighbourHeightfields[7]->Config.Coords.fMaxLattitude;
+
+		out_pTerrainBlockShaderParams->fNorthWestMinLong = neighbourHeightfields[7]->Config.Coords.fMinLongitude;
+		out_pTerrainBlockShaderParams->fNorthWestMaxLong = neighbourHeightfields[7]->Config.Coords.fMaxLongitude;
+
+		out_pTerrainBlockShaderParams->pNorthWestNeighbourHeightfield = neighbourHeightfields[7]->pTextureSRV;
+	}
+
+
+	out_pTerrainBlockShaderParams->uiCurrentLOD = pParams->uiDepth;
+
+	//TODO: писать здесь глубину соседних блоков по видимости
+	out_pTerrainBlockShaderParams->uiAdjacentLOD[0] = pParams->uiDepth;
+	out_pTerrainBlockShaderParams->uiAdjacentLOD[1] = pParams->uiDepth;
+	out_pTerrainBlockShaderParams->uiAdjacentLOD[2] = pParams->uiDepth;
+	out_pTerrainBlockShaderParams->uiAdjacentLOD[3] = pParams->uiDepth;
 }
 
 //@}

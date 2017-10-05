@@ -105,6 +105,9 @@ public:
 	// Задать множитель высоты, считываемых из текстур карт высот
 	void	SetHeightScale(float in_fHeightScale);
 
+	// Запросить масштабный коэффициент на высоту
+	float	GetHeightScale() const;
+
 	// Задать предельный углы при которых происходит интерполяция и разделение нормалей [по умолчанию 30 и 60 градусов]
 	void	SetNormalDivisionAngles(float in_fAngleMinInDeg, float in_fAngleMaxInDeg);
 

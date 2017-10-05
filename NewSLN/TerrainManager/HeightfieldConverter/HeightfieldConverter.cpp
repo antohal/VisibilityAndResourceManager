@@ -31,6 +31,11 @@ void HeightfieldConverter::SetHeightScale(float in_fHeightScale)
 	_private->SetHeightScale(in_fHeightScale);
 }
 
+float HeightfieldConverter::GetHeightScale() const
+{
+	return _private->GetHeightScale();
+}
+
 void HeightfieldConverter::SetNormalDivisionAngles(float in_fAngle1InDeg, float in_fAngle2InDeg)
 {
 	_private->SetNormalDivisionAngles(in_fAngle1InDeg, in_fAngle2InDeg);

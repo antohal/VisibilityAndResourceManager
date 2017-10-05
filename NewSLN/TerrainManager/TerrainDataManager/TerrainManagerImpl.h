@@ -215,6 +215,17 @@ public:
 
 	//@}
 
+
+	//@{ Функции получения параметров для шейдеров
+
+	// заполнить структуру с глобальными шейдерными параметрами
+	void FillGlobalShaderParams(SGlobalTerrainShaderParams* out_pGlobalShaderParams);
+
+	// заполнить структуру с параметрами для указанного блока
+	void FillTerrainBlockShaderParams(TerrainObjectID ID, STerrainBlockShaderParams* out_pTerrainBlockShaderParams);
+
+	//@}
+
 private:
 
 	float GetWorldRadius() const;
@@ -250,6 +261,8 @@ private:
 	float					_fWorldSize = 10000000.f;
 	unsigned int			_heightfieldCompressionRatio = 1;
 	//@}
+
+	SGlobalTerrainShaderParams	_globalTerrainShaderParams;
 
 	//@{ Containers
 	std::vector<CInternalTerrainObject*>				_vecObjects;
