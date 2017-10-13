@@ -521,7 +521,7 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	// считаем данные карты высот из файла
 	_pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), *pHeightfield, (unsigned short)_heightfieldCompressionRatio);
 
-	LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
+	//LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
 
 	// заполним граничные данные
 	pHeightfield->Config.Coords.fMinLattitude = pParams->fMinLattitude;

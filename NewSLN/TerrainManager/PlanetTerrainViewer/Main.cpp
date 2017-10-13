@@ -224,7 +224,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"PlanetViewerData\\Earth_2\\earth.db", 2, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, true);
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Y:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 4, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, true);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());

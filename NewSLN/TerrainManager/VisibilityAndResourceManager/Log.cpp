@@ -3,10 +3,12 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <mutex>
 
 static bool g_enabled = false;
 static bool g_inited = false;
 static FILE* g_fp = NULL;
+static std::mutex	g_Mutex;
 
 class CFileCloser
 {
@@ -39,6 +41,8 @@ void LogEnable(bool enable/* = true*/)
 
 void LogMessage (const char* strFmt, ...)
 {
+	std::lock_guard<std::mutex>	locker(g_Mutex);
+
 	if (!g_inited)
 	{
 		LogInit("visresman.log");
