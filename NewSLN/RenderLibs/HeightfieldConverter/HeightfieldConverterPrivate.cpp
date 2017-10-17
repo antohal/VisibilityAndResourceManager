@@ -160,12 +160,8 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseTriangulation(STr
 
 void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseHeightfield(SHeightfield* heightfield)
 {
-	LockDeviceContext();
-
 	if (heightfield->pTextureSRV)
 		heightfield->pTextureSRV->Release();
-
-	UnlockDeviceContext();
 
 	heightfield->pTextureSRV = nullptr;
 

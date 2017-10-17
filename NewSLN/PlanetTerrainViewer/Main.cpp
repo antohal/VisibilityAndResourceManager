@@ -97,8 +97,8 @@ public:
 		{
 			TerrainObjectID visObjID = _pTerrainManager->GetVisibleObjectID(iObj);
 
-			STerrainBlockShaderParams terrainBlockParams;
-			_pTerrainManager->FillTerrainBlockShaderParams(visObjID, &terrainBlockParams);
+			//STerrainBlockShaderParams terrainBlockParams;
+			//_pTerrainManager->FillTerrainBlockShaderParams(visObjID, &terrainBlockParams);
 
 			_pTerrainRenderer->AddObjectToRenderQueue(visObjID);
 		}
@@ -254,12 +254,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// Run the application
 	pApplication->Run();
 
+	if (pTerrainManager)
+		delete pTerrainManager;
 
 	if (pSimpleTerrainRenderer)
 		delete pSimpleTerrainRenderer;
-
-	if (pTerrainManager)
-		delete pTerrainManager;
 
 	// Shutdown application
 	pApplication->Shutdown();

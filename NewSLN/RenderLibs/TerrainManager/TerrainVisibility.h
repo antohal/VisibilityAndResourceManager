@@ -77,7 +77,7 @@ private:
 	float									_fWorldScale = 1;
 	unsigned int							_uiMaxDepth = 0;
 
-	float									_fMaxInvisibleTime = 10.f;
+	float									_fMaxInvisibleTime = 5.f;
 
 	std::set<TerrainObjectID>				_setVisibleObjects;
 	std::map<TerrainObjectID, SAliveObject> _mapAliveObjects;
