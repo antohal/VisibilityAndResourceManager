@@ -20,7 +20,7 @@ public:
 
 	CTerrainObjectManager();
 
-	bool LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int & out_resultingDepth);
+	bool LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int in_uiMaxDepth, unsigned int & out_resultingDepth);
 
 	const std::vector<size_t>&			GetLodsResolution() const {
 		return _vecLODResolution;

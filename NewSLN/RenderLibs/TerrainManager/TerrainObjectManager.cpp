@@ -19,7 +19,7 @@ CTerrainObjectManager::CTerrainObjectManager()
 	_fLongitudeRange = 2 * M_PI;
 }
 
-bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int & out_resultingDepth)
+bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int in_uiMaxDepth, unsigned int & out_resultingDepth)
 {
 	out_resultingDepth = 0;
 	std::wstring wsDbFileName = in_pcwszDatabaseFile;
@@ -86,9 +86,6 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 
 	}
 
-
-	out_resultingDepth = _databaseInfo.LodCount;
-
 	double totalPixelsX = _vecLodInfos[_databaseInfo.LodCount - 1].Width;
 	double totalPixelsY = _vecLodInfos[_databaseInfo.LodCount - 1].Height;
 
@@ -115,6 +112,18 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 
 	_fLattitudeRange = static_cast<float>(M_PI) * fLattitudeScaleCoeff;
 	_fLongitudeRange = 2 * static_cast<float>(M_PI) * fLattitudeScaleCoeff;
+
+	if (_databaseInfo.LodCount > in_uiMaxDepth)
+	{
+		_databaseInfo.LodCount = in_uiMaxDepth;
+
+		_vecLodInfos.resize(in_uiMaxDepth);
+		_vecTotalXCountPerLOD.resize(in_uiMaxDepth);
+		_vecTotalYCountPerLOD.resize(in_uiMaxDepth);
+	}
+
+	out_resultingDepth = _databaseInfo.LodCount;
+
 
 	return true;
 }
@@ -148,7 +157,7 @@ bool CTerrainObjectManager::IsObjectHasSubhierarchy(TerrainObjectID ID)
 
 	std::wstring wsSubdirectoryName = _rootDirectory;
 
-	for (unsigned int i = 0; i < params.uiDepth; i++)
+	for (unsigned int i = 0; i <= params.uiDepth; i++)
 	{
 		std::wstring wsXX = std::to_wstring(params.aTreePosition[i].ucLattitudeIndex);
 		std::wstring wsYY = std::to_wstring(params.aTreePosition[i].ucLongitudeIndex);
@@ -432,7 +441,7 @@ void CTerrainObjectManager::ComputeTerrainObjectParams(TerrainObjectID ID, STerr
 			out_Params.fLongitudeÑutCoeff = (static_cast<float>(M_PI * 2) - out_Params.fMinLongitude) / (out_Params.fMaxLongitude - out_Params.fMinLongitude);
 		}
 		else
-			out_Params.fLattitudeCutCoeff = 1;
+			out_Params.fLongitudeÑutCoeff = 1;
 	}
 
 
@@ -441,9 +450,9 @@ void CTerrainObjectManager::ComputeTerrainObjectParams(TerrainObjectID ID, STerr
 		out_Params.fMinLattitude = -M_PI*0.5;
 	}
 
-	if (out_Params.fMaxLattitude > 2 * M_PI)
+	if (out_Params.fMaxLongitude > 2 * M_PI)
 	{
-		out_Params.fMaxLattitude = 2 * M_PI;
+		out_Params.fMaxLongitude = 2 * M_PI;
 	}
 
 	if (flags & COMPUTE_TREE_PATH)
@@ -470,8 +479,8 @@ STerrainBlockIndex CTerrainObjectManager::GetCoordInParent(TerrainObjectID ID) c
 
 	STerrainBlockIndex result;
 
-	result.ucLattitudeIndex = X - X / _vecLodInfos[lod].CountX;
-	result.ucLongitudeIndex = Y - Y / _vecLodInfos[lod].CountY;
+	result.ucLattitudeIndex = X - (X / _vecLodInfos[lod].CountX) * _vecLodInfos[lod].CountX;
+	result.ucLongitudeIndex = Y - (Y / _vecLodInfos[lod].CountY) * _vecLodInfos[lod].CountY;
 
 	return result;
 }

@@ -383,7 +383,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	//}
 
 	unsigned int uiResultingMaxDepth = 0;
-	bool bSuccessifulRead = _pTerrainObjectManager->LoadDatabaseFile(in_pcwszFileName, uiResultingMaxDepth);
+	bool bSuccessifulRead = _pTerrainObjectManager->LoadDatabaseFile(in_pcwszFileName, in_uiMaxDepth, uiResultingMaxDepth);
 
 
 	if (!bSuccessifulRead)
@@ -542,8 +542,10 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	_triangulationsMutex.unlock();
 
 
-	std::wstring wsHeightmapFileName = GetHeightmapFileName(ID);
-	const STerrainBlockParams* pParams = GetTerrainObjectParams(ID);
+	std::wstring wsHeightmapFileName = _pTerrainObjectManager->GetHeighmapFileName(ID); //GetHeightmapFileName(ID);
+	//const STerrainBlockParams* pParams = GetTerrainObjectParams(ID);
+	STerrainBlockParams params;
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
 
 	// Ò˜ËÚ‡ÂÏ ‰‡ÌÌ˚Â Í‡Ú˚ ‚˚ÒÓÚ ËÁ Ù‡ÈÎ‡
 	_pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), *pHeightfield, (unsigned short)_heightfieldCompressionRatio);
@@ -551,13 +553,13 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	//LogMessage("Loading faceset. Triangulating heightmap '%ls'", wsHeightmapFileName.c_str());
 
 	// Á‡ÔÓÎÌËÏ „‡ÌË˜Ì˚Â ‰‡ÌÌ˚Â
-	pHeightfield->Config.Coords.fMinLattitude = pParams->fMinLattitude;
-	pHeightfield->Config.Coords.fMaxLattitude = pParams->fMaxLattitude;
-	pHeightfield->Config.Coords.fMinLongitude = pParams->fMinLongitude;
-	pHeightfield->Config.Coords.fMaxLongitude = pParams->fMaxLongitude;
+	pHeightfield->Config.Coords.fMinLattitude = params.fMinLattitude;
+	pHeightfield->Config.Coords.fMaxLattitude = params.fMaxLattitude;
+	pHeightfield->Config.Coords.fMinLongitude = params.fMinLongitude;
+	pHeightfield->Config.Coords.fMaxLongitude = params.fMaxLongitude;
 
-	pHeightfield->fLattitudeCutCoeff = pParams->fLattitudeCutCoeff;
-	pHeightfield->fLongitudeCutCoeff = pParams->fLongitude—utCoeff;
+	pHeightfield->fLattitudeCutCoeff = params.fLattitudeCutCoeff;
+	pHeightfield->fLongitudeCutCoeff = params.fLongitude—utCoeff;
 
 	return pHeightfield;
 }
@@ -856,16 +858,16 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
-		/*for (int i = 0; i < 8; i++)
-		{
+		//for (int i = 0; i < 8; i++)
+		//{
 
-			if (neighbours[i] != (TerrainObjectID)(-1))
-			{
-				_pTerrainVisibility->RequestForAlive(neighbours[i]);
-				neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
-			}
+		//	if (neighbours[i] != (TerrainObjectID)(-1))
+		//	{
+		//		//_pTerrainVisibility->RequestForAlive(neighbours[i]);
+		//		neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
+		//	}
 
-		}*/
+		//}
 
 		// —ÓÁ‰‡‰ËÏ ÚË‡Ì„ÛÎˇˆË˛ Ò ÔÓÏÓ˘¸˛ ComputeShader. ¬ Ó·˙ÂÍÚÂ _triangulation ÎÂÊ‡Ú ËÌ‰ÂÍÒÌ˚Â Ë ‚ÂÚÂÍÒÌ˚Â ·ÛÙÂ˚
 		_pHeightfieldConverter->CreateTriangulationImmediate(pHeightfield, pParams->fLongitude—utCoeff, pParams->fLattitudeCutCoeff, &objTri._triangulation, neighbourHeightfields);
@@ -1357,16 +1359,16 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 
 	const SHeightfield* neighbourHeightfields[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
-	for (int i = 0; i < 8; i++)
-	{
+	//for (int i = 0; i < 8; i++)
+	//{
 
-		/*if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
-		{
-			_pTerrainVisibility->RequestForAlive(neighbours[i]);
-			neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
-		}*/
+	//	if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
+	//	{
+	//		//_pTerrainVisibility->RequestForAlive(neighbours[i]);
+	//		neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
+	//	}
 
-	}
+	//}
 
 	out_pTerrainBlockShaderParams->pHeightfield = pHeightfield->pTextureSRV;
 

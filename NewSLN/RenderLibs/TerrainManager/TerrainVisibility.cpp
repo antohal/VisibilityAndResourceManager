@@ -212,7 +212,11 @@ unsigned int CTerrainVisibility::GetLodDepth(double dist) const
 
 		uiDepth++;
 	}
-	return uiDepth;
+
+	if (uiDepth > 0)
+		uiDepth--;
+
+	return uiDepth ;
 }
 
 double CTerrainVisibility::AngularDistance(double a1, double a2)

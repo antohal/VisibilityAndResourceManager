@@ -148,7 +148,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <CustomBuildAfterTargets>PostBuildEvent</CustomBuildAfterTargets>
-    <OutDir>$(ProjectDir)\..\bin</OutDir>
+    <OutDir>$(ProjectDir)\..\3D_Release</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -273,7 +273,7 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../3rdParty/D3DX/include;../include;../Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3DLib/include/D3DX;../RenderLibs/include;../RenderLibs/Common</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -281,13 +281,12 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>HeightfieldConverter.lib;D2DTextRender.lib;TerrainManager.lib;VisibilityManager.lib;ResourceManager.lib;Effects11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../3rdParty/D3DX/lib;../bin</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../3DLib/Lib/D3DX/x64;../RenderLibs/lib</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
-      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps"
-copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.ps"</Command>
       <Message>Copying shaders</Message>
-      <Outputs>$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(OutDir)\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
+      <Outputs>$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
       <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuildStep>

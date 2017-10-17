@@ -123,11 +123,8 @@ void GenerateDatabaseInfo(const char* fileName)
 	LodInfoStruct aLods[7];
 
 	dbInfo.LodCount = 7;
-	//dbInfo.DeltaX = 22400;
-	//dbInfo.DeltaY = 44608;
-
-	dbInfo.DeltaX = 0;
-	dbInfo.DeltaY = 0;
+	dbInfo.DeltaX = 22400;
+	dbInfo.DeltaY = 44608;
 
 	aLods[0].CountX = 2;
 	aLods[0].CountY = 4;
@@ -226,6 +223,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	GenerateDatabaseInfo("..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+//	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_2\\earth.db", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 //	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());
 
