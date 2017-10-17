@@ -166,6 +166,8 @@
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
     <ClCompile Include="TerrainManagerImpl.cpp" />
+    <ClCompile Include="TerrainObjectManager.cpp" />
+    <ClCompile Include="TerrainVisibility.cpp" />
     <ClCompile Include="TerrainVisibilityManagerImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +182,8 @@
     <ClInclude Include="TerrainDataBlock.h" />
     <ClInclude Include="TerrainDataManagerImpl.h" />
     <ClInclude Include="TerrainManagerImpl.h" />
+    <ClInclude Include="TerrainObjectManager.h" />
+    <ClInclude Include="TerrainVisibility.h" />
     <ClInclude Include="TerrainVisibilityManagerImpl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

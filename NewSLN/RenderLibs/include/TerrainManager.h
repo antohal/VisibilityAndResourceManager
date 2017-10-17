@@ -23,6 +23,7 @@ class HeightfieldConverter;
 struct STriangulation;
 
 typedef size_t TerrainObjectID;
+#define INVALID_TERRAIN_OBJECT_ID (size_t)(-1)
 
 struct TerrainManagerConfig
 {
@@ -43,8 +44,8 @@ public:
 	// in_pcwszPlanetDirectory - имя дериктории, где лежат данные Земли
 	// in_fWorldScale - коэффициент масштаба мира
 	// in_fHeightScale - коэффициент масштаба высоты
-	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
+	//void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+	//	float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
 	// Инициализировать из файла-описания, согласно заданному формату
 	void InitFromDatabaseInfo(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency);
@@ -57,8 +58,8 @@ public:
 
 	// Инициализация со случайной генерацией планеты до уровня глубины depth, с разбиением по долготе и широте N и M соответственно. 
 	// Текстуры и карты высот беруться случайным образом из [in_pcwszPlanetDirectory]/Textures и /HeightMaps
-	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
+	//void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+	//	unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
 
 	// Установить положение камеры и матрицу проекции
 	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
@@ -119,8 +120,8 @@ public:
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
 	//@}
 
-	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
-	CResourceManager* GetResourceManager();
+	//// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
+	//CResourceManager* GetResourceManager();
 
 
 

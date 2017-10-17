@@ -7,25 +7,27 @@
 #include "ResourceManager.h"
 #include "TerrainVisibilityManager.h"
 
-
+#include "TerrainObjectManager.h"
+#include "TerrainVisibility.h"
 
 #include <set>
 #include <map>
 #include <mutex>
 #include <thread>
 
-class CInternalTerrainObject : public C3DBaseObject
+class CInternalTerrainObject  : public C3DBaseObject
 {
 public:
 
-	CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, const CTerrainBlockDesc* in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo);
+	CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName);
 
 	const TerrainObjectID&	GetID() const {
 		return _ID;
 	}
 
-	const CTerrainBlockDesc*	GetDesc() const {
-		return _pBlockDesc;
+	const STerrainBlockParams*	GetParams() const {
+		return &_params;
 	}
 
 	void InvalidateData() {
@@ -50,6 +52,14 @@ public:
 	}
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>& out_vecPoints, std::vector<vm::Vector3df>& out_vecNormals);
+
+	const wchar_t* GetTextureFileName() const {
+		return _textureFileName.c_str();
+	}
+
+	const wchar_t* GetHeightmapFileName() const {
+		return _heightmapFileName.c_str();
+	}
 
 protected:
 
@@ -79,9 +89,12 @@ protected:
 private:
 
 	TerrainObjectID				_ID = -1;
-	const CTerrainBlockDesc*	_pBlockDesc = nullptr;
+	//const CTerrainBlockDesc*	_pBlockDesc = nullptr;
+	STerrainBlockParams			_params;
 
 	C3DBaseManager*				_pOwner = nullptr;
+
+
 
 	D3DXMATRIX					_mTransform;
 	D3DXVECTOR3					_vBBoxMin;
@@ -89,10 +102,13 @@ private:
 
 	bool						_bTriangulationsReady = false;
 	bool						_bOtherDataReady = false;
+
+	std::wstring				_textureFileName;
+	std::wstring				_heightmapFileName;
 };
 
 
-class CTerrainManager::CTerrainManagerImpl : public C3DBaseTerrainObjectManager
+class CTerrainManager::CTerrainManagerImpl // : public C3DBaseTerrainObjectManager
 {
 public:
 
@@ -100,13 +116,13 @@ public:
 	~CTerrainManagerImpl();
 
 	// инициализация. Параметр - имя дериктории, где лежат данные Земли
-	void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
+	//void Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+	//	float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff);
 
 	void InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency);
 
-	void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
-		unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
+	//void InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, 
+	//	unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize);
 
 	void SetHeightfieldConverter(HeightfieldConverter*);
 
@@ -168,23 +184,23 @@ public:
 
 
 	// получить указатель на менеджер ресурсов (если необходимо задать параметрам предсказателя видимости значения, отличные от значений по-умолчанию)
-	CResourceManager* GetResourceManager();
+	//CResourceManager* GetResourceManager();
 
 	//@{ C3DBaseObjectManager
 	// получить список объектов
 	
-	virtual size_t GetObjectsCount() const override;
-	virtual C3DBaseObject*	GetObjectByIndex(size_t id) const override;
+	//virtual size_t GetObjectsCount() const override;
+	//virtual C3DBaseObject*	GetObjectByIndex(size_t id) const override;
 	
 	//@}
 
 	//@{ C3DBaseTerrainObjectManager
 
 	// получить данные блока по объекту
-	virtual const CTerrainBlockDesc* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
+	//virtual const CTerrainBlockDesc* GetTerrainDataForObject(C3DBaseObject* pObject) const override;
 
-	// получить указатель на корневой блок [с корневым узлом не должно быть связано никаких объектов, он служит как хранилище]
-	virtual const CTerrainBlockDesc* GetRootTerrainData() const override;
+	//// получить указатель на корневой блок [с корневым узлом не должно быть связано никаких объектов, он служит как хранилище]
+	//virtual const CTerrainBlockDesc* GetRootTerrainData() const override;
 
 	//@}
 
@@ -192,10 +208,10 @@ public:
 	//@{ C3DBaseManager
 
 	// Запросить загрузку ресурса
-	virtual void RequestLoadResource(C3DBaseResource*) override;
+	//virtual void RequestLoadResource(C3DBaseResource*) override;
 
-	// запросить выгрузку ресурса
-	virtual void RequestUnloadResource(C3DBaseResource*) override;
+	//// запросить выгрузку ресурса
+	//virtual void RequestUnloadResource(C3DBaseResource*) override;
 
 	//@} C3DBaseManager
 
@@ -226,14 +242,16 @@ public:
 
 	//@}
 
+
 private:
 
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
 
-	void CreateObjects();
-	void CreateObjectsRecursive(const CTerrainBlockDesc* in_pData);
-	void CreateObject(const CTerrainBlockDesc* in_pData);
+	//void CreateObjects();
+	//void CreateObjectsRecursive(const CTerrainBlockDesc* in_pData);
+	void CreateObject(TerrainObjectID ID);
+	void DestroyObject(TerrainObjectID ID);
 	void DestroyObjects();
 
 	void ReleaseTriangulationsAndHeightmaps();
@@ -245,18 +263,18 @@ private:
 	bool CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const;
 
 	//@{ Main objects
-	CResourceManager*		_pResourceManager = nullptr;
-	CVisibilityManager*		_pVisibilityManager = nullptr;
-	CTerrainVisibilityManager* _pTerrainVisibilityManager = nullptr;
+	//CResourceManager*		_pResourceManager = nullptr;
+	//CVisibilityManager*		_pVisibilityManager = nullptr;
+	//CTerrainVisibilityManager* _pTerrainVisibilityManager = nullptr;
 
-	CTerrainBlockDesc*		_pPlanetTerrainData = nullptr;
-	CTerrainDataManager*	_pTerrainDataManager = nullptr;
+	//CTerrainBlockDesc*		_pPlanetTerrainData = nullptr;
+	//CTerrainDataManager*	_pTerrainDataManager = nullptr;
 
 	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
 	//@}
 
 	//@{ Vars
-	TerrainObjectID			_idCurrentIDForNewObject = 0;
+	//TerrainObjectID			_idCurrentIDForNewObject = 0;
 	float					_fWorldScale = 1.f;
 	float					_fWorldSize = 10000000.f;
 	unsigned int			_heightfieldCompressionRatio = 1;
@@ -265,9 +283,9 @@ private:
 	SGlobalTerrainShaderParams	_globalTerrainShaderParams;
 
 	//@{ Containers
-	std::vector<CInternalTerrainObject*>				_vecObjects;
+	std::set<CInternalTerrainObject*>					_setObjects;
 	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
-	std::map<const CTerrainBlockDesc*, TerrainObjectID>	_mapDesc2ID;
+	//std::map<const CTerrainBlockDesc*, TerrainObjectID>	_mapDesc2ID;
 
 	std::wstring										_wsPlanetRootDirectory;
 
@@ -327,4 +345,9 @@ private:
 	float					_fMaxPixelsPerTexel = 10;
 	bool					_bRecalculateLodsDistances = false;
 
+
+
+	//---------------------- New mechanism
+	CTerrainObjectManager*	_pTerrainObjectManager = nullptr;
+	CTerrainVisibility*		_pTerrainVisibility = nullptr;
 };
