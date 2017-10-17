@@ -401,7 +401,7 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	for (int i = 0; i < 8; i++)
 		neighbourQuads[i] = thisQuad;
 
-	/*
+	
 	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY,		neighbourQuads[0]);
 	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY + 1,	neighbourQuads[1]);
 	ComputeNeighbourQuadGeom(iQuadX,	 iQuadY + 1,	neighbourQuads[2]);
@@ -410,7 +410,7 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY,		neighbourQuads[4]);
 	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY - 1,	neighbourQuads[5]);
 	ComputeNeighbourQuadGeom(iQuadX,     iQuadY - 1,	neighbourQuads[6]);
-	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY - 1,	neighbourQuads[7]);*/
+	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY - 1,	neighbourQuads[7]);
 
 	Vertex v[6];
 

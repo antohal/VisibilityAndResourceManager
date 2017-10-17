@@ -140,11 +140,16 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseTriangulation(STriangulation* triangulation)
 {
 	ULONG lref = 0;
+
+	LockDeviceContext();
+
 	if (triangulation->pIndexBuffer)
 		lref = triangulation->pIndexBuffer->Release();
 
 	if (triangulation->pVertexBuffer)
 		lref = triangulation->pVertexBuffer->Release();
+
+	UnlockDeviceContext();
 
 	triangulation->pIndexBuffer = nullptr;
 	triangulation->pVertexBuffer = nullptr;
@@ -155,8 +160,12 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseTriangulation(STr
 
 void HeightfieldConverter::HeightfieldConverterPrivate::ReleaseHeightfield(SHeightfield* heightfield)
 {
+	LockDeviceContext();
+
 	if (heightfield->pTextureSRV)
 		heightfield->pTextureSRV->Release();
+
+	UnlockDeviceContext();
 
 	heightfield->pTextureSRV = nullptr;
 
@@ -187,7 +196,9 @@ ID3D11Buffer* CreateAndCopyToDebugBuf(ID3D11Device* pDevice, ID3D11DeviceContext
 		//debugbuf->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Debug") - 1, "Debug");
 		//#endif 
 
+	
 		pd3dImmediateContext->CopyResource(debugbuf, pBuffer);
+
 	}
 
 	return debugbuf;
@@ -197,6 +208,8 @@ ID3D11Buffer* CreateAndCopyToDebugBuf(ID3D11Device* pDevice, ID3D11DeviceContext
 // Получить буферы вершин и индексов в памяти
 void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
 {
+	LockDeviceContext();
+
 	// Read back the result from GPU, verify its correctness against result computed by CPU 
 	if (triangulation->pVertexBuffer)
 	{
@@ -238,6 +251,8 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 		if (debugbuf)
 			debugbuf->Release();
 	}
+
+	UnlockDeviceContext();
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::LockDeviceContext()

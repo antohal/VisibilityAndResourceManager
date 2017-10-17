@@ -206,7 +206,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 
-	//StartUpdateTriangulationsThread();
+	StartUpdateTriangulationsThread();
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)

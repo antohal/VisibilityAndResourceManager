@@ -286,7 +286,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 	if (objectDepth < requiredLodDepth)
 	{
-		static std::vector<TerrainObjectID> vecChildren;
+		std::vector<TerrainObjectID> vecChildren;
 		vecChildren.clear();
 
 		_objectManager->GetTerrainObjectChildren(ID, vecChildren);
@@ -300,7 +300,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 		bool bSomeChildVisible = false;
 
-		static vector<TerrainObjectID> vecInvisibleChilds;
+		vector<TerrainObjectID> vecInvisibleChilds;
 		vecInvisibleChilds.clear();
 
 		vecInvisibleChilds.reserve(vecChildren.size());

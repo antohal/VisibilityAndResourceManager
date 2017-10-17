@@ -71,7 +71,7 @@ public:
 
 		_pTerrainManager->Update(in_fFrameTime);
 		
-		_pTerrainManager->UpdateTriangulations();
+		//_pTerrainManager->UpdateTriangulations();
 
 		// добавляем новые объекты
 
@@ -220,9 +220,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 
 
-	GenerateDatabaseInfo("..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
+	GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\DataBase\\DataBaseInfo", 9, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 //	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_2\\earth.db", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 //	pTerrainManager->GetResourceManager()->EnableDebugTextRender(pApplication->GetGraphicsContext()->GetScene()->GetDebugTextBlock());

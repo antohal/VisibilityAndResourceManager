@@ -285,6 +285,7 @@ private:
 	//@{ Containers
 	std::set<CInternalTerrainObject*>					_setObjects;
 	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
+	mutable std::mutex									_objectsMutex;
 	//std::map<const CTerrainBlockDesc*, TerrainObjectID>	_mapDesc2ID;
 
 	std::wstring										_wsPlanetRootDirectory;
