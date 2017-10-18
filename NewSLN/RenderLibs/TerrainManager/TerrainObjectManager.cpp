@@ -113,8 +113,8 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 	float fLattitudeScaleCoeff = (totalPixelsX) / (totalPixelsX - _databaseInfo.DeltaX);
 	float fLongitudeScaleCoeff = (totalPixelsY) / (totalPixelsY - _databaseInfo.DeltaY);
 
-	_fLattitudeRange = static_cast<float>(M_PI) * fLattitudeScaleCoeff;
-	_fLongitudeRange = 2 * static_cast<float>(M_PI) * fLattitudeScaleCoeff;
+	_fLattitudeRange = static_cast<float>(M_PI) *fLattitudeScaleCoeff;
+	_fLongitudeRange = 2 * static_cast<float>(M_PI) *fLattitudeScaleCoeff;
 
 	for (int iLodLevel = 0; iLodLevel < _databaseInfo.LodCount; iLodLevel++)
 	{

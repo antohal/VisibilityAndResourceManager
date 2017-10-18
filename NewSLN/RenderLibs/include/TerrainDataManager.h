@@ -47,16 +47,16 @@ struct DataBaseInfo
 	unsigned char Minor;
 	unsigned char Reserved;
 	unsigned char LodCount; // кол-во лодов
-	int DeltaX;				// кол-во доп пикселей по X дл¤ выравнивани¤ текстуры
-	int DeltaY;				//  кол-во доп пикселей по Y дл¤ выравнивани¤ текстуры
+	int DeltaY;				// кол-во доп пикселей по X дл¤ выравнивани¤ текстуры
+	int DeltaX;				//  кол-во доп пикселей по Y дл¤ выравнивани¤ текстуры
 };
 
 struct LodInfoStruct
 {
 	short Width;			// ширины тексутры
 	short Height;			// высота тексутры
-	short CountX;			// кол-во текстур по X
-	short CountY;			// кол-во текстур по Y
+	short CountY;			// кол-во текстур по X
+	short CountX;			// кол-во текстур по Y
 };
 
 // Описание блока Земли
