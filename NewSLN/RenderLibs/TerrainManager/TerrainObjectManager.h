@@ -61,8 +61,12 @@ private:
 	std::map<TerrainObjectID, bool>	_mapHasSubhierarchy;
 
 	std::vector<size_t>				_vecLODResolution;
+	
 	std::vector<unsigned short>		_vecTotalXCountPerLOD;
 	std::vector<unsigned short>		_vecTotalYCountPerLOD;
+
+	std::vector<unsigned short>		_vecValidXCountPerLOD;
+	std::vector<unsigned short>		_vecValidYCountPerLOD;
 
 	float							_fLattitudeRange;
 	float							_fLongitudeRange;

@@ -63,6 +63,8 @@ public:
 
 	void							SetDebugTextBlock(CDirect2DTextBlock* block);
 
+	void							Stop();
+
 	//@{ CD3DSceneRenderer
 
 	virtual int						Render(CD3DGraphicsContext* in_pContext) override;

@@ -129,6 +129,24 @@ unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 // CSimpleTerrainRenderer
 //
 
+void CSimpleTerrainRenderer::Stop()
+{
+	if (_pTriangulationsThread)
+	{
+
+		_bTriangulationThreadFinished = true;
+
+		if (_pTriangulationsThread->joinable() && _pTriangulationsThread->native_handle())
+		{
+			_pTriangulationsThread->join();
+		}
+
+		delete _pTriangulationsThread;
+
+		_pTriangulationsThread = nullptr;
+	}
+}
+
 CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 {
 	if (_pD3DXEffect)

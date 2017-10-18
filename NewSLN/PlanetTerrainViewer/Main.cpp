@@ -254,6 +254,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// Run the application
 	pApplication->Run();
 
+	pSimpleTerrainRenderer->Stop();
+
 	if (pTerrainManager)
 		delete pTerrainManager;
 

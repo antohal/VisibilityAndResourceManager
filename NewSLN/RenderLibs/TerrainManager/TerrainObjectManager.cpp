@@ -92,6 +92,9 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 	_vecTotalXCountPerLOD.resize(_databaseInfo.LodCount);
 	_vecTotalYCountPerLOD.resize(_databaseInfo.LodCount);
 
+	_vecValidXCountPerLOD.resize(_databaseInfo.LodCount);
+	_vecValidYCountPerLOD.resize(_databaseInfo.LodCount);
+
 	for (int iLodLevel = 0; iLodLevel < _databaseInfo.LodCount; iLodLevel++)
 	{
 		totalPixelsX *= _vecLodInfos[iLodLevel].CountX;
@@ -113,6 +116,15 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 	_fLattitudeRange = static_cast<float>(M_PI) * fLattitudeScaleCoeff;
 	_fLongitudeRange = 2 * static_cast<float>(M_PI) * fLattitudeScaleCoeff;
 
+	for (int iLodLevel = 0; iLodLevel < _databaseInfo.LodCount; iLodLevel++)
+	{
+		double deltaX = _fLattitudeRange / _vecTotalXCountPerLOD[iLodLevel];
+		double deltaY = _fLongitudeRange / _vecTotalYCountPerLOD[iLodLevel];
+
+		_vecValidXCountPerLOD[iLodLevel] = (unsigned short)(ceil(M_PI / deltaX));
+		_vecValidYCountPerLOD[iLodLevel] = (unsigned short)(ceil(2 * M_PI / deltaY));
+	}
+
 	if (_databaseInfo.LodCount > in_uiMaxDepth)
 	{
 		_databaseInfo.LodCount = in_uiMaxDepth;
@@ -120,6 +132,9 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 		_vecLodInfos.resize(in_uiMaxDepth);
 		_vecTotalXCountPerLOD.resize(in_uiMaxDepth);
 		_vecTotalYCountPerLOD.resize(in_uiMaxDepth);
+
+		_vecValidXCountPerLOD.resize(in_uiMaxDepth);
+		_vecValidYCountPerLOD.resize(in_uiMaxDepth);
 	}
 
 	out_resultingDepth = _databaseInfo.LodCount;
@@ -274,8 +289,8 @@ void CTerrainObjectManager::GetTerrainObjectNeighbours(TerrainObjectID ID, Terra
 
 	DecomposeTerrainObjectID(ID, lod, X, Y);
 
-	unsigned short XCount = _vecTotalXCountPerLOD[lod];
-	unsigned short YCount = _vecTotalYCountPerLOD[lod];
+	unsigned short XCount = _vecValidXCountPerLOD[lod];
+	unsigned short YCount = _vecValidYCountPerLOD[lod];
 
 	if (XCount == 0 || YCount == 0)
 	{
