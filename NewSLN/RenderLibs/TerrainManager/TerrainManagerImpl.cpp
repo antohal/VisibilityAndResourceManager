@@ -640,16 +640,34 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 		for (TerrainObjectID deadObj : _vecObjectsToDelete)
 		{
-			std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
 
-			auto itTri = _mapObjectTriangulations.find(deadObj);
-			if (itTri == _mapObjectTriangulations.end())
 			{
-				LogMessage("Object %d has no triangulation while was alive", deadObj);
-				continue;
+				std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
+
+				auto itTri = _mapObjectTriangulations.find(deadObj);
+				if (itTri == _mapObjectTriangulations.end())
+				{
+					LogMessage("Object %d has no triangulation while was alive", deadObj);
+					continue;
+				}
+
+				itTri->second._alive = false;
 			}
 
-			itTri->second._alive = false;
+			{
+				std::lock_guard<std::mutex> objectsLock(_objectsMutex);
+
+				auto it = _mapId2Object.find(deadObj);
+				if (it != _mapId2Object.end())
+				{
+					CInternalTerrainObject* pObject = it->second;
+
+					delete pObject;
+
+					_mapId2Object.erase(it);
+				}
+			}
+
 		}
 	}
 
@@ -1179,20 +1197,20 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObjectID ID)
 
 void CTerrainManager::CTerrainManagerImpl::DestroyObject(TerrainObjectID ID)
 {
-	std::lock_guard<std::mutex> objectsLock(_objectsMutex);
+	//std::lock_guard<std::mutex> objectsLock(_objectsMutex);
 
-	auto it = _mapId2Object.find(ID);
-	if (it == _mapId2Object.end())
-	{
-		return;
-	}
+	//auto it = _mapId2Object.find(ID);
+	//if (it == _mapId2Object.end())
+	//{
+	//	return;
+	//}
 
-	CInternalTerrainObject* pObject = it->second;
+	//CInternalTerrainObject* pObject = it->second;
 
-	//_setObjects.erase(pObject);
-	delete pObject;
+	////_setObjects.erase(pObject);
+	//delete pObject;
 
-	_mapId2Object.erase(it);
+	//_mapId2Object.erase(it);
 
 	//std::lock_guard<std::mutex> lock(_containersMutex);
 	_vecPreliminaryObjectsToDelete.push_back(ID);

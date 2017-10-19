@@ -284,7 +284,8 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
       <AdditionalLibraryDirectories>../3DLib/Lib/D3DX/x64;../RenderLibs/lib</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
-      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.ps"</Command>
+      <Command>copy "$(ProjectDir)SimpleTerrain.ps" "$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.ps"
+copy "$(ProjectDir)SimpleTerrain.vs" "$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.vs"</Command>
       <Message>Copying shaders</Message>
       <Outputs>$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.ps;$(ProjectDir)..\3D_Release\PlanetTerrainViewerShaders\SimpleTerrain.vs;%(Outputs)</Outputs>
       <Inputs>$(ProjectDir)SimpleTerrain.ps;$(ProjectDir)SimpleTerrain.vs;%(Inputs)</Inputs>
