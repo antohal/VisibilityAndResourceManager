@@ -230,6 +230,7 @@ private:
 
 	bool CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const;
 
+	bool FillTerrainBlockParams(TerrainObjectID ID, STerrainBlockParams& out_Params) const;
 	void UpdateTriangulationsAndHeightfieldLifetime();
 
 	//@{ Main objects
@@ -252,7 +253,7 @@ private:
 	SGlobalTerrainShaderParams							_globalTerrainShaderParams;
 
 	//@{ Containers
-	std::set<CInternalTerrainObject*>					_setObjects;
+	//std::set<CInternalTerrainObject*>					_setObjects;
 	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
 	mutable std::mutex									_objectsMutex;
 
