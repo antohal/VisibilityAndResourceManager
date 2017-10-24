@@ -72,7 +72,7 @@ bool IsSegmentIntersectsEarthMinRadius(const vm::Vector3df& A, const vm::Vector3
 	vm::Vector3df D = vm::normalize(B - A);
 
 	vm::Vector3df L = C - O;
-	double tca = vm::dot(L, D);
+	double tca = vm::dot_prod(L, D);
 
 	if (tca < 0)
 		return false;

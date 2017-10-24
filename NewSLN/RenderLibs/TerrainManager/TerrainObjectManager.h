@@ -39,6 +39,8 @@ public:
 	TerrainObjectID					GetTerrainObjectParent(TerrainObjectID ID) const;
 	STerrainBlockIndex				GetCoordInParent(TerrainObjectID ID) const;
 	unsigned char					GetObjectDepth(TerrainObjectID ID) const;
+
+	std::pair<unsigned int, unsigned int>	GetObjectHfResolution(TerrainObjectID ID) const;
 	void							GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
 
 	bool							IsObjectValid(TerrainObjectID ID) const;

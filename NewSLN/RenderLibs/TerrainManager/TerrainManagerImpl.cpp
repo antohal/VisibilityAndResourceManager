@@ -9,6 +9,10 @@
 #include <algorithm>
 
 #include "TerrainVisibilityManagerImpl.h"
+//#include "Geometry/InFrustum.h"
+#include "Geometry/Vector3D.h"
+#include "Geometry/Matrix.h"
+
 
 #define USE_ENGINE_SCALE
 
@@ -320,67 +324,12 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 {
 	ZeroMemory(&_globalTerrainShaderParams, sizeof(SGlobalTerrainShaderParams));
 
-	//_pTerrainDataManager = new CTerrainDataManager();
-	//_pResourceManager = new CResourceManager();
-
 	_fWorldSize = in_fWorldSize;
 	_fWorldScale = g_fMasterScale*in_fWorldScale;
 
 	LogMessage("Loading planet terrain info");
 
-	// Read data 
-
-	//DataBaseInfo dbInfo;
-	//LodInfoStruct* aLods = nullptr;
-
-	////std::wstring wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
-
 	std::wstring wsDbFileName = in_pcwszFileName;
-
-	//if (!PathFileExistsW(wsDbFileName.c_str()))
-	//{
-	//	wsDbFileName = std::wstring(GetStartDir() + in_pcwszFileName);
-
-	//	if (!PathFileExistsW(wsDbFileName.c_str()))
-	//	{
-	//		LogMessage("Cannot open database file %ls", wsDbFileName.c_str());
-	//		return;
-	//	}
-	//}
-
-	//bool bSuccessifulRead = true;
-
-	//FILE* fp = nullptr;
-	//
-	//_wfopen_s(&fp, wsDbFileName.c_str(), L"rb");
-
-	//if (fp)
-	//{
-	//	if (fread_s(&dbInfo, sizeof(DataBaseInfo), sizeof(DataBaseInfo), 1, fp) != 1)
-	//	{
-	//		bSuccessifulRead = false;
-	//	}
-
-	//	if (bSuccessifulRead)
-	//	{
-	//		aLods = new LodInfoStruct[dbInfo.LodCount];
-
-	//		size_t nReadLods = fread_s(aLods, sizeof(LodInfoStruct) * dbInfo.LodCount, sizeof(LodInfoStruct), dbInfo.LodCount, fp);
-
-	//		if (nReadLods != dbInfo.LodCount)
-	//		{
-	//			LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszFileName, nReadLods, dbInfo.LodCount);
-	//			bSuccessifulRead = false;
-	//		}
-	//	}
-
-	//	fclose(fp);
-	//}
-	//else
-	//{
-	//	LogMessage("Cannot open database file %ls, aborting", in_pcwszFileName);
-	//	return;
-	//}
 
 	unsigned int uiResultingMaxDepth = 0;
 	bool bSuccessifulRead = _pTerrainObjectManager->LoadDatabaseFile(in_pcwszFileName, in_uiMaxDepth, uiResultingMaxDepth);
@@ -394,9 +343,15 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	else
 	{
 
+		double dfCurrentLatDiam = M_PI;
+		double Rmax = 6356752.3142;
+
 		for (int i = 0; i < _pTerrainObjectManager->GetDatabaseInfo().LodCount; i++)
 		{
-			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height);
+			dfCurrentLatDiam /= _pTerrainObjectManager->GetLodInfos()[i].CountY;
+
+			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height) / (2 );
+			_vecLODDiameter[i] = Rmax*sqrt(2*(1 - cos(dfCurrentLatDiam)));
 
 			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].Width;
 			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].Height;
@@ -417,24 +372,6 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	// TODO: Read lods structure
 
 	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);
-	
-	//unsigned int uiResultingMaxDepth = 0;
-	//_pTerrainDataManager->LoadTerrainDataInfo(_wsPlanetRootDirectory.c_str(), dbInfo, aLods, uiMaxDepth, &_pPlanetTerrainData, &uiResultingMaxDepth, in_bCalculateAdjacency);
-
-//	CreateObjects();
-
-	//_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
-	//_pResourceManager->AddVisibilityManager(_pVisibilityManager);
-
-
-	//_pTerrainVisibilityManager = new CTerrainVisibilityManager;
-	//_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
-
-
-	//_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
-
-	//delete[] aLods;
-
 
 	_pTerrainVisibility = new CTerrainVisibility(_pTerrainObjectManager, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
 
@@ -447,57 +384,45 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	});
 }
 
-//void CTerrainManager::CTerrainManagerImpl::InitGenerated(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t* in_pcwszPlanetDirectory, unsigned int N, unsigned int M, unsigned int depth, float in_fWorldScale, float in_fWorldSize)
-//{
-//	_pTerrainDataManager = new CTerrainDataManager();
-//	_pResourceManager = new CResourceManager();
-//
-//	_fWorldScale = g_fMasterScale*in_fWorldScale;
-//	_fWorldSize = in_fWorldSize;
-//
-//	LogMessage("Generating planet terrain info");
-//
-//	_pTerrainDataManager->GenerateTerrainDataInfo(in_pcwszPlanetDirectory, &_pPlanetTerrainData, M, N, depth);
-//
-//	CreateObjects();
-//
-//	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
-//	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
-//
-//	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
-//	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5f, depth);
-//	
-//	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
-//}
-
 void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldConverter * in_pHeightfieldConverter)
 {
 	_pHeightfieldConverter = in_pHeightfieldConverter;
 }
 
+
+static Vector3f ToVec3(const Vector3& v)
+{
+	return Vector3f(v.x, v.y, v.z);
+}
+
+static Vector3 FromVec3(const Vector3f& v)
+{
+	return Vector3(v.x, v.y, v.z);
+}
+
 void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 * in_vPos, const D3DXVECTOR3 * in_vDir, const D3DXVECTOR3 * in_vUp, const D3DMATRIX * in_pmProjection)
 {
-	Vector3 vPos, vDir, vUp;
+	Vector3 v3Pos, v3Dir, v3Up;
 
-	vPos.x = (float)in_vPos->x;
-	vPos.y = (float)in_vPos->y;
-	vPos.z = (float)in_vPos->z;
-
-	vDir.x = (float)in_vDir->x;
-	vDir.y = (float)in_vDir->y;
-	vDir.z = (float)in_vDir->z;
-
-	vUp.x = (float)in_vUp->x;
-	vUp.y = (float)in_vUp->y;
-	vUp.z = (float)in_vUp->z;
+	v3Pos.x = (float)in_vPos->x;
+	v3Pos.y = (float)in_vPos->y;
+	v3Pos.z = (float)in_vPos->z;
+	 
+	v3Dir.x = (float)in_vDir->x;
+	v3Dir.y = (float)in_vDir->y;
+	v3Dir.z = (float)in_vDir->z;
+	 
+	v3Up.x = (float)in_vUp->x;
+	v3Up.y = (float)in_vUp->y;
+	v3Up.z = (float)in_vUp->z;
 
 
 	if (in_pmProjection)
 		_cameraParams.mProjection = *in_pmProjection;
 
-	_cameraParams.vPos = vm::Vector3df(vPos.x / _fWorldScale, vPos.y / _fWorldScale, vPos.z / _fWorldScale);
-	_cameraParams.vDir = vm::Vector3df(vDir.x, vDir.y, vDir.z);
-	_cameraParams.vUp = vm::Vector3df(vUp.x, vUp.y, vUp.z);
+	_cameraParams.vPos = vm::Vector3df(v3Pos.x / _fWorldScale, v3Pos.y / _fWorldScale, v3Pos.z / _fWorldScale);
+	_cameraParams.vDir = vm::Vector3df(v3Dir.x, v3Dir.y, v3Dir.z);
+	_cameraParams.vUp = vm::Vector3df(v3Up.x, v3Up.y, v3Up.z);
 
 	/*if (_pVisibilityManager)
 		_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
@@ -513,6 +438,149 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	
 	//_cameraParams.fHFovAngleRad *= D2R;
 	//_cameraParams.fVFovAngleRad *= D2R;
+
+	// ----------------
+
+	_cameraParams.mProjection = *in_pmProjection;
+
+
+	/*vm::Matrix4x4df vmProj, vmInvProj;
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			vmProj[i][j] = in_pmProjection->m[i][j];
+		}
+	}
+
+	vm::Vector4df vmCubeEdges[8];
+	vm::Vector3df vmTransformedCubeEdges[8];
+
+	if (vm::inverse(vmProj, vmInvProj, 4))
+	{
+		vmCubeEdges[0] = vm::Vector4df(1, 1, 0, 1);
+		vmCubeEdges[1] = vm::Vector4df(1, -1, 0, 1);
+		vmCubeEdges[2] = vm::Vector4df(-1, -1, 0, 1);
+		vmCubeEdges[3] = vm::Vector4df(-1, 1, 0, 1);
+
+		vmCubeEdges[4] = vm::Vector4df(1, 1, 1, 1);
+		vmCubeEdges[5] = vm::Vector4df(1, -1, 1, 1);
+		vmCubeEdges[6] = vm::Vector4df(-1, -1, 1, 1);
+		vmCubeEdges[7] = vm::Vector4df(-1, 1, 1, 1);
+
+
+		for (int i = 0; i < 8; i++)
+		{
+			vm::Vector4df vmTransformedCubeEdge = vm::mul(vmInvProj, vmCubeEdges[i]);
+
+			vmTransformedCubeEdge[0] /= vmTransformedCubeEdge[3];
+			vmTransformedCubeEdge[1] /= vmTransformedCubeEdge[3];
+			vmTransformedCubeEdge[2] /= vmTransformedCubeEdge[3];
+
+			vmTransformedCubeEdges[i] = vm::Vector3df(vmTransformedCubeEdge[0], vmTransformedCubeEdge[1], vmTransformedCubeEdge[2]);
+		}
+
+	}
+
+
+	Matrix4x4<float> mView, mProj;
+
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+		{
+			mProj[i][j] = in_pmProjection->m[i][j];
+		}
+
+	D3DXMATRIX md3dView;
+
+	D3DXVECTOR3 eye(in_vPos->x, in_vPos->y, in_vPos->z);
+	D3DXVECTOR3 at(in_vPos->x + in_vDir->x, in_vPos->y + in_vDir->y, in_vPos->z + in_vDir->z);
+	D3DXVECTOR3 up(in_vUp->x, in_vUp->y, in_vUp->z);
+
+	D3DXMatrixLookAtLH(&md3dView, &eye, &at, &up);
+
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+		{
+			mView[i][j] = md3dView.m[i][j];
+		}
+
+	Vector3f vPos = ToVec3(*in_vPos);
+	Vector3f vDir = ToVec3(*in_vDir);
+	Vector3f vUp = ToVec3(*in_vUp);
+
+
+	D3DXMATRIX md3dProj = *in_pmProjection;
+	D3DXMATRIX mInvProjection;
+
+	D3DXVECTOR3 vCubeEdges[8];
+	D3DXVECTOR3 vViewSpaceCubeEdges[8];
+	Vector3f vViewSpaceFrustumPoints[8];
+
+	FLOAT fDet = 0;
+
+	float fNearPlane = 99999.f;
+	float fFarPlane = 0;
+
+	if (D3DXMatrixInverse(&mInvProjection, &fDet, &md3dProj) != NULL)
+	{
+
+		vCubeEdges[0] = D3DXVECTOR3(1, 1, 0);
+		vCubeEdges[1] = D3DXVECTOR3(1, -1, 0);
+		vCubeEdges[2] = D3DXVECTOR3(-1, -1, 0);
+		vCubeEdges[3] = D3DXVECTOR3(-1, 1, 0);
+
+		vCubeEdges[4] = D3DXVECTOR3(1, 1, 1);
+		vCubeEdges[5] = D3DXVECTOR3(1, -1, 1);
+		vCubeEdges[6] = D3DXVECTOR3(-1, -1, 1);
+		vCubeEdges[7] = D3DXVECTOR3(-1, 1, 1);
+
+		for (int i = 0; i < 8; i++)
+		{
+			D3DXVec3TransformCoord(&vViewSpaceCubeEdges[i], &vCubeEdges[i], &mInvProjection);
+
+			if (fFarPlane < vViewSpaceCubeEdges[i].z)
+				fFarPlane = vViewSpaceCubeEdges[i].z;
+
+			if (fNearPlane > vViewSpaceCubeEdges[i].z)
+				fNearPlane = vViewSpaceCubeEdges[i].z;
+
+			vViewSpaceFrustumPoints[i] = Vector3f(vViewSpaceCubeEdges[i].x, vViewSpaceCubeEdges[i].y, vViewSpaceCubeEdges[i].z);
+		}
+
+
+		D3DXVECTOR3 vXZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
+		D3DXVECTOR3 vXZBase2 = vViewSpaceCubeEdges[7] - vViewSpaceCubeEdges[3];
+
+		Vector2f vHorizontalBase1(vXZBase1.x, vXZBase1.z);
+		Vector2f vHorizontalBase2(vXZBase2.x, vXZBase2.z);
+
+		float fCosHor = DotProduct(Normalize(vHorizontalBase1), Normalize(vHorizontalBase2));
+		_cameraParams.fHFovAngleRad = acosf(fCosHor);
+
+
+		D3DXVECTOR3 vYZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
+		D3DXVECTOR3 vYZBase2 = vViewSpaceCubeEdges[5] - vViewSpaceCubeEdges[1];
+
+		Vector2f vVerticalBase1(vYZBase1.y, vYZBase1.z);
+		Vector2f vVerticalBase2(vYZBase2.y, vYZBase2.z);
+
+		float fCosVer = DotProduct(Normalize(vVerticalBase1), Normalize(vVerticalBase2));
+		_cameraParams.fVFovAngleRad = acosf(fCosVer);
+
+		if (vViewSpaceFrustumPoints[0].z > vViewSpaceFrustumPoints[4].z)
+		{
+			std::swap(vViewSpaceFrustumPoints[0], vViewSpaceFrustumPoints[4]);
+			std::swap(vViewSpaceFrustumPoints[1], vViewSpaceFrustumPoints[5]);
+			std::swap(vViewSpaceFrustumPoints[2], vViewSpaceFrustumPoints[6]);
+			std::swap(vViewSpaceFrustumPoints[3], vViewSpaceFrustumPoints[7]);
+		}
+
+	}*/
+
+	_cameraParams.fHFovAngleRad = 75.f * D2R;
+	_cameraParams.fVFovAngleRad = 60.f * D2R;
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
@@ -545,6 +613,11 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	STerrainBlockParams params;
 	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
 
+	auto objRes = _pTerrainObjectManager->GetObjectHfResolution(ID);
+
+	pHeightfield->Config.nCountX = objRes.first / _heightfieldCompressionRatio;
+	pHeightfield->Config.nCountY = objRes.second / _heightfieldCompressionRatio;
+
 	// считаем данные карты высот из файла
 	_pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), *pHeightfield, (unsigned short)_heightfieldCompressionRatio);
 
@@ -576,7 +649,8 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	_vecNewObjectIDs.clear();
 	_vecObjectsToDelete.clear();
 
-	_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
+	if (_pTerrainVisibility)
+		_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
 
 	//_pVisibilityManager->UpdateVisibleObjectsSet();
 	//_pResourceManager->Update(in_fDeltaTime);
@@ -601,6 +675,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 			break;
 		}
 	}*/
+
+	if (!_pTerrainVisibility)
+		return;
 
 	for (TerrainObjectID visID : _pTerrainVisibility->GetVisibleObjects())
 	{
@@ -720,7 +797,7 @@ bool CTerrainManager::CTerrainManagerImpl::CheckPointsInFrustum(const std::vecto
 
 	for (const vm::Vector3df& vPoint : vecPoints)
 	{
-		if (dot(vPoint - _cameraParams.vPos, _cameraParams.vDir) >= 0)
+		if (vm::dot_prod(vPoint - _cameraParams.vPos, _cameraParams.vDir) >= 0)
 		{
 			bAllPointsOutOfFrustum = false;
 			break;
@@ -751,7 +828,7 @@ void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
 
 		for (size_t i = 0; i < vecRefNormals.size(); i++)
 		{
-			if (dot(normalize(vecRefPoints[i] - _cameraParams.vPos), normalize(vecRefPoints[i])) < 0.2)
+			if (vm::dot_prod(normalize(vecRefPoints[i] - _cameraParams.vPos), normalize(vecRefPoints[i])) < 0.2)
 			{
 				bFullBackSided = false;
 				break;
@@ -1114,7 +1191,7 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 
 	double diam = Rmin * anglesDist;
 
-	_vecLODDiameter[nLod] = std::max<float>(_vecLODDiameter[nLod], (float)diam);
+	//_vecLODDiameter[nLod] = std::max<float>(_vecLODDiameter[nLod], (float)diam);
 
 	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
 	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
@@ -1282,13 +1359,15 @@ void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
 // Установить линейку расстояний для NLods лодов
 void CTerrainManager::CTerrainManagerImpl::SetLodDistancesKM(double* aLodDistances, size_t NLods)
 {
-	_pTerrainVisibility->SetLodDistancesKM(aLodDistances, NLods);
+	if (_pTerrainVisibility)
+		_pTerrainVisibility->SetLodDistancesKM(aLodDistances, NLods);
 }
 
 // Считать линейку расстояний для NLods лодов
 void CTerrainManager::CTerrainManagerImpl::GetLodDistancesKM(double* aLodDistances, size_t NLods)
 {
-	_pTerrainVisibility->GetLodDistancesKM(aLodDistances, NLods);
+	if (_pTerrainVisibility)
+		_pTerrainVisibility->GetLodDistancesKM(aLodDistances, NLods);
 }
 
 // Рассчитать автоматически линейку расстояний исходя из максимального количества пикселей на тексель
@@ -1299,7 +1378,12 @@ void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPi
 	_cameraParams.uiScreenResolutionY = in_uiScreenResolutionY;
 	_fMaxPixelsPerTexel = in_fMaxPixelsPerTexel;
 
-	_bRecalculateLodsDistances = true;
+//	if (_cameraParams.fVFovAngleRad != 0 && _cameraParams.fHFovAngleRad != 0)
+		_bRecalculateLodsDistances = true;
+//	else
+	//{
+		//LogMessage("TerrainManager::CalculateLodDistances: cannot calculate, because of illegal fov calculation");
+	//}
 }
 
 //@}
@@ -1370,8 +1454,8 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	out_pTerrainBlockShaderParams->fMinLongitude = params.fMinLongitude;
 	out_pTerrainBlockShaderParams->fMaxLongitude = params.fMaxLongitude;
 
-	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX;
-	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY;
+	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX / _heightfieldCompressionRatio;
+	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY / _heightfieldCompressionRatio;
 
 
 	out_pTerrainBlockShaderParams->fLongitudeCoeff = params.fLongitudeСutCoeff;

@@ -96,6 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>HEIGHTFIELD_CONVERTER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../3DLib/Lib/D3DX/x64</AdditionalLibraryDirectories>
@@ -146,6 +147,7 @@
       <PreprocessorDefinitions>HEIGHTFIELD_CONVERTER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

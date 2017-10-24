@@ -76,10 +76,11 @@ void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const st
 		_aLodDistances[j] = _aLodDistances[j - 1] * 0.5;
 	}
 
+	/*
 	for (size_t i = 1; i < MAX_LODS; i++)
 	{
 		_aLodDistances[i] += 3000.0;
-	}
+	}*/
 }
 
 void CTerrainVisibility::SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods)
@@ -106,7 +107,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	STerrainBlockParams params;
 	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS);
 
-	double dfMinLat = params.fMinLattitude;;
+	double dfMinLat = params.fMinLattitude;
 	double dfMaxLat = params.fMaxLattitude;
 	double dfMinLong = params.fMinLongitude;
 	double dfMaxLong = params.fMaxLongitude;
@@ -230,7 +231,7 @@ double CTerrainVisibility::AngularDistance(double a1, double a2)
 	vm::Vector3df v1(cos1, sin1, 0);
 	vm::Vector3df v2(cos2, sin2, 0);
 
-	double angle = acos(vm::dot(v1, v2));
+	double angle = acos(vm::dot_prod(v1, v2));
 
 	vm::Vector3df v = vm::cross(v1, v2);
 

@@ -504,7 +504,7 @@ inline Vector<Type, N> operator / (const Vector<Type, N>& in_vA, const Type2& in
 }
 
 template <typename Type, int N>
-inline Type dot(const Vector<Type, N>& in_vA, const Vector<Type, N>& in_vB)
+inline Type dot_prod(const Vector<Type, N>& in_vA, const Vector<Type, N>& in_vB)
 {
     Type tResult(0);
     for(size_t i = 0; i < N; ++i)
@@ -515,13 +515,13 @@ inline Type dot(const Vector<Type, N>& in_vA, const Vector<Type, N>& in_vB)
 template <typename Type, int N>
 inline Type length(const Vector<Type, N>& in_vVec)
 {
-    return static_cast<Type>(sqrt(dot(in_vVec, in_vVec)));
+    return static_cast<Type>(sqrt(dot_prod(in_vVec, in_vVec)));
 }
 
 template <typename Type, int N>
 inline Type length2(const Vector<Type, N>& in_vVec)
 {
-	return static_cast<Type>(dot(in_vVec, in_vVec));
+	return static_cast<Type>(dot_prod(in_vVec, in_vVec));
 }
 
 template <typename Type, int N>
@@ -863,7 +863,7 @@ inline Vector<Type, M> mul(const Matrix<Type, M, N>& mA, const Vector<Type, N>& 
     Vector<Type, M> vResult;
     for(size_t i = 0; i < M; ++i)
     {
-        vResult[i] = dot(mA[i], vB);
+        vResult[i] = vm::dot_prod(mA[i], vB);
     }
     return vResult;
 }

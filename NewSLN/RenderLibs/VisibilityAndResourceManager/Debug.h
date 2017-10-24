@@ -22,18 +22,24 @@ void Trace(const wchar_t* in_sFormat, ...);
 	Trace(wossMessage.str().c_str()); \
 	if (!bDisabled)\
 	{\
-		wossMessage << L"\r\n Retry - debug, Cancel - skip.";\
-		if (IDCANCEL == ::MessageBoxW(0, wossMessage.str().c_str(), L"assertion failed", MB_RETRYCANCEL))\
-		{\
-			bDisabled = true;\
-		}\
-	if (!bDisabled)\
-		__debugbreak();  \
+	LogMessage("Assertion failed: %ls", wossMessage.str().c_str()); \
 	}\
 }
 #else
 #define assert_debug(expr, message)
 #endif
+
+//	wossMessage << L"\r\n Retry - debug, Cancel - skip.";\
+	//	if (IDCANCEL == ::MessageBoxW(0, wossMessage.str().c_str(), L"assertion failed", MB_RETRYCANCEL))\
+	//	{\
+	//		bDisabled = true;\
+	//	}\
+	//if (!bDisabled)\
+	//	__debugbreak();  
+
+
+//LogMessage("Assertion failed: %ls", wossMessage.str().c_str()); 
+
 
 std::string GetLastErrorString (LPCTSTR lpszFunction);
 

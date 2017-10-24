@@ -54,7 +54,7 @@ double AngularDistance(double a1, double a2)
 	vm::Vector3df v1(cos1, sin1, 0);
 	vm::Vector3df v2(cos2, sin2, 0);
 
-	double angle = acos(vm::dot(v1, v2));
+	double angle = acos(vm::dot_prod(v1, v2));
 
 	vm::Vector3df v = vm::cross(v1, v2);
 

@@ -106,13 +106,14 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;TERRAINMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common;../VisibilityAndResourceManager/</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>HeightfieldConverter.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../lib;../../3DLib/Lib/D3DX/x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>HeightfieldConverter.lib;VisibilityManager.lib;ResourceManager.lib;d3dx10.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <ImportLibrary>$(ProjectDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
@@ -145,15 +146,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;TERRAINMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common;../VisibilityAndResourceManager/</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>HeightfieldConverter.lib;VisibilityManager.lib;ResourceManager.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>HeightfieldConverter.lib;VisibilityManager.lib;ResourceManager.lib;d3dx10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../lib;../../3DLib/Lib/D3DX/x64</AdditionalLibraryDirectories>
       <ImportLibrary>$(ProjectDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
@@ -162,6 +164,7 @@
     <ClCompile Include="..\Common\FileUtil.cpp" />
     <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="..\Common\StlUtil.cpp" />
+    <ClCompile Include="..\Common\vecmath.cpp" />
     <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="TerrainDataBlock.cpp" />
     <ClCompile Include="TerrainDataManager.cpp" />
@@ -174,6 +177,7 @@
     <ClInclude Include="..\Common\FileUtil.h" />
     <ClInclude Include="..\Common\Log.h" />
     <ClInclude Include="..\Common\StlUtil.h" />
+    <ClInclude Include="..\Common\vecmath.h" />
     <ClInclude Include="..\Common\wgs84.h" />
     <ClInclude Include="..\include\TerrainDataManager.h" />
     <ClInclude Include="..\include\TerrainManager.h" />

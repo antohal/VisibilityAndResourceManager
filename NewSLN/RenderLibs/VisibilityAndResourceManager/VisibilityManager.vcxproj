@@ -89,6 +89,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VisibilityManager_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../3DLib/Lib/D3DX/x64</AdditionalLibraryDirectories>
@@ -120,6 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);../../3DLib/include/D3DX;../../3DLib/include/Effects11/inc;../include;../Common</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VisibilityManager_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

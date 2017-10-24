@@ -252,6 +252,19 @@ unsigned char CTerrainObjectManager::GetObjectDepth(TerrainObjectID ID) const
 	return static_cast<unsigned char>((ID >> 32) & 0xFF);
 }
 
+std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResolution(TerrainObjectID ID) const
+{
+	unsigned char depth = GetObjectDepth(ID);
+
+	if (depth >= _vecLodInfos.size())
+	{
+		LogMessage("CTerrainObjectManager::GetObjectHfResolution, depth of object is more than config, %ld", ID);
+		return std::make_pair<unsigned int, unsigned int>(16, 16);
+	}
+
+	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].Width, (unsigned int)_vecLodInfos[depth].Height);
+}
+
 void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecChildren)
 {
 	if (!IsObjectHasSubhierarchy(ID))

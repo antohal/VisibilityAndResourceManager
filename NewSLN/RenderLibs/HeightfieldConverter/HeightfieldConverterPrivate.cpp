@@ -113,7 +113,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 		return;
 	}
 
-	ID3D11Resource* resource = NULL;
+	/*ID3D11Resource* resource = NULL;
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
 	if (out_Heightfield.pTextureSRV)
@@ -132,7 +132,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 		
 		out_Heightfield.Config.nCountX = description.Width / in_usCompressionRatio;
 		out_Heightfield.Config.nCountY = description.Height / in_usCompressionRatio;
-	}
+	}*/
 }
 
 
