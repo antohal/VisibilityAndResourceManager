@@ -613,10 +613,10 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	STerrainBlockParams params;
 	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
 
-	auto objRes = _pTerrainObjectManager->GetObjectHfResolution(ID);
+	auto objRes = _pTerrainObjectManager->GetObjectHfResolution(ID, _heightfieldCompressionRatio);
 
-	pHeightfield->Config.nCountX = objRes.first / _heightfieldCompressionRatio;
-	pHeightfield->Config.nCountY = objRes.second / _heightfieldCompressionRatio;
+	pHeightfield->Config.nCountX = objRes.first;
+	pHeightfield->Config.nCountY = objRes.second;
 
 	// считаем данные карты высот из файла
 	_pHeightfieldConverter->ReadHeightfieldDataFromTexture(wsHeightmapFileName.c_str(), *pHeightfield, (unsigned short)_heightfieldCompressionRatio);
@@ -1454,8 +1454,8 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	out_pTerrainBlockShaderParams->fMinLongitude = params.fMinLongitude;
 	out_pTerrainBlockShaderParams->fMaxLongitude = params.fMaxLongitude;
 
-	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX / _heightfieldCompressionRatio;
-	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY / _heightfieldCompressionRatio;
+	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX;// / _heightfieldCompressionRatio;
+	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY;// / _heightfieldCompressionRatio;
 
 
 	out_pTerrainBlockShaderParams->fLongitudeCoeff = params.fLongitudeСutCoeff;

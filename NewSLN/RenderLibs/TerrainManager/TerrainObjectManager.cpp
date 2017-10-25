@@ -6,6 +6,14 @@
 #include <algorithm>
 #include "vecmath.h"
 
+struct LodInfoStruct_Ver10
+{
+	short Width;			// ширины тексутры
+	short Height;			// высота тексутры
+	short CountY;			// кол-во текстур по X
+	short CountX;			// кол-во текстур по Y
+};
+
 CTerrainObjectManager::CTerrainObjectManager()
 {
 	_vecLODResolution.resize(20);
@@ -54,12 +62,36 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 		{
 			_vecLodInfos.resize(_databaseInfo.LodCount);
 
-			size_t nReadLods = fread_s(&_vecLodInfos[0], sizeof(LodInfoStruct) * _databaseInfo.LodCount, sizeof(LodInfoStruct), _databaseInfo.LodCount, fp);
-
-			if (nReadLods != _databaseInfo.LodCount)
+			if (_databaseInfo.Major == 1 && _databaseInfo.Minor == 1)
 			{
-				LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszDatabaseFile, nReadLods, _databaseInfo.LodCount);
-				bSuccessifulRead = false;
+				size_t nReadLods = fread_s(&_vecLodInfos[0], sizeof(LodInfoStruct) * _databaseInfo.LodCount, sizeof(LodInfoStruct), _databaseInfo.LodCount, fp);
+
+				if (nReadLods != _databaseInfo.LodCount)
+				{
+					LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszDatabaseFile, nReadLods, _databaseInfo.LodCount);
+					bSuccessifulRead = false;
+				}
+			}
+			else if (_databaseInfo.Major == 1 && _databaseInfo.Minor == 0)
+			{
+				std::vector<LodInfoStruct_Ver10> vecReadLods;
+				vecReadLods.resize(_databaseInfo.LodCount);
+
+				size_t nReadLods = fread_s(&vecReadLods[0], sizeof(LodInfoStruct_Ver10) * _databaseInfo.LodCount, sizeof(LodInfoStruct_Ver10), _databaseInfo.LodCount, fp);
+
+				if (nReadLods != _databaseInfo.LodCount)
+				{
+					LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszDatabaseFile, nReadLods, _databaseInfo.LodCount);
+					bSuccessifulRead = false;
+				}
+
+				for (size_t iLod = 0; iLod < nReadLods; iLod++)
+				{
+					memcpy(&_vecLodInfos[iLod], &vecReadLods[iLod], sizeof(LodInfoStruct_Ver10));
+
+					_vecLodInfos[iLod].AltWidth = vecReadLods[iLod].Width;
+					_vecLodInfos[iLod].AltHeight = vecReadLods[iLod].Height;
+				}
 			}
 		}
 
@@ -252,7 +284,7 @@ unsigned char CTerrainObjectManager::GetObjectDepth(TerrainObjectID ID) const
 	return static_cast<unsigned char>((ID >> 32) & 0xFF);
 }
 
-std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResolution(TerrainObjectID ID) const
+std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResolution(TerrainObjectID ID, unsigned int in_uiCompressionRatio) const
 {
 	unsigned char depth = GetObjectDepth(ID);
 
@@ -262,7 +294,10 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 		return std::make_pair<unsigned int, unsigned int>(16, 16);
 	}
 
-	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].Width, (unsigned int)_vecLodInfos[depth].Height);
+	if (_vecLodInfos[depth].HasBorder)
+		return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio + 1, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio + 1);
+
+	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio);
 }
 
 void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecChildren)

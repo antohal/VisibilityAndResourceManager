@@ -57,6 +57,21 @@ struct LodInfoStruct
 	short Height;			// высота тексутры
 	short CountY;			// кол-во текстур по X
 	short CountX;			// кол-во текстур по Y
+
+	// ver 1.1
+
+	unsigned int	TextureFormat = 0;				// 4 байта
+
+	unsigned int	TextureScaleAlgorithm = 0;		// 4 байта
+	bool			TextureIsGauss = false;				// 1 байта
+
+	short			AltWidth = 0;
+	short			AltHeight = 0;
+
+	unsigned int	AltFormat = 0;					// 4 байта
+	unsigned int	AltScaleAlgorithm = 0;			// 4 байта
+	bool			AltIsGauss = 0;					// 1 байта
+	bool			HasBorder = 0;					// 1 байта
 };
 
 // Описание блока Земли
