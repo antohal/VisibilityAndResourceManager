@@ -293,32 +293,11 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 
 	if (_pTerrainVisibility)
 		delete _pTerrainVisibility;
+
+	if (_pVisibilityManager)
+		delete _pVisibilityManager;
 }
 
-//void CTerrainManager::CTerrainManagerImpl::Init(ID3D11Device* in_pD3DDevice11, ID3D11DeviceContext* in_pDeviceContext, const wchar_t * in_pcwszPlanetDirectory, float in_fWorldScale, float in_fWorldSize, float in_fLongitudeScaleCoeff, float in_fLattitudeScaleCoeff)
-//{
-//	_pTerrainDataManager = new CTerrainDataManager();
-//	_pResourceManager = new CResourceManager();
-//
-//	_fWorldSize = in_fWorldSize;
-//	_fWorldScale = g_fMasterScale*in_fWorldScale;
-//
-//	LogMessage("Loading planet terrain info");
-//
-//	unsigned int uiMaxDepth = 0;
-//	_pTerrainDataManager->LoadTerrainDataInfo(std::wstring(GetStartDir() + in_pcwszPlanetDirectory).c_str(), &_pPlanetTerrainData, in_fLongitudeScaleCoeff, in_fLattitudeScaleCoeff, &uiMaxDepth);
-//
-//	CreateObjects();
-//
-//	_pVisibilityManager = new CVisibilityManager(this, GetWorldRadius(), GetMinCellSize());
-//	_pResourceManager->AddVisibilityManager(_pVisibilityManager);
-//
-//
-//	_pTerrainVisibilityManager = new CTerrainVisibilityManager;
-//	_pTerrainVisibilityManager->Init(this, _fWorldScale, 6000000.0f, 0.5, uiMaxDepth);
-//
-//	_pVisibilityManager->InstallPlugin(_pTerrainVisibilityManager);
-//}
 
 void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
 {
@@ -382,6 +361,8 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	_pTerrainVisibility->SetDeleteObjectHandler([this](TerrainObjectID ID) {
 		DestroyObject(ID);
 	});
+
+	_pVisibilityManager = new CVisibilityManager(nullptr, _fWorldScale * 20000000.0, 1000 * _fWorldScale);
 }
 
 void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldConverter * in_pHeightfieldConverter)
@@ -424,6 +405,14 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	_cameraParams.vDir = vm::Vector3df(v3Dir.x, v3Dir.y, v3Dir.z);
 	_cameraParams.vUp = vm::Vector3df(v3Up.x, v3Up.y, v3Up.z);
 
+
+	if (_pVisibilityManager)
+		_pVisibilityManager->SetViewProjection(v3Pos, v3Dir, v3Up, const_cast<D3DMATRIX *>(in_pmProjection));
+
+	if (_pVisibilityManager)
+		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);
+
+
 	/*if (_pVisibilityManager)
 		_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
 
@@ -441,10 +430,11 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 
 	// ----------------
 
+	/*
 	_cameraParams.mProjection = *in_pmProjection;
 
 
-	/*vm::Matrix4x4df vmProj, vmInvProj;
+	vm::Matrix4x4df vmProj, vmInvProj;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -577,10 +567,13 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 			std::swap(vViewSpaceFrustumPoints[3], vViewSpaceFrustumPoints[7]);
 		}
 
-	}*/
+	}
 
-	_cameraParams.fHFovAngleRad = 75.f * D2R;
-	_cameraParams.fVFovAngleRad = 60.f * D2R;
+	if (_cameraParams.fHFovAngleRad < 75.f * D2R)
+		_cameraParams.fHFovAngleRad = 75.f * D2R;
+
+	if (_cameraParams.fVFovAngleRad < 60.f * D2R)
+		_cameraParams.fVFovAngleRad = 60.f * D2R;*/
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
