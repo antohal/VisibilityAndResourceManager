@@ -189,6 +189,8 @@ void CTerrainObjectManager::DecomposeTerrainObjectID(TerrainObjectID ID, unsigne
 
 bool CTerrainObjectManager::IsObjectHasSubhierarchy(TerrainObjectID ID)
 {
+//	return true;
+
 	auto it = _mapHasSubhierarchy.find(ID);
 
 	// if we have cached subhierarchy flag - return it
@@ -295,7 +297,7 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 	}
 
 	if (_vecLodInfos[depth].HasBorder)
-		return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio + 1, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio + 1);
+		return std::make_pair<unsigned int, unsigned int>(((unsigned int)_vecLodInfos[depth].AltWidth + 1) / in_uiCompressionRatio, ((unsigned int)_vecLodInfos[depth].AltHeight + 1) / in_uiCompressionRatio);
 
 	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio);
 }
