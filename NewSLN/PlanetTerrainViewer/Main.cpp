@@ -125,6 +125,9 @@ void GenerateDatabaseInfo(const char* fileName)
 	dbInfo.DeltaX = 22400;
 	dbInfo.DeltaY = 44608;
 
+	dbInfo.Major = 1;
+	dbInfo.Minor = 1;
+
 	aLods[0].CountX = 2;
 	aLods[0].CountY = 4;
 	aLods[0].Width = 512;
@@ -159,6 +162,13 @@ void GenerateDatabaseInfo(const char* fileName)
 	aLods[6].CountY = 2;
 	aLods[6].Width = 512;
 	aLods[6].Height = 512;
+
+	for (int i = 0; i < 7; i++)
+	{
+		aLods[i].AltWidth = 128;
+		aLods[i].AltHeight = 128;
+		aLods[i].HasBorder = 1;
+	}
 
 
 	FILE* fp = fopen(fileName, "wb");
@@ -218,6 +228,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainManager = new CTerrainManager;
 
 
+	GenerateDatabaseInfo("Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+
 
 	//GenerateDatabaseInfo("..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
@@ -226,7 +239,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	//GenerateDatabaseInfo("Z:\\DataBase\\DataBaseInfo");
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface5\\Data_Bilinear\\DatabaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface5\\Data_Bilinear\\DatabaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	SGlobalTerrainShaderParams globalShaderParams;
