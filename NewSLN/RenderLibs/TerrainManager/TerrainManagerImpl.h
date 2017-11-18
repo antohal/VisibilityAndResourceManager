@@ -238,6 +238,8 @@ private:
 	CTerrainObjectManager*	_pTerrainObjectManager = nullptr;
 	CTerrainVisibility*		_pTerrainVisibility = nullptr;
 
+	CVisibilityManager*		_pVisibilityManager = nullptr;
+
 	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
 	//@}
 

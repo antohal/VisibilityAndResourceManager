@@ -398,10 +398,14 @@ CVisibilityManager::CVisibilityManager (C3DBaseObjectManager* in_pMeshTree, floa
 	D3DXVECTOR3 vMaxWorld(in_fWorldRadius, in_fWorldRadius, in_fWorldRadius);
 
 	std::vector<C3DBaseObject*> vecObjects;
-	vecObjects.resize(in_pMeshTree->GetObjectsCount());
 
-	for (size_t i = 0; i < vecObjects.size(); i++)
-		vecObjects[i] = in_pMeshTree->GetObjectByIndex(i);
+	if (in_pMeshTree)
+	{
+		vecObjects.resize(in_pMeshTree->GetObjectsCount());
+
+		for (size_t i = 0; i < vecObjects.size(); i++)
+			vecObjects[i] = in_pMeshTree->GetObjectByIndex(i);
+	}
 
 	//calculate world radius
 	for (C3DBaseObject* object : vecObjects)
