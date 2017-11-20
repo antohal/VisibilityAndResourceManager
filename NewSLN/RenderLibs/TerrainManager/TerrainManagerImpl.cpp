@@ -298,7 +298,6 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 		delete _pVisibilityManager;
 }
 
-
 void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
 {
 	ZeroMemory(&_globalTerrainShaderParams, sizeof(SGlobalTerrainShaderParams));
@@ -433,8 +432,16 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	/*
 	_cameraParams.mProjection = *in_pmProjection;
 
+	if (_pVisibilityManager)
+		_pVisibilityManager->SetViewProjection(v3Pos, v3Dir, v3Up, const_cast<D3DMATRIX *>(in_pmProjection));
 
-	vm::Matrix4x4df vmProj, vmInvProj;
+	if (_pVisibilityManager)
+		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad); 
+
+	_cameraParams.fHFovAngleRad *= D2R;
+	_cameraParams.fVFovAngleRad *= D2R;
+
+	/*vm::Matrix4x4df vmProj, vmInvProj;
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -569,11 +576,8 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 
 	}
 
-	if (_cameraParams.fHFovAngleRad < 75.f * D2R)
-		_cameraParams.fHFovAngleRad = 75.f * D2R;
-
-	if (_cameraParams.fVFovAngleRad < 60.f * D2R)
-		_cameraParams.fVFovAngleRad = 60.f * D2R;*/
+	/*_cameraParams.fHFovAngleRad = 75.f * D2R;
+	_cameraParams.fVFovAngleRad = 60.f * D2R;*/
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)

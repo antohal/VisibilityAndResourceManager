@@ -189,6 +189,8 @@ void CTerrainObjectManager::DecomposeTerrainObjectID(TerrainObjectID ID, unsigne
 
 bool CTerrainObjectManager::IsObjectHasSubhierarchy(TerrainObjectID ID)
 {
+//	return true;
+
 	auto it = _mapHasSubhierarchy.find(ID);
 
 	// if we have cached subhierarchy flag - return it
@@ -295,7 +297,7 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 	}
 
 	if (_vecLodInfos[depth].HasBorder)
-		return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio + 1, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio + 1);
+		return std::make_pair<unsigned int, unsigned int>(((unsigned int)_vecLodInfos[depth].AltWidth + 1) / in_uiCompressionRatio, ((unsigned int)_vecLodInfos[depth].AltHeight + 1) / in_uiCompressionRatio);
 
 	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio);
 }
@@ -445,11 +447,11 @@ bool CTerrainObjectManager::IsObjectValid(TerrainObjectID ID) const
 
 void CTerrainObjectManager::ComputeTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams& out_Params, int flags) const
 {
-	float fGlobalMinLat = static_cast<float>(M_PI * 0.5) - _fLattitudeRange;
-	float fGlobalMaxLat = static_cast<float>(M_PI * 0.5);
+	double dfGlobalMinLat = static_cast<float>(M_PI * 0.5) - _fLattitudeRange;
+	double dfGlobalMaxLat = static_cast<float>(M_PI * 0.5);
 
-	float fGlobalMinLong = 0;
-	float fGlobalMaxLong = _fLongitudeRange;
+	double dfGlobalMinLong = 0;
+	double dfGlobalMaxLong = _fLongitudeRange;
 
 	unsigned char lod;
 	unsigned short X, Y;
@@ -464,17 +466,18 @@ void CTerrainObjectManager::ComputeTerrainObjectParams(TerrainObjectID ID, STerr
 		unsigned short totalXObjectsCount = _vecTotalXCountPerLOD[lod];
 		unsigned short totalYObjectsCount = _vecTotalYCountPerLOD[lod];
 
-		float fDeltaLatPerObject = (fGlobalMaxLat - fGlobalMinLat) / totalXObjectsCount;
-		float fDeltaLongPerObject = (fGlobalMaxLong - fGlobalMinLong) / totalYObjectsCount;
+		double dfDeltaLatPerObject = (dfGlobalMaxLat - dfGlobalMinLat) / totalXObjectsCount;
+		double dfDeltaLongPerObject = (dfGlobalMaxLong - dfGlobalMinLong) / totalYObjectsCount;
 
-		out_Params.fMinLongitude = fGlobalMinLong + Y * fDeltaLongPerObject;
-		out_Params.fMaxLongitude = out_Params.fMinLongitude + fDeltaLongPerObject;
+		double dfMinLongitude = dfGlobalMinLong + Y * dfDeltaLongPerObject;
+		double dfMaxLongitude = dfMinLongitude + dfDeltaLongPerObject;
+		double dfMaxLattitude = dfGlobalMaxLat - X * dfDeltaLatPerObject;
+		double dfMinLattitude = dfMaxLattitude - dfDeltaLatPerObject;
 
-		out_Params.fMaxLattitude = fGlobalMaxLat - X * fDeltaLatPerObject;
-		out_Params.fMinLattitude = out_Params.fMaxLattitude - fDeltaLatPerObject;
-
-	//	out_Params.fMinLattitude = fGlobalMinLat + X * fDeltaLatPerObject;
-	//	out_Params.fMaxLattitude = out_Params.fMinLattitude + fDeltaLatPerObject;
+		out_Params.fMinLongitude = static_cast<float>(dfMinLongitude);
+		out_Params.fMaxLongitude = static_cast<float>(dfMaxLongitude);
+		out_Params.fMaxLattitude = static_cast<float>(dfMaxLattitude);
+		out_Params.fMinLattitude = static_cast<float>(dfMinLattitude);
 	}
 
 	out_Params.uiDepth = lod;
