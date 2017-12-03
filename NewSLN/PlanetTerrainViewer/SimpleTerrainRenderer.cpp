@@ -26,32 +26,24 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
 
 	LogMessage("Loading texture '%ls'", wsTextureFileName.c_str());
+
 	_wsTextureFileName = wsTextureFileName;
+	_wsHeightmapFileName = wsHeightmapFileName;
 
 	_pLoadThread = new std::thread([this]() {
 
 		_owner->LockLoadMutex();
 
-		ID3D11ShaderResourceView* pResourceView = nullptr;
+		ID3D11ShaderResourceView* pResourceViewTex = nullptr;
 
 		// Загружаем текстуру
-		HRESULT result = D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceView, NULL);
-		if (FAILED(result))
-		{
+		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
 
-			_owner->GetTerrainManager()->SetDataReady(_ID);
+		ID3D11ShaderResourceView* pResourceViewHF = nullptr;
+		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsHeightmapFileName.c_str(), NULL, NULL, &pResourceViewHF, NULL);
 
-			//LogMessage("CD3DStaticTerrainMaterial::Load: Error loading texture %ls", _wsTextureFileName.c_str());
-
-			_owner->UnlockLoadMutex();
-			return;
-		}
-
-
-		//std::this_thread::sleep_for(1s);
-
-		_pTextureSRV = pResourceView;
-		_owner->GetTerrainManager()->SetDataReady(_ID);
+		_pTextureSRV = pResourceViewTex;
+		_owner->GetTerrainManager()->SetDataReady(_ID, pResourceViewHF);
 
 		_owner->UnlockLoadMutex();
 	});
@@ -226,105 +218,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 
-	//---------------------------------------------
-
-	//ID3D11ShaderResourceView* pTextureSRV = nullptr;
-
-	////ID3D11Texture2D* tex;
-
-	//D3DX11_IMAGE_INFO iinfo;
-	//D3DX11GetImageInfoFromFileW(L"E://H_00_00.dds", nullptr, &iinfo, nullptr);
-
-	//D3DX11_IMAGE_LOAD_INFO info;
-
-	//info.Width = 257;
-	//info.Height = 257;
-	//info.Depth = 1;
-	//info.FirstMipLevel = 0;
-	//info.MipLevels = 1;
-	//info.Usage = D3D11_USAGE_STAGING;
-	//info.BindFlags = 0;
-	//info.Format = DXGI_FORMAT_R32_FLOAT;
-	//info.CpuAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
-	//info.MiscFlags = 0;
-	//info.Filter = D3DX11_FILTER_NONE;
-	//info.MipFilter = D3DX11_FILTER_NONE;
-	//info.pSrcInfo = &iinfo;
-
-
-	//ID3D11Resource* res;
-	//HRESULT result = D3DX11CreateTextureFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), L"E://H_00_00.dds", &info, NULL, &res, NULL);
-	//if (FAILED(result))
-	//	return;
-
-	///*SHeightfield hf;
-	//_pHeightfieldConverter->ReadHeightfieldDataFromTexture(L"E://H_00_00.dds", hf, 1);
-
-	//pTextureSRV = hf.pTextureSRV;*/
-
-	////ID3D11Resource* resource = NULL;
-	////D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-
-	////if (pTextureSRV)
-	////{
-	////	pTextureSRV->GetResource(&resource);
-	////	pTextureSRV->GetDesc(&srvDesc);
-	////}
-	////else
-	////	return;
-
-	////ID3D11Texture2D* tex = (ID3D11Texture2D*)resource;
-	//ID3D11Texture2D* tex = (ID3D11Texture2D*)res;
-	//if (tex)
-	//{
-	//	D3D11_TEXTURE2D_DESC description;
-	//	tex->GetDesc(&description);
-
-
-	//	//description.Usage = D3D11_USAGE_DYNAMIC;
-	//	//description.MipLevels = 1;
-	//	//description.CPUAccessFlags = D3D11_CPU_ACCESS_READ;// | D3D11_CPU_ACCESS_WRITE;
-
-
-	//	///ID3D11Texture2D* memTexture = nullptr;
-	//	//GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice()->CreateTexture2D(&description, nullptr, &memTexture);
-	//	//GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext()->CopyResource(memTexture, tex);
-
-	//	D3D11_MAPPED_SUBRESOURCE subresource;
-	//	HRESULT hr = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext()->Map(tex, 0, D3D11_MAP_READ, 0, &subresource);
-
-	//	if (hr == S_OK)
-	//	{
-
-	//		float* pfData = (float*)subresource.pData;
-
-	//		FILE* fp = fopen("E://hmap.dat", "wt");
-
-	//		unsigned int iData = 0;
-
-	//		while (iData < subresource.DepthPitch)
-	//		{
-	//			unsigned int iRow = subresource.RowPitch;
-
-	//			for (unsigned int i = 0; i < iRow / 4; i++)
-	//			{
-	//				fprintf(fp, "%f ", pfData[iData / 4 + i]);
-	//			}
-
-	//			fprintf(fp, "\n");
-
-	//			iData += iRow;
-	//		}
-
-	//		fclose(fp);
-
-
-	//		GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext()->Unmap(tex, 0);
-	//	}
-	//}
-
-
-	StartUpdateTriangulationsThread();
+	//StartUpdateTriangulationsThread();
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)

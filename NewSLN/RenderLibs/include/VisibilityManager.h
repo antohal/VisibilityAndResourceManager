@@ -132,6 +132,9 @@ public:
 	void UpdateVisibleObjectsSet ();
 	void UpdateTextureVisibility();
 	bool IsObjectVisible (C3DBaseObject* in_pObject) const;
+
+	bool CheckOBBInCamera(const Vector3& in_vPos, const Vector3& in_vX, const Vector3& in_vY, const Vector3& in_vZ, const Vector3& in_vHalfSizes) const;
+	bool CheckAABBInCamera(const Vector3& vMin, const Vector3& vMax) const;
 	
 	//const CPtrArray& GetVisibleObjects () const;
 	size_t GetVisibleObjectsCount() const;

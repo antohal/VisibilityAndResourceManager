@@ -1187,6 +1187,16 @@ bool CVisibilityManager::IsObjectVisible (C3DBaseObject* in_pObject) const
 #endif
 }
 
+bool CVisibilityManager::CheckOBBInCamera(const Vector3& in_vPos, const Vector3& in_vX, const Vector3& in_vY, const Vector3& in_vZ, const Vector3& in_vHalfSizes) const
+{
+	return IsOBBInFrustum(ToVec3(in_vPos), ToVec3(in_vHalfSizes), Matrix3x3<float>(ToVec3(in_vX), ToVec3(in_vY), ToVec3(in_vZ)), _private->_Camera.GetFrustum());
+}
+
+bool CVisibilityManager::CheckAABBInCamera(const Vector3& vMin, const Vector3& vMax) const
+{
+	return IsAABBInFrustum(CBoundBox<float>(ToVec3(vMin), ToVec3(vMax)), _private->_Camera.GetFrustum());
+}
+
 IVisibilityManagerPrivateInterface*	CVisibilityManager::GetPrivateInterface() const
 {
 	return _private;

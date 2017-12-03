@@ -5,6 +5,7 @@
 
 #include <set>
 #include <map>
+#include <mutex>
 
 #include "TerrainObjectManager.h"
 

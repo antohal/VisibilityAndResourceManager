@@ -354,6 +354,7 @@ void CTerrainVisibility::RequestForAlive(TerrainObjectID ID)
 	}
 }
 
+
 void CTerrainVisibility::UpdateObjectsLifetime(float in_fDeltaTime)
 {
 	// 1. advance all objects invisible time
@@ -384,7 +385,6 @@ void CTerrainVisibility::UpdateObjectsLifetime(float in_fDeltaTime)
 			it->second.timeBeingInvisible = 0;
 		}
 	}
-
 
 	// 3. check for dead objects
 	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); )

@@ -70,7 +70,7 @@ public:
 		_pTerrainManager->SetViewProjection(&vPos, &vDir, &vUp, _pContext->GetSystem()->GetProjectionMatrix());
 
 		_pTerrainManager->Update(in_fFrameTime);
-		//_pTerrainManager->UpdateTriangulations();
+		_pTerrainManager->UpdateTriangulations();
 
 		// добавляем новые объекты
 
@@ -96,8 +96,8 @@ public:
 		{
 			TerrainObjectID visObjID = _pTerrainManager->GetVisibleObjectID(iObj);
 
-			//STerrainBlockShaderParams terrainBlockParams;
-			//_pTerrainManager->FillTerrainBlockShaderParams(visObjID, &terrainBlockParams);
+			STerrainBlockShaderParams terrainBlockParams;
+			_pTerrainManager->FillTerrainBlockShaderParams(visObjID, &terrainBlockParams);
 
 			_pTerrainRenderer->AddObjectToRenderQueue(visObjID);
 		}
@@ -112,6 +112,7 @@ private:
 	CD3DGraphicsContext*	_pContext = nullptr;
 };
 
+#define N_LODS_TO_GENERATE 7
 
 void GenerateDatabaseInfo(const char* fileName)
 {
@@ -119,9 +120,9 @@ void GenerateDatabaseInfo(const char* fileName)
 
 
 	DataBaseInfo dbInfo;
-	LodInfoStruct aLods[7];
+	LodInfoStruct aLods[N_LODS_TO_GENERATE];
 
-	dbInfo.LodCount = 7;
+	dbInfo.LodCount = N_LODS_TO_GENERATE;
 	dbInfo.DeltaX = 22400;
 	dbInfo.DeltaY = 44608;
 
@@ -133,37 +134,15 @@ void GenerateDatabaseInfo(const char* fileName)
 	aLods[0].Width = 512;
 	aLods[0].Height = 512;
 
-	aLods[1].CountX = 2;
-	aLods[1].CountY = 2;
-	aLods[1].Width = 512;
-	aLods[1].Height = 512;
+	for (int i = 1; i < N_LODS_TO_GENERATE; i++)
+	{
+		aLods[i].CountX = 2;
+		aLods[i].CountY = 2;
+		aLods[i].Width = 512;
+		aLods[i].Height = 512;
+	}
 
-	aLods[2].CountX = 2;
-	aLods[2].CountY = 2;
-	aLods[2].Width = 512;
-	aLods[2].Height = 512;
-
-	aLods[3].CountX = 2;
-	aLods[3].CountY = 2;
-	aLods[3].Width = 512;
-	aLods[3].Height = 512;
-
-	aLods[4].CountX = 2;
-	aLods[4].CountY = 2;
-	aLods[4].Width = 512;
-	aLods[4].Height = 512;
-
-	aLods[5].CountX = 2;
-	aLods[5].CountY = 2;
-	aLods[5].Width = 512;
-	aLods[5].Height = 512;
-
-	aLods[6].CountX = 2;
-	aLods[6].CountY = 2;
-	aLods[6].Width = 512;
-	aLods[6].Height = 512;
-
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < N_LODS_TO_GENERATE; i++)
 	{
 		aLods[i].AltWidth = 128;
 		aLods[i].AltHeight = 128;
@@ -174,8 +153,7 @@ void GenerateDatabaseInfo(const char* fileName)
 	FILE* fp = fopen(fileName, "wb");
 
 	fwrite(&dbInfo, sizeof(DataBaseInfo), 1, fp);
-
-	fwrite(&aLods[0], sizeof(LodInfoStruct) * 7, 1, fp);
+	fwrite(&aLods[0], sizeof(LodInfoStruct) * N_LODS_TO_GENERATE, 1, fp);
 
 	fclose(fp);
 }
@@ -228,15 +206,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainManager = new CTerrainManager;
 
 
-	GenerateDatabaseInfo("Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//GenerateDatabaseInfo("Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Compas\\VisibilityAndResourceManager\\NewSLN\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	//GenerateDatabaseInfo("..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo");
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"..\\TerrainManager\\bin\\PlanetViewerData\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", 7, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 	//GenerateDatabaseInfo("Z:\\DataBase\\DataBaseInfo");
 	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface5\\Data_Bilinear\\DatabaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);

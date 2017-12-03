@@ -16,11 +16,11 @@
 #include <thread>
 #include <chrono>
 
-class CInternalTerrainObject  : public C3DBaseObject
+class CInternalTerrainObject  //: public C3DBaseObject
 {
 public:
 
-	CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+	CInternalTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
 		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName);
 
 	const TerrainObjectID&	GetID() const {
@@ -57,7 +57,7 @@ public:
 		return _bTriangulationsReady && _bOtherDataReady;
 	}
 
-	void CalculateReferencePoints(std::vector<vm::Vector3df>& out_vecPoints, std::vector<vm::Vector3df>& out_vecNormals);
+	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals);
 
 	const wchar_t* GetTextureFileName() const {
 		return _textureFileName.c_str();
@@ -67,44 +67,31 @@ public:
 		return _heightmapFileName.c_str();
 	}
 
-protected:
+	const vm::Vector3df&					GetPos() const { return _vPos; }
+	const vm::Vector3df&					GetX() const { return _vXAxis; }
+	const vm::Vector3df&					GetY() const { return _vYAxis; }
+	const vm::Vector3df&					GetZ() const { return _vZAxis; }
+	const vm::Vector3df&					GetHalfSizes() const { return _vHalfsizes; }
 
-	// Все 3D объекты должны будут возвращать Баунд-Бокс. Причем, если объект - точка, а не меш, то
-	// пусть вернет одинаковые значения в out_vBBMin и out_vBBMax.
-	virtual void							GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax) override;
-
-	// Получить матрицу трансформации
-	virtual D3DXMATRIX*						GetWorldTransform() override;
-
-	// Функция должна возвращать: включена-ли проверка размера объекта на экране
-	virtual bool							IsMinimalSizeCheckEnabled() const override { return false; };
-
-	// Функция возврящает количество мешей данного объекта
-	virtual size_t							GetMeshesCount() const override { return 0; }
-
-	// Функция возвращает конкретный меш объекта по его идентификатору
-	virtual C3DBaseMesh*					GetMeshById(size_t id) const { return nullptr; }
-
-	// получить список фейссетов
-	virtual size_t							GetFaceSetsCount() const { return 0; }
-	virtual C3DBaseFaceSet*					GetFaceSetById(size_t id) const { return nullptr; }
-
-	virtual C3DBaseManager*					GetManager() const { return _pOwner; }
-
+	/*const vm::Vector3df&					GetAABBMin() const { return _vAABBMin; }
+	const vm::Vector3df&					GetAABBMax() const { return _vAABBMax; }*/
 
 private:
 
 	TerrainObjectID				_ID = -1;
-	//const CTerrainBlockDesc*	_pBlockDesc = nullptr;
 	STerrainBlockParams			_params;
-
-	C3DBaseManager*				_pOwner = nullptr;
-
+	
 	STriangulation*				_pTriangulation = nullptr;
 
-	D3DXMATRIX					_mTransform;
-	D3DXVECTOR3					_vBBoxMin;
-	D3DXVECTOR3					_vBBoxMax;
+	vm::Vector3df				_vPos = vm::Vector3df(0, 0, 0);
+	
+	vm::Vector3df				_vXAxis = vm::Vector3df(1, 0, 0);
+	vm::Vector3df				_vYAxis = vm::Vector3df(0, 1, 0);
+	vm::Vector3df				_vZAxis = vm::Vector3df(0, 0, 1);
+	vm::Vector3df				_vHalfsizes = vm::Vector3df(0, 0, 0);
+
+	vm::Vector3df				_vAABBMin = vm::Vector3df(0, 0, 0);
+	vm::Vector3df				_vAABBMax = vm::Vector3df(0, 0, 0);
 
 	bool						_bTriangulationsReady = false;
 	bool						_bOtherDataReady = false;
@@ -179,7 +166,7 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
-	void SetDataReady(TerrainObjectID ID);
+	void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
 
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
 
@@ -201,6 +188,9 @@ public:
 
 	//@}
 
+	void SetWaitForExternalHeightmaps(bool wait) {
+		_bWaitForExternalHeightmaps = wait;
+	}
 
 	//@{ Функции получения параметров для шейдеров
 
@@ -215,6 +205,8 @@ public:
 
 private:
 
+	void SetObjectHeightmapLoaded(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
+
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
 
@@ -228,8 +220,6 @@ private:
 
 	void CalculateReadyAndVisibleSet();
 
-	bool CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const;
-
 	bool FillTerrainBlockParams(TerrainObjectID ID, STerrainBlockParams& out_Params) const;
 	void UpdateTriangulationsAndHeightfieldLifetime();
 
@@ -237,8 +227,6 @@ private:
 	//---------------------- New mechanism
 	CTerrainObjectManager*	_pTerrainObjectManager = nullptr;
 	CTerrainVisibility*		_pTerrainVisibility = nullptr;
-	CVisibilityManager*		_pVisibilityManager = nullptr;
-
 	CVisibilityManager*		_pVisibilityManager = nullptr;
 
 	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
@@ -266,10 +254,11 @@ private:
 
 	//@{ following containers are guarded by mutex (_containersMutex)
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
-	std::vector<TerrainObjectID>						_vecNotCheckedForTriangulations;
+	std::set<TerrainObjectID>							_setNotCheckedForTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 	std::vector<TerrainObjectID>						_vecPreliminaryObjectsToDelete;
 
+	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
 	std::set<CInternalTerrainObject*>					_setPreliminaryVisibleObjects;
 	//@}
@@ -290,6 +279,7 @@ private:
 	};
 
 	SHeightfield*		RequestObjectHeightfield(TerrainObjectID ID);
+	bool				HasLoadedHeightfield(TerrainObjectID ID) const;
 
 	mutable std::mutex									_objectTriangulationsMutex;
 	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
@@ -307,8 +297,8 @@ private:
 
 		D3DMATRIX			mProjection;
 
-		float				fHFovAngleRad, fVFovAngleRad;
-		unsigned int		uiScreenResolutionX, uiScreenResolutionY;
+		float				fHFovAngleRad = 0, fVFovAngleRad = 0;
+		unsigned int		uiScreenResolutionX = 0, uiScreenResolutionY = 0;
 	};
 
 	SCameraParams			_cameraParams;
@@ -319,4 +309,5 @@ private:
 	float					_fMaxPixelsPerTexel = 10;
 	bool					_bRecalculateLodsDistances = false;
 
+	bool					_bWaitForExternalHeightmaps = true;
 };

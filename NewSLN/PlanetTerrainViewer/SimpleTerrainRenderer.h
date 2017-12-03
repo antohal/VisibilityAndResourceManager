@@ -31,6 +31,7 @@ private:
 	TerrainObjectID					_ID;
 
 	std::wstring					_wsTextureFileName;
+	std::wstring					_wsHeightmapFileName;
 
 	std::thread*					_pLoadThread = nullptr;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;

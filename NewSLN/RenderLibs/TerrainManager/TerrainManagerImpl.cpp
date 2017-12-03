@@ -24,34 +24,25 @@ const float g_fMasterScale = 1.f;
 
 const float g_fMaxHFAliveTime = 1.f;
 
-CInternalTerrainObject::CInternalTerrainObject(C3DBaseManager* in_pOwner, TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+CInternalTerrainObject::CInternalTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
 	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName)
-	: _pOwner(in_pOwner), _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName)
+	: _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName)
 {
-	_vBBoxMin = D3DXVECTOR3(
-		(float)in_coordsInfo.vBoundBoxMinimum[0],
-		(float)in_coordsInfo.vBoundBoxMinimum[1],
-		(float)in_coordsInfo.vBoundBoxMinimum[2]
-	);
+	_vPos = vm::Vector3df(in_coordsInfo.vPosition);
+	_vXAxis = vm::Vector3df(in_coordsInfo.vXAxis);
+	_vYAxis = vm::Vector3df(in_coordsInfo.vYAxis);
+	_vZAxis = vm::Vector3df(in_coordsInfo.vZAxis);
 
-	_vBBoxMax = D3DXVECTOR3(
-		(float)in_coordsInfo.vBoundBoxMaximum[0],
-		(float)in_coordsInfo.vBoundBoxMaximum[1],
-		(float)in_coordsInfo.vBoundBoxMaximum[2]
-	);
+	_vHalfsizes = (vm::Vector3df(in_coordsInfo.vBoundBoxMaximum) - vm::Vector3df(in_coordsInfo.vBoundBoxMinimum))*0.5;
 
-	D3DXMatrixIdentity(&_mTransform);
-}
+	if (in_coordsInfo.vBoundBoxMaximum[1] < _vHalfsizes[1])
+		_vPos -= _vYAxis * (_vHalfsizes[1] - in_coordsInfo.vBoundBoxMaximum[1]);
+	else
+		if (fabs(in_coordsInfo.vBoundBoxMinimum[1]) < _vHalfsizes[1])
+			_vPos += _vYAxis * (_vHalfsizes[1] - fabs(in_coordsInfo.vBoundBoxMinimum[1]));
 
-void CInternalTerrainObject::GetBoundBox(D3DXVECTOR3** ppBBMin, D3DXVECTOR3** ppBBMax)
-{
-	*ppBBMin = &_vBBoxMin;
-	*ppBBMax = &_vBBoxMax;
-}
-
-D3DXMATRIX* CInternalTerrainObject::GetWorldTransform()
-{
-	return &_mTransform;
+//	_vAABBMin = vm::Vector3df(in_coordsInfo.vBoundBoxMinimum);
+//	_vAABBMax = vm::Vector3df(in_coordsInfo.vBoundBoxMaximum);
 }
 
 //---------------------------------------------------------------------------------------------------
@@ -132,6 +123,11 @@ bool CTerrainManager::UpdateTriangulations()
 	return _implementation->UpdateTriangulations();
 }
 
+void CTerrainManager::SetWaitForExternalHeightmaps(bool wait)
+{
+	_implementation->SetWaitForExternalHeightmaps(wait);
+}
+
 // получить имя текстуры для данного объекта
 const wchar_t*	CTerrainManager::GetTextureFileName(TerrainObjectID ID) const
 {
@@ -208,9 +204,9 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 	return _implementation->GetVisibleObjectID(index);
 }
 
-void CTerrainManager::SetDataReady(TerrainObjectID ID)
+void CTerrainManager::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
 {
-	_implementation->SetDataReady(ID);
+	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
 }
 
 bool CTerrainManager::IsTriangulationReady(TerrainObjectID ID) const
@@ -263,30 +259,15 @@ CTerrainManager::CTerrainManagerImpl::CTerrainManagerImpl()
 	}
 
 	const double Rmin = 6356752.3142;
-	_vecLODDiameter[0] = 2 * Rmin;
+	_vecLODDiameter[0] = (float) (2 * Rmin);
 
 	_pTerrainObjectManager = new CTerrainObjectManager;
 }
 
 CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 {
-	//if (_pResourceManager)
-	//	delete _pResourceManager;
-
-	//if (_pTerrainVisibilityManager)
-	//	delete _pTerrainVisibilityManager;
-
-	//if (_pVisibilityManager)
-	//	delete _pVisibilityManager;
-
 	DestroyObjects();
 	ReleaseTriangulationsAndHeightmaps();
-
-	//if (_pPlanetTerrainData)
-	//	_pTerrainDataManager->ReleaseTerrainDataInfo(_pPlanetTerrainData);
-
-	//if (_pTerrainDataManager)
-	//	delete _pTerrainDataManager;
 
 	if (_pTerrainObjectManager)
 		delete _pTerrainObjectManager;
@@ -328,8 +309,8 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 		{
 			dfCurrentLatDiam /= _pTerrainObjectManager->GetLodInfos()[i].CountY;
 
-			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height) / (2 );
-			_vecLODDiameter[i] = Rmax*sqrt(2*(1 - cos(dfCurrentLatDiam)));
+			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height) / 2;
+			_vecLODDiameter[i] = (float)(Rmax*sqrt(2*(1 - cos(dfCurrentLatDiam))));
 
 			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].Width;
 			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].Height;
@@ -361,7 +342,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 		DestroyObject(ID);
 	});
 
-	_pVisibilityManager = new CVisibilityManager(nullptr, _fWorldScale * 20000000.0, 1000 * _fWorldScale);
+	_pVisibilityManager = new CVisibilityManager(nullptr, _fWorldScale * 20000000.0f, 1000 * _fWorldScale);
 }
 
 void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldConverter * in_pHeightfieldConverter)
@@ -411,173 +392,56 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 	if (_pVisibilityManager)
 		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);
 
-
-	/*if (_pVisibilityManager)
-		_pVisibilityManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
-
-	_pResourceManager->SetViewProjection(vPos, vDir, vUp, const_cast<D3DMATRIX *>(in_pmProjection));
-	
-	if (_pVisibilityManager)
-		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad);*/
-
-	
-	
-	// TODO: Make frustum culling! and read of this params
-	
-	//_cameraParams.fHFovAngleRad *= D2R;
-	//_cameraParams.fVFovAngleRad *= D2R;
-
-	// ----------------
-
-	/*
-	_cameraParams.mProjection = *in_pmProjection;
-
-	if (_pVisibilityManager)
-		_pVisibilityManager->SetViewProjection(v3Pos, v3Dir, v3Up, const_cast<D3DMATRIX *>(in_pmProjection));
-
-	if (_pVisibilityManager)
-		_pVisibilityManager->GetFOVAnglesDeg(_cameraParams.fHFovAngleRad, _cameraParams.fVFovAngleRad); 
-
 	_cameraParams.fHFovAngleRad *= D2R;
 	_cameraParams.fVFovAngleRad *= D2R;
+}
 
-	/*vm::Matrix4x4df vmProj, vmInvProj;
-
-	for (int i = 0; i < 4; i++)
+void CTerrainManager::CTerrainManagerImpl::SetObjectHeightmapLoaded(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+{
+	SHeightfield*	pHeightfield = nullptr;
+	
+	std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
+	
+	auto it = _mapObjectHeightfields.find(ID);
+	if (it != _mapObjectHeightfields.end())
 	{
-		for (int j = 0; j < 4; j++)
-		{
-			vmProj[i][j] = in_pmProjection->m[i][j];
-		}
+		it->second._timeSinceLastRequest = 0;
+		return;
 	}
-
-	vm::Vector4df vmCubeEdges[8];
-	vm::Vector3df vmTransformedCubeEdges[8];
-
-	if (vm::inverse(vmProj, vmInvProj, 4))
+	else
 	{
-		vmCubeEdges[0] = vm::Vector4df(1, 1, 0, 1);
-		vmCubeEdges[1] = vm::Vector4df(1, -1, 0, 1);
-		vmCubeEdges[2] = vm::Vector4df(-1, -1, 0, 1);
-		vmCubeEdges[3] = vm::Vector4df(-1, 1, 0, 1);
-
-		vmCubeEdges[4] = vm::Vector4df(1, 1, 1, 1);
-		vmCubeEdges[5] = vm::Vector4df(1, -1, 1, 1);
-		vmCubeEdges[6] = vm::Vector4df(-1, -1, 1, 1);
-		vmCubeEdges[7] = vm::Vector4df(-1, 1, 1, 1);
-
-
-		for (int i = 0; i < 8; i++)
-		{
-			vm::Vector4df vmTransformedCubeEdge = vm::mul(vmInvProj, vmCubeEdges[i]);
-
-			vmTransformedCubeEdge[0] /= vmTransformedCubeEdge[3];
-			vmTransformedCubeEdge[1] /= vmTransformedCubeEdge[3];
-			vmTransformedCubeEdge[2] /= vmTransformedCubeEdge[3];
-
-			vmTransformedCubeEdges[i] = vm::Vector3df(vmTransformedCubeEdge[0], vmTransformedCubeEdge[1], vmTransformedCubeEdge[2]);
-		}
-
+		SObjectHeightfield& objHF = _mapObjectHeightfields[ID];	
+		pHeightfield = &objHF._heightfield;
 	}
+	
 
+	STerrainBlockParams params;
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
+	
+	auto objRes = _pTerrainObjectManager->GetObjectHfResolution(ID, _heightfieldCompressionRatio);
+	
+	pHeightfield->Config.nCountX = objRes.first;
+	pHeightfield->Config.nCountY = objRes.second;
 
-	Matrix4x4<float> mView, mProj;
+	// заполним граничные данные
+	pHeightfield->Config.Coords.fMinLattitude = params.fMinLattitude;
+	pHeightfield->Config.Coords.fMaxLattitude = params.fMaxLattitude;
+	pHeightfield->Config.Coords.fMinLongitude = params.fMinLongitude;
+	pHeightfield->Config.Coords.fMaxLongitude = params.fMaxLongitude;
 
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-		{
-			mProj[i][j] = in_pmProjection->m[i][j];
-		}
+	pHeightfield->fLattitudeCutCoeff = params.fLattitudeCutCoeff;
+	pHeightfield->fLongitudeCutCoeff = params.fLongitudeСutCoeff;
 
-	D3DXMATRIX md3dView;
+	pHeightfield->pTextureSRV = in_pLoadedHeightmap;
+}
 
-	D3DXVECTOR3 eye(in_vPos->x, in_vPos->y, in_vPos->z);
-	D3DXVECTOR3 at(in_vPos->x + in_vDir->x, in_vPos->y + in_vDir->y, in_vPos->z + in_vDir->z);
-	D3DXVECTOR3 up(in_vUp->x, in_vUp->y, in_vUp->z);
+bool CTerrainManager::CTerrainManagerImpl::HasLoadedHeightfield(TerrainObjectID ID) const
+{
+	std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
 
-	D3DXMatrixLookAtLH(&md3dView, &eye, &at, &up);
+	auto it = _mapObjectHeightfields.find(ID);
 
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-		{
-			mView[i][j] = md3dView.m[i][j];
-		}
-
-	Vector3f vPos = ToVec3(*in_vPos);
-	Vector3f vDir = ToVec3(*in_vDir);
-	Vector3f vUp = ToVec3(*in_vUp);
-
-
-	D3DXMATRIX md3dProj = *in_pmProjection;
-	D3DXMATRIX mInvProjection;
-
-	D3DXVECTOR3 vCubeEdges[8];
-	D3DXVECTOR3 vViewSpaceCubeEdges[8];
-	Vector3f vViewSpaceFrustumPoints[8];
-
-	FLOAT fDet = 0;
-
-	float fNearPlane = 99999.f;
-	float fFarPlane = 0;
-
-	if (D3DXMatrixInverse(&mInvProjection, &fDet, &md3dProj) != NULL)
-	{
-
-		vCubeEdges[0] = D3DXVECTOR3(1, 1, 0);
-		vCubeEdges[1] = D3DXVECTOR3(1, -1, 0);
-		vCubeEdges[2] = D3DXVECTOR3(-1, -1, 0);
-		vCubeEdges[3] = D3DXVECTOR3(-1, 1, 0);
-
-		vCubeEdges[4] = D3DXVECTOR3(1, 1, 1);
-		vCubeEdges[5] = D3DXVECTOR3(1, -1, 1);
-		vCubeEdges[6] = D3DXVECTOR3(-1, -1, 1);
-		vCubeEdges[7] = D3DXVECTOR3(-1, 1, 1);
-
-		for (int i = 0; i < 8; i++)
-		{
-			D3DXVec3TransformCoord(&vViewSpaceCubeEdges[i], &vCubeEdges[i], &mInvProjection);
-
-			if (fFarPlane < vViewSpaceCubeEdges[i].z)
-				fFarPlane = vViewSpaceCubeEdges[i].z;
-
-			if (fNearPlane > vViewSpaceCubeEdges[i].z)
-				fNearPlane = vViewSpaceCubeEdges[i].z;
-
-			vViewSpaceFrustumPoints[i] = Vector3f(vViewSpaceCubeEdges[i].x, vViewSpaceCubeEdges[i].y, vViewSpaceCubeEdges[i].z);
-		}
-
-
-		D3DXVECTOR3 vXZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
-		D3DXVECTOR3 vXZBase2 = vViewSpaceCubeEdges[7] - vViewSpaceCubeEdges[3];
-
-		Vector2f vHorizontalBase1(vXZBase1.x, vXZBase1.z);
-		Vector2f vHorizontalBase2(vXZBase2.x, vXZBase2.z);
-
-		float fCosHor = DotProduct(Normalize(vHorizontalBase1), Normalize(vHorizontalBase2));
-		_cameraParams.fHFovAngleRad = acosf(fCosHor);
-
-
-		D3DXVECTOR3 vYZBase1 = vViewSpaceCubeEdges[4] - vViewSpaceCubeEdges[0];
-		D3DXVECTOR3 vYZBase2 = vViewSpaceCubeEdges[5] - vViewSpaceCubeEdges[1];
-
-		Vector2f vVerticalBase1(vYZBase1.y, vYZBase1.z);
-		Vector2f vVerticalBase2(vYZBase2.y, vYZBase2.z);
-
-		float fCosVer = DotProduct(Normalize(vVerticalBase1), Normalize(vVerticalBase2));
-		_cameraParams.fVFovAngleRad = acosf(fCosVer);
-
-		if (vViewSpaceFrustumPoints[0].z > vViewSpaceFrustumPoints[4].z)
-		{
-			std::swap(vViewSpaceFrustumPoints[0], vViewSpaceFrustumPoints[4]);
-			std::swap(vViewSpaceFrustumPoints[1], vViewSpaceFrustumPoints[5]);
-			std::swap(vViewSpaceFrustumPoints[2], vViewSpaceFrustumPoints[6]);
-			std::swap(vViewSpaceFrustumPoints[3], vViewSpaceFrustumPoints[7]);
-		}
-
-	}
-
-	/*_cameraParams.fHFovAngleRad = 75.f * D2R;
-	_cameraParams.fVFovAngleRad = 60.f * D2R;*/
+	return it != _mapObjectHeightfields.end();
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
@@ -635,7 +499,7 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 {
 
-	if (_bRecalculateLodsDistances)
+	if (_bRecalculateLodsDistances && _cameraParams.fVFovAngleRad >= 30 * D2R && _cameraParams.uiScreenResolutionY > 0)
 	{
 		_pTerrainVisibility->CalculateLodDistances(_cameraParams.fVFovAngleRad, _vecLODResolution, _vecLODDiameter,
 			_cameraParams.uiScreenResolutionY, _fMaxPixelsPerTexel);
@@ -649,29 +513,11 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	if (_pTerrainVisibility)
 		_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
 
-	//_pVisibilityManager->UpdateVisibleObjectsSet();
-	//_pResourceManager->Update(in_fDeltaTime);
-
 	
 	static std::set<CInternalTerrainObject*> setVisObjs;
 	setVisObjs.clear();
 
 	bool bAllReady = true;
-
-	/*for (size_t iVisObj = 0; iVisObj < _pVisibilityManager->GetVisibleObjectsCount(); iVisObj++)
-	{
-		CInternalTerrainObject* pTerrainObject = static_cast<CInternalTerrainObject*>(_pVisibilityManager->GetVisibleObjectPtr(iVisObj));
-
-		if (pTerrainObject->IsDataReady() || !_bAwaitingVisibleForDataReady)
-		{
-			setVisObjs.insert(pTerrainObject);
-		}
-		else
-		{
-			bAllReady = false;
-			break;
-		}
-	}*/
 
 	if (!_pTerrainVisibility)
 		return;
@@ -707,7 +553,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	if (bAllReady)
 	{
 		_setPreliminaryVisibleObjects = setVisObjs;
-		//_vecReadyVisibleObjects = vecVisID;
+		_setPreliminaryVisibleObjectIDs = _pTerrainVisibility->GetVisibleObjects();
 
 		_vecObjectsToDelete = _vecPreliminaryObjectsToDelete;
 		_vecPreliminaryObjectsToDelete.clear();
@@ -748,20 +594,19 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	CalculateReadyAndVisibleSet();
 }
 
-void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>& out_vecPoints, std::vector<vm::Vector3df>& out_vecNormals)
+void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals)
 {
 	if (_bReferencePointsCalulated)
 	{
-		out_vecPoints = _vecRefPoints;
-		out_vecNormals = _vecRefNormals;
+		*out_pvecPoints = &_vecRefPoints;
+		*out_pvecNormals = &_vecRefNormals;
 
 		return;
 	}
 
-	out_vecPoints.clear();
-	out_vecNormals.clear();
+	_vecRefPoints.clear();
+	_vecRefNormals.clear();
 
-	//const STerrainBlockParams* pParams = _pBlockDesc->GetParams();
 	double dfMinLat =  _params.fMinLattitude;
 	double dfMaxLat =  _params.fMaxLattitude;
 	double dfMinLong = _params.fMinLongitude;
@@ -777,55 +622,45 @@ void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>
 			vm::Vector3df vPoint = GetWGS84SurfacePoint(dfLong, dfLat);
 			vm::Vector3df vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
 
-			out_vecPoints.push_back(vPoint);
-			out_vecNormals.push_back(vNormal);
+			_vecRefPoints.push_back(vPoint);
+			_vecRefNormals.push_back(vNormal);
 		}
 	}
 
-	_vecRefPoints = out_vecPoints;
-	_vecRefNormals = out_vecNormals;
+	*out_pvecPoints = &_vecRefPoints;
+	*out_pvecNormals = &_vecRefNormals;
 
 	_bReferencePointsCalulated = true;
 }
 
-bool CTerrainManager::CTerrainManagerImpl::CheckPointsInFrustum(const std::vector<vm::Vector3df>& vecPoints) const
+Vector3 ToVec3(const vm::Vector3df& v)
 {
-	bool bAllPointsOutOfFrustum = true;
-
-	for (const vm::Vector3df& vPoint : vecPoints)
-	{
-		if (vm::dot_prod(vPoint - _cameraParams.vPos, _cameraParams.vDir) >= 0)
-		{
-			bAllPointsOutOfFrustum = false;
-			break;
-		}
-		// TODO: other checks
-	}
-
-	return !bAllPointsOutOfFrustum;
+	return Vector3((float)v[0], (float)v[1], (float)v[2]);
 }
 
 void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
 {
 	_vecReadyVisibleObjects.clear();
 
-	std::vector<vm::Vector3df> vecRefPoints;
-	std::vector<vm::Vector3df> vecRefNormals;
+	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
+	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
 
 	for (CInternalTerrainObject* pObj : _setPreliminaryVisibleObjects)
 	{
-		pObj->CalculateReferencePoints(vecRefPoints, vecRefNormals);
+		pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
 
-		if (!CheckPointsInFrustum(vecRefPoints))
+		if (!_pVisibilityManager->CheckOBBInCamera(ToVec3(pObj->GetPos()), ToVec3(pObj->GetX()), ToVec3(pObj->GetY()), ToVec3(pObj->GetZ()), ToVec3(pObj->GetHalfSizes())))
 			continue;
 
+	//	if (!_pVisibilityManager->CheckAABBInCamera(ToVec3(pObj->GetAABBMin()), ToVec3(pObj->GetAABBMax())))
+	//		continue;
 
 		// check backfaces
 		bool bFullBackSided = true;
 
-		for (size_t i = 0; i < vecRefNormals.size(); i++)
+		for (size_t i = 0; i < (*vecRefNormals).size(); i++)
 		{
-			if (vm::dot_prod(normalize(vecRefPoints[i] - _cameraParams.vPos), normalize(vecRefPoints[i])) < 0.2)
+			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
 			{
 				bFullBackSided = false;
 				break;
@@ -920,23 +755,38 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 	UpdateTriangulationsAndHeightfieldLifetime();
 
-	std::vector<TerrainObjectID> vecCheckObjects;
+	std::set<TerrainObjectID> setCheckObjects;
 
 	{
 		std::lock_guard<std::mutex> contLock(_containersMutex);
-		vecCheckObjects = _vecNotCheckedForTriangulations;
-		_vecNotCheckedForTriangulations.clear();
+		setCheckObjects = _setNotCheckedForTriangulations;
 	}
 
-	if (vecCheckObjects.empty())
+	if (setCheckObjects.empty())
 		return false;
+
+	for (TerrainObjectID ID : setCheckObjects)
+	{
+		if (_bWaitForExternalHeightmaps && !HasLoadedHeightfield(ID))
+			return false;
+	}
+
+	{
+		std::lock_guard<std::mutex> contLock(_containersMutex);
+		_setNotCheckedForTriangulations.clear();;
+	}
 
 	static std::vector<std::pair<TerrainObjectID, SObjectTriangulation*>> s_vecTriangulationsToCreate;
 	s_vecTriangulationsToCreate.clear();
 
 	
-	for (TerrainObjectID ID : vecCheckObjects)
+	for (TerrainObjectID ID : setCheckObjects)
 	{
+		if (_bWaitForExternalHeightmaps && !HasLoadedHeightfield(ID))
+		{
+			continue;
+		}
+
 		CInternalTerrainObject* pInternalObject = nullptr;
 
 		{
@@ -1134,10 +984,11 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetVisibleObjectID(size_t 
 	return _vecReadyVisibleObjects[index];
 }
 
-void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID)
+void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
 {
-	std::lock_guard<std::mutex> lock(_objectsMutex);
+	SetObjectHeightmapLoaded(ID, in_pLoadedHeightmap);
 
+	std::lock_guard<std::mutex> lock(_objectsMutex);
 	auto it = _mapId2Object.find(ID);
 
 	if (it != _mapId2Object.end())
@@ -1168,13 +1019,27 @@ float CTerrainManager::CTerrainManagerImpl::GetMinCellSize() const
 	return _fWorldScale * 100.f;
 }
 
-void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float latti, float minH, float maxH)
+vm::Vector3df GetTransformedPoint(const vm::Vector3df& point, const vm::Vector3df& vPos, const vm::Vector3df& vX, const vm::Vector3df& vY, const vm::Vector3df& vZ)
+{
+	vm::Vector3df vDelta = point - vPos;
+	return vm::Vector3df(vm::dot_prod(vDelta, vX), vm::dot_prod(vDelta, vY), vm::dot_prod(vDelta, vZ));
+}
+
+void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float latti, float minH, float maxH, const vm::Vector3df& vPos, const vm::Vector3df& vX, const vm::Vector3df& vY, const vm::Vector3df& vZ)
 {
 	vm::Vector3df vPoint = GetWGS84SurfacePoint(longi, latti);
 	vm::Vector3df vNormal = GetWGS84SurfaceNormal(longi, latti);
 
-	out_BB.update(vPoint + vNormal*minH);
-	out_BB.update(vPoint + vNormal*maxH);
+	vm::Vector3df p1 = (vPoint + vNormal*minH);
+	vm::Vector3df p2 = (vPoint + vNormal*maxH);
+
+	// For OBB:
+	out_BB.update(GetTransformedPoint(p1, vPos, vX, vY, vZ));
+	out_BB.update(GetTransformedPoint(p2, vPos, vX, vY, vZ));
+
+	// For AABB:
+	//out_BB.update(p1);
+	//out_BB.update(p2);
 }
 
 void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords, unsigned int nLod)
@@ -1195,18 +1060,17 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	vm::Vector3df vEast = vm::normalize(vm::cross(vNormal, vm::Vector3df(0, 1, 0)));
 	vm::Vector3df vNorth = vm::normalize(vm::cross(vNormal, vEast));
 
-	memcpy(out_TriangulationCoords.vPosition, &vMiddlePoint[0], 3 * sizeof(double));
-	memcpy(out_TriangulationCoords.vXAxis, &vNorth[0], 3 * sizeof(double));
-	memcpy(out_TriangulationCoords.vYAxis, &vNormal[0], 3 * sizeof(double));
-	memcpy(out_TriangulationCoords.vZAxis, &vEast[0], 3 * sizeof(double));
+	vm::BoundBox<double> vBoundBox(vm::Vector3f(0, 0, 0)); // -> for OBB
+//	vm::BoundBox<double> vBoundBox(vMiddlePoint); // -> For AABB
 
-	vm::BoundBox<double> vBoundBox(vMiddlePoint);
+	double dfMinHeight = -50000.0;
+	double dfMaxHeight = 100000.0;
 
-	const double dfMinHeight = -5000.0;
-	const double dfMaxHeight = 10000.0;
-
-	vBoundBox.update(vMiddlePoint + vNormal*dfMinHeight);
-	vBoundBox.update(vMiddlePoint + vNormal*dfMaxHeight);
+	/*if (_pHeightfieldConverter)
+	{
+		dfMinHeight *= _pHeightfieldConverter->GetHeightScale();
+		dfMaxHeight *= _pHeightfieldConverter->GetHeightScale();
+	}*/
 
 	double dfMinLat = in_Coords.fMinLattitude;
 	double dfMaxLat = in_Coords.fMaxLattitude;
@@ -1220,10 +1084,17 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	{
 		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
 		{
-			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight);
-			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight);
+			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight, vMiddlePoint, vEast, vNormal, vNorth);
+			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight, vMiddlePoint, vEast, vNormal, vNorth);
 		}
 	}
+
+
+	memcpy(out_TriangulationCoords.vPosition, &vMiddlePoint[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vXAxis, &vEast[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vYAxis, &vNormal[0], 3 * sizeof(double));
+	memcpy(out_TriangulationCoords.vZAxis, &vNorth[0], 3 * sizeof(double));
+
 
 	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vBoundBoxMaximum, &vBoundBox._vMax[0], 3 * sizeof(double));
@@ -1251,9 +1122,7 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObjectID ID)
 	STriangulationCoordsInfo coordsInfo;
 	ComputeTriangulationCoords(coords, coordsInfo, params.uiDepth);
 
-	CInternalTerrainObject* pObject = new CInternalTerrainObject(nullptr, ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), _pTerrainObjectManager->GetHeighmapFileName(ID));
-
-	//_setObjects.insert(pObject);
+	CInternalTerrainObject* pObject = new CInternalTerrainObject(ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), _pTerrainObjectManager->GetHeighmapFileName(ID));
 
 	{
 		std::lock_guard<std::mutex> objLock(_objectsMutex);
@@ -1266,39 +1135,16 @@ void CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObjectID ID)
 	_vecNewObjectIDs.push_back(pObject->GetID());
 
 	std::lock_guard<std::mutex> lock(_containersMutex);
-	_vecNotCheckedForTriangulations.push_back(pObject->GetID());
+	_setNotCheckedForTriangulations.insert(pObject->GetID());
 }
 
 void CTerrainManager::CTerrainManagerImpl::DestroyObject(TerrainObjectID ID)
 {
-	//std::lock_guard<std::mutex> objectsLock(_objectsMutex);
-
-	//auto it = _mapId2Object.find(ID);
-	//if (it == _mapId2Object.end())
-	//{
-	//	return;
-	//}
-
-	//CInternalTerrainObject* pObject = it->second;
-
-	////_setObjects.erase(pObject);
-	//delete pObject;
-
-	//_mapId2Object.erase(it);
-
-	//std::lock_guard<std::mutex> lock(_containersMutex);
 	_vecPreliminaryObjectsToDelete.push_back(ID);
 }
 
 void CTerrainManager::CTerrainManagerImpl::DestroyObjects()
 {
-	/*for (CInternalTerrainObject* pObject : _setObjects)
-	{
-		delete pObject;
-	}
-
-	_setObjects.clear();*/
-
 	std::lock_guard<std::mutex> objectsLock(_objectsMutex);
 
 	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end(); it++)
@@ -1326,7 +1172,6 @@ void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
 				vecObjHF.push_back(&it->second._heightfield);
 		}
 
-		
 		{
 			std::lock_guard<std::mutex> triLock(_objectTriangulationsMutex);
 
@@ -1375,12 +1220,7 @@ void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPi
 	_cameraParams.uiScreenResolutionY = in_uiScreenResolutionY;
 	_fMaxPixelsPerTexel = in_fMaxPixelsPerTexel;
 
-//	if (_cameraParams.fVFovAngleRad != 0 && _cameraParams.fHFovAngleRad != 0)
-		_bRecalculateLodsDistances = true;
-//	else
-	//{
-		//LogMessage("TerrainManager::CalculateLodDistances: cannot calculate, because of illegal fov calculation");
-	//}
+	_bRecalculateLodsDistances = true;
 }
 
 //@}
@@ -1434,6 +1274,12 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	{
 		if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
 		{
+			if ((_setPreliminaryVisibleObjectIDs.find(neighbours[i]) == _setPreliminaryVisibleObjectIDs.end()) && 
+				(_pTerrainObjectManager->GetObjectDepth(neighbours[i]) != 0))
+			{
+				neighbours[i] = _pTerrainObjectManager->GetTerrainObjectParent(neighbours[i]);
+			}
+
 			neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
 		}
 	}
@@ -1580,11 +1426,21 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 
 	out_pTerrainBlockShaderParams->uiCurrentLOD = params.uiDepth;
 
-	//TODO: писать здесь глубину соседних блоков по видимости
-	out_pTerrainBlockShaderParams->uiAdjacentLOD[0] =  params.uiDepth;
-	out_pTerrainBlockShaderParams->uiAdjacentLOD[1] =  params.uiDepth;
-	out_pTerrainBlockShaderParams->uiAdjacentLOD[2] =  params.uiDepth;
-	out_pTerrainBlockShaderParams->uiAdjacentLOD[3] =  params.uiDepth;
+	
+	for (int i = 0; i < 4; i++)
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[i] =  0;
+
+	if (neighbours[0] != INVALID_TERRAIN_OBJECT_ID)
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[0] = _pTerrainObjectManager->GetObjectDepth(neighbours[0]);
+
+	if (neighbours[6] != INVALID_TERRAIN_OBJECT_ID)
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[1] = _pTerrainObjectManager->GetObjectDepth(neighbours[6]);
+
+	if (neighbours[4] != INVALID_TERRAIN_OBJECT_ID)
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[2] = _pTerrainObjectManager->GetObjectDepth(neighbours[4]);
+
+	if (neighbours[2] != INVALID_TERRAIN_OBJECT_ID)
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[3] = _pTerrainObjectManager->GetObjectDepth(neighbours[2]);
 }
 
 //@}

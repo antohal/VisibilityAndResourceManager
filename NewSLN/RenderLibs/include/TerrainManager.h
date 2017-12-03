@@ -72,6 +72,9 @@ public:
 	// Рассчитать триангуляции [Функция может вызываться в другом потоке, она дергает ComputeShader, поэтому вызов должен находится вне пределов Present]
 	bool UpdateTriangulations();
 
+	// Ожидать передачи загруженных карт высот снаружи перед тем, как генерировать триангуляцию
+	void SetWaitForExternalHeightmaps(bool wait);
+
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
 
@@ -109,7 +112,7 @@ public:
 	//@}
 
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
-	void SetDataReady(TerrainObjectID ID);
+	void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
 	//@}
 
 	// Проверить - готова ли триангуляция для объекта Земли
