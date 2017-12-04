@@ -204,9 +204,19 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 	return _implementation->GetVisibleObjectID(index);
 }
 
-void CTerrainManager::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+//void CTerrainManager::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+//{
+//	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
+//}
+
+void CTerrainManager::SetTextureReady(TerrainObjectID ID)
 {
-	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
+	_implementation->SetTextureReady(ID);
+}
+
+void CTerrainManager::SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+{
+	_implementation->SetHeightmapReady(ID, in_pLoadedHeightmap);
 }
 
 bool CTerrainManager::IsTriangulationReady(TerrainObjectID ID) const
@@ -400,17 +410,17 @@ void CTerrainManager::CTerrainManagerImpl::SetObjectHeightmapLoaded(TerrainObjec
 {
 	SHeightfield*	pHeightfield = nullptr;
 	
-	std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
+	std::lock_guard<std::mutex> hfLock(_objectPreloadedHeightfieldsMutex);
 	
-	auto it = _mapObjectHeightfields.find(ID);
-	if (it != _mapObjectHeightfields.end())
+	auto it = _mapObjectPreloadedHeightfields.find(ID);
+	if (it != _mapObjectPreloadedHeightfields.end())
 	{
 		it->second._timeSinceLastRequest = 0;
 		return;
 	}
 	else
 	{
-		SObjectHeightfield& objHF = _mapObjectHeightfields[ID];	
+		SObjectHeightfield& objHF = _mapObjectPreloadedHeightfields[ID];
 		pHeightfield = &objHF._heightfield;
 	}
 	
@@ -433,20 +443,38 @@ void CTerrainManager::CTerrainManagerImpl::SetObjectHeightmapLoaded(TerrainObjec
 	pHeightfield->fLongitudeCutCoeff = params.fLongitudeСutCoeff;
 
 	pHeightfield->pTextureSRV = in_pLoadedHeightmap;
+
+//	if (pHeightfield->pTextureSRV)
+	//	pHeightfield->pTextureSRV->AddRef();
 }
 
 bool CTerrainManager::CTerrainManagerImpl::HasLoadedHeightfield(TerrainObjectID ID) const
 {
-	std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
+	std::lock_guard<std::mutex> hfLock(_objectPreloadedHeightfieldsMutex);
 
-	auto it = _mapObjectHeightfields.find(ID);
+	auto it = _mapObjectPreloadedHeightfields.find(ID);
 
-	return it != _mapObjectHeightfields.end();
+	return it != _mapObjectPreloadedHeightfields.end();
 }
 
 SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(TerrainObjectID ID)
 {
 	SHeightfield*	pHeightfield = nullptr;
+
+	{
+		std::lock_guard<std::mutex> hfLock(_objectPreloadedHeightfieldsMutex);
+
+		auto it = _mapObjectPreloadedHeightfields.find(ID);
+		if (it != _mapObjectPreloadedHeightfields.end())
+		{
+			it->second._timeSinceLastRequest = 0;
+
+			pHeightfield = &it->second._heightfield;
+
+			return pHeightfield;
+		}
+	}
+
 
 	{
 		std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
@@ -586,6 +614,21 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 					_mapId2Object.erase(it);
 				}
+			}
+
+
+			{
+				std::lock_guard<std::mutex> objectsLock(_objectPreloadedHeightfieldsMutex);
+
+				auto it = _mapObjectPreloadedHeightfields.find(deadObj);
+				if (it != _mapObjectPreloadedHeightfields.end())
+				{
+//					if (it->second._heightfield.pTextureSRV)
+	//					it->second._heightfield.pTextureSRV->Release();
+
+					_mapObjectPreloadedHeightfields.erase(it);
+				}
+
 			}
 
 		}
@@ -765,6 +808,9 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 	if (setCheckObjects.empty())
 		return false;
 
+	// здесь нужно залочить, чтобы не рухнула генерация террейна, если вдруг удалиться хейтмэп в это время
+	//std::lock_guard<std::mutex> objectsLock(_objectPreloadedHeightfieldsMutex);
+
 	for (TerrainObjectID ID : setCheckObjects)
 	{
 		if (_bWaitForExternalHeightmaps && !HasLoadedHeightfield(ID))
@@ -773,12 +819,11 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 	{
 		std::lock_guard<std::mutex> contLock(_containersMutex);
-		_setNotCheckedForTriangulations.clear();;
+		_setNotCheckedForTriangulations.clear();
 	}
 
 	static std::vector<std::pair<TerrainObjectID, SObjectTriangulation*>> s_vecTriangulationsToCreate;
 	s_vecTriangulationsToCreate.clear();
-
 	
 	for (TerrainObjectID ID : setCheckObjects)
 	{
@@ -984,16 +1029,40 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetVisibleObjectID(size_t 
 	return _vecReadyVisibleObjects[index];
 }
 
-void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
-{
-	SetObjectHeightmapLoaded(ID, in_pLoadedHeightmap);
+//void CTerrainManager::CTerrainManagerImpl::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+//{
+//	SetObjectHeightmapLoaded(ID, in_pLoadedHeightmap);
+//
+//	std::lock_guard<std::mutex> lock(_objectsMutex);
+//	auto it = _mapId2Object.find(ID);
+//
+//	if (it != _mapId2Object.end())
+//	{
+//		it->second->SetDataReady();
+//	}
+//}
 
+void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)
+{
 	std::lock_guard<std::mutex> lock(_objectsMutex);
 	auto it = _mapId2Object.find(ID);
 
 	if (it != _mapId2Object.end())
 	{
-		it->second->SetDataReady();
+		it->second->SetTextureReady();
+	}
+}
+
+void CTerrainManager::CTerrainManagerImpl::SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
+{
+	//SetObjectHeightmapLoaded(ID, in_pLoadedHeightmap);
+
+	std::lock_guard<std::mutex> lock(_objectsMutex);
+	auto it = _mapId2Object.find(ID);
+	
+	if (it != _mapId2Object.end())
+	{
+		it->second->SetHeightmapReady();
 	}
 }
 
@@ -1063,8 +1132,8 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	vm::BoundBox<double> vBoundBox(vm::Vector3f(0, 0, 0)); // -> for OBB
 //	vm::BoundBox<double> vBoundBox(vMiddlePoint); // -> For AABB
 
-	double dfMinHeight = -50000.0;
-	double dfMaxHeight = 100000.0;
+	double dfMinHeight = -10000.0;
+	double dfMaxHeight = 20000.0;
 
 	/*if (_pHeightfieldConverter)
 	{

@@ -112,7 +112,8 @@ public:
 	//@}
 
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
-	void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
+	void SetTextureReady(TerrainObjectID ID);
+	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
 	//@}
 
 	// Проверить - готова ли триангуляция для объекта Земли

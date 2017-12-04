@@ -33,11 +33,20 @@ public:
 
 	void InvalidateData() {
 		_bTriangulationsReady = false;
-		_bOtherDataReady = false;
+		_bTextureReady = false;
+		_bHeightmapReady = false;
 	}
 
-	void SetDataReady() {
+	/*void SetDataReady() {
 		_bOtherDataReady = true;
+	}*/
+
+	void SetTextureReady() {
+		_bTextureReady = true;
+	}
+
+	void SetHeightmapReady() {
+		_bHeightmapReady = true;
 	}
 
 	bool IsTriangulationReady() const {
@@ -54,7 +63,7 @@ public:
 	}
 
 	virtual bool							IsDataReady() const {
-		return _bTriangulationsReady && _bOtherDataReady;
+		return _bTriangulationsReady && _bTextureReady && _bHeightmapReady;
 	}
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals);
@@ -94,7 +103,9 @@ private:
 	vm::Vector3df				_vAABBMax = vm::Vector3df(0, 0, 0);
 
 	bool						_bTriangulationsReady = false;
-	bool						_bOtherDataReady = false;
+	//bool						_bOtherDataReady = false;
+	bool						_bTextureReady = false;
+	bool						_bHeightmapReady = false;
 
 	std::wstring				_textureFileName;
 	std::wstring				_heightmapFileName;
@@ -166,7 +177,9 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
-	void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
+	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
+	void SetTextureReady(TerrainObjectID ID);
+	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
 
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
 
@@ -287,6 +300,9 @@ private:
 	mutable std::mutex									_objectHeightfieldsMutex;
 	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
 
+	mutable std::mutex									_objectPreloadedHeightfieldsMutex;
+	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectPreloadedHeightfields;
+
 	bool			_bAwaitingVisibleForDataReady = true;
 
 	struct SCameraParams
@@ -309,5 +325,6 @@ private:
 	float					_fMaxPixelsPerTexel = 10;
 	bool					_bRecalculateLodsDistances = false;
 
-	bool					_bWaitForExternalHeightmaps = true;
+	//bool					_bWaitForExternalHeightmaps = true;
+	bool					_bWaitForExternalHeightmaps = false;
 };
