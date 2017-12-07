@@ -32,7 +32,7 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 
 	_pLoadThread = new std::thread([this]() {
 
-		_owner->LockLoadMutex();
+		//_owner->LockLoadMutex();
 
 		ID3D11ShaderResourceView* pResourceViewTex = nullptr;
 
@@ -43,9 +43,12 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsHeightmapFileName.c_str(), NULL, NULL, &pResourceViewHF, NULL);
 
 		_pTextureSRV = pResourceViewTex;
-		_owner->GetTerrainManager()->SetDataReady(_ID, pResourceViewHF);
+		_pHeightmapSRV = pResourceViewHF;
 
-		_owner->UnlockLoadMutex();
+		_owner->GetTerrainManager()->SetTextureReady(_ID);
+		_owner->GetTerrainManager()->SetHeightmapReady(_ID, pResourceViewHF);
+
+		//_owner->UnlockLoadMutex();
 	});
 
 }
@@ -64,6 +67,12 @@ CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 	{
 		_pTextureSRV->Release();
 		_pTextureSRV = nullptr;
+	}
+
+	if (_pHeightmapSRV)
+	{
+		_pHeightmapSRV->Release();
+		_pHeightmapSRV = nullptr;
 	}
 
 	LogMessage("Unloading texture '%ls'", _wsTextureFileName.c_str());
@@ -209,7 +218,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	_pHeightfieldConverter->SetHeightScale(30.f);
+	//_pHeightfieldConverter->SetHeightScale(30.f);
 	//_pHeightfieldConverter->SetHeightScale(20.f);
 
 	//_pHeightfieldConverter->SetHeightScale(0);

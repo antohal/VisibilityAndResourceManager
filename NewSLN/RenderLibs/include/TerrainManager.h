@@ -141,6 +141,10 @@ public:
 	// (учитываются: FOV камеры, разрешение экрана, размер текстур лодов, линейные размеры соответствующих блоков Земли)
 	void CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY);
 
+	// Установить дальность видимости (в метрах) самого детального лода, если камера находится у поверхности Земли
+	// 
+	void SetLastLodDistanceOnSurface(double distanceMeters);
+
 	//@}
 
 

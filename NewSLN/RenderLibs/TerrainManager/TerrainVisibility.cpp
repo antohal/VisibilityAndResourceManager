@@ -36,6 +36,27 @@ void CTerrainVisibility::SetDeleteObjectHandler(const std::function<void(Terrain
 	_deleteObjectHandler = deleteObjectHandler;
 }
 
+void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
+{
+	_dfDistancesCoeff = 1.f;
+
+	if (_dfLastLODDistanceOnEarth <= 0)
+		return;
+
+	double heightAboveEarth = fabs(height);
+
+	if (heightAboveEarth < /*_dfLastLODDistanceOnEarth*/_aLodDistances[_uiMaxDepth])
+	{
+		double kMax = 1.0;
+		double kMin = _dfLastLODDistanceOnEarth / _aLodDistances[_uiMaxDepth];
+
+		if (kMin > 1.0)
+			kMin = 1.0;
+
+		_dfDistancesCoeff = vm::lerp(heightAboveEarth / _aLodDistances[_uiMaxDepth] /*_dfLastLODDistanceOnEarth*/, kMin, kMax);
+	}
+}
+
 void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos)
 {
 	_setVisibleObjects.clear();
@@ -49,6 +70,8 @@ void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::
 
 	double longitude, lattitude, height, length;
 	GetWGS84LongLatHeight(vPos, longitude, lattitude, height, length);
+
+	CalculateLodDistanceCoeff(height);
 
 	unsigned int uiMaxDepth = GetLodDepth(height);
 
@@ -208,7 +231,7 @@ unsigned int CTerrainVisibility::GetLodDepth(double dist) const
 
 	for (size_t i = 0; i < _uiMaxDepth; i++)
 	{
-		if (dist > _aLodDistances[i])
+		if (dist > _aLodDistances[i] * _dfDistancesCoeff)
 			break;
 
 		uiDepth++;

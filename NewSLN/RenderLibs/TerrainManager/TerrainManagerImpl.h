@@ -199,6 +199,9 @@ public:
 	// После вызова этой функции, на следующем вызове Update произойдет пересчет линейки лодов.
 	void CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigned int in_uiScreenResolutionX, unsigned int in_uiScreenResolutionY);
 
+
+	void SetLastLodDistanceOnSurface(double distance);
+
 	//@}
 
 	void SetWaitForExternalHeightmaps(bool wait) {

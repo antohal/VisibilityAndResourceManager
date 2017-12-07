@@ -244,6 +244,11 @@ void CTerrainManager::CalculateLodDistances(float in_fMaxPixelsPerTexel, unsigne
 	_implementation->CalculateLodDistances(in_fMaxPixelsPerTexel, in_uiScreenResolutionX, in_uiScreenResolutionY);
 }
 
+void CTerrainManager::SetLastLodDistanceOnSurface(double distance)
+{
+	_implementation->SetLastLodDistanceOnSurface(distance);
+}
+
 //@}
 
 
@@ -444,8 +449,8 @@ void CTerrainManager::CTerrainManagerImpl::SetObjectHeightmapLoaded(TerrainObjec
 
 	pHeightfield->pTextureSRV = in_pLoadedHeightmap;
 
-//	if (pHeightfield->pTextureSRV)
-	//	pHeightfield->pTextureSRV->AddRef();
+	if (pHeightfield->pTextureSRV)
+		pHeightfield->pTextureSRV->AddRef();
 }
 
 bool CTerrainManager::CTerrainManagerImpl::HasLoadedHeightfield(TerrainObjectID ID) const
@@ -474,7 +479,6 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 			return pHeightfield;
 		}
 	}
-
 
 	{
 		std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
@@ -623,8 +627,8 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 				auto it = _mapObjectPreloadedHeightfields.find(deadObj);
 				if (it != _mapObjectPreloadedHeightfields.end())
 				{
-//					if (it->second._heightfield.pTextureSRV)
-	//					it->second._heightfield.pTextureSRV->Release();
+					if (it->second._heightfield.pTextureSRV)
+						it->second._heightfield.pTextureSRV->Release();
 
 					_mapObjectPreloadedHeightfields.erase(it);
 				}
@@ -827,11 +831,6 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 	
 	for (TerrainObjectID ID : setCheckObjects)
 	{
-		if (_bWaitForExternalHeightmaps && !HasLoadedHeightfield(ID))
-		{
-			continue;
-		}
-
 		CInternalTerrainObject* pInternalObject = nullptr;
 
 		{
@@ -1292,6 +1291,11 @@ void CTerrainManager::CTerrainManagerImpl::CalculateLodDistances(float in_fMaxPi
 	_bRecalculateLodsDistances = true;
 }
 
+void CTerrainManager::CTerrainManagerImpl::SetLastLodDistanceOnSurface(double distance)
+{
+	_pTerrainVisibility->SetLastLODDistanceOnSurface(distance);
+}
+
 //@}
 
 
@@ -1347,9 +1351,13 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 				(_pTerrainObjectManager->GetObjectDepth(neighbours[i]) != 0))
 			{
 				neighbours[i] = _pTerrainObjectManager->GetTerrainObjectParent(neighbours[i]);
+
+				if (_setPreliminaryVisibleObjectIDs.find(neighbours[i]) == _setPreliminaryVisibleObjectIDs.end())
+					neighbours[i] = INVALID_TERRAIN_OBJECT_ID;
 			}
 
-			neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
+			if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
+				neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);
 		}
 	}
 
@@ -1499,17 +1507,27 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	for (int i = 0; i < 4; i++)
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[i] =  0;
 
+
+
 	if (neighbours[0] != INVALID_TERRAIN_OBJECT_ID)
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[0] = _pTerrainObjectManager->GetObjectDepth(neighbours[0]);
+	else
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[0] = -1;
 
 	if (neighbours[6] != INVALID_TERRAIN_OBJECT_ID)
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[1] = _pTerrainObjectManager->GetObjectDepth(neighbours[6]);
+	else
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[1] = -1;
 
 	if (neighbours[4] != INVALID_TERRAIN_OBJECT_ID)
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[2] = _pTerrainObjectManager->GetObjectDepth(neighbours[4]);
+	else
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[2] = -1;
 
 	if (neighbours[2] != INVALID_TERRAIN_OBJECT_ID)
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[3] = _pTerrainObjectManager->GetObjectDepth(neighbours[2]);
+	else
+		out_pTerrainBlockShaderParams->uiAdjacentLOD[3] = -1;
 }
 
 //@}

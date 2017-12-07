@@ -35,6 +35,7 @@ private:
 
 	std::thread*					_pLoadThread = nullptr;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
+	ID3D11ShaderResourceView*		_pHeightmapSRV = nullptr;
 
 	CSimpleTerrainRenderer*			_owner = nullptr;
 

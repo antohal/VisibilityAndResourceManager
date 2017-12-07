@@ -25,6 +25,9 @@ public:
 		_fMaxInvisibleTime = in_fMaxInvisibleTime;
 	}
 
+	void	SetLastLODDistanceOnSurface(double in_dfDistM) {
+		_dfLastLODDistanceOnEarth = in_dfDistM;
+	}
 
 	void	CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFResolution, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel);
 	void	SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods);
@@ -47,6 +50,7 @@ private:
 	void			AddVisibleBlock(TerrainObjectID ID);
 
 	void			UpdateObjectsLifetime(float in_fDeltaTime);
+	void			CalculateLodDistanceCoeff(double height);
 
 	enum class EUpdateVisibilityResult
 	{
@@ -79,6 +83,8 @@ private:
 	unsigned int							_uiMaxDepth = 0;
 
 	float									_fMaxInvisibleTime = 5.f;
+	double									_dfLastLODDistanceOnEarth = -1;
+	double									_dfDistancesCoeff = 1.f;
 
 	std::set<TerrainObjectID>				_setVisibleObjects;
 	std::map<TerrainObjectID, SAliveObject> _mapAliveObjects;

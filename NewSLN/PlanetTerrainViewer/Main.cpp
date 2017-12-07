@@ -49,6 +49,14 @@ public:
 		{
 			_pTerrainRenderer->SetRenderingMode(CSimpleTerrainRenderer::PSRenderingMode::WITHOUT_LIGHTING);
 		}
+
+		if (in_wKey == VK_F6)
+		{
+			static bool surfaceDistSwitch = false;
+
+			surfaceDistSwitch = !surfaceDistSwitch;
+			_pTerrainManager->SetLastLodDistanceOnSurface(surfaceDistSwitch ? 10000 : -1);
+		}
 	}
 
 	virtual void OnFrame(float in_fFrameTime) override
@@ -225,7 +233,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 
 	//pTerrainManager->CalculateLodDistances(10, 1280, 960);
-
+	pTerrainManager->SetLastLodDistanceOnSurface(10000);
 	//pTerrainManager->SetAwaitVisibleForDataReady(false);
 
 	// создаем простой рендерер
