@@ -49,6 +49,9 @@ public:
 	std::wstring					GetHeighmapFileName(TerrainObjectID ID) const;
 
 	std::vector<TerrainObjectID>	GetRootObjects() const;
+	const wchar_t*					GetRootDirectory() const {
+		return _rootDirectory.c_str();
+	}
 
 private:
 

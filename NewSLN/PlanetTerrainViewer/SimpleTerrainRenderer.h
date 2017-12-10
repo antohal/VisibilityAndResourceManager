@@ -33,7 +33,7 @@ private:
 	std::wstring					_wsTextureFileName;
 	std::wstring					_wsHeightmapFileName;
 
-	std::thread*					_pLoadThread = nullptr;
+	//std::thread*					_pLoadThread = nullptr;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
 	ID3D11ShaderResourceView*		_pHeightmapSRV = nullptr;
 
@@ -83,6 +83,7 @@ public:
 	HeightfieldConverter*			GetHeightfieldConverter() { return _pHeightfieldConverter; }
 
 	void							StartUpdateTriangulationsThread();
+	void							StartTextureLoadThread();
 
 
 	virtual void					LockDeviceContext() override;
@@ -92,6 +93,12 @@ public:
 	void							LockLoadMutex();
 	void							UnlockLoadMutex();
 
+	void							AppendTextureToLoad(TerrainObjectID);
+	void							AppendHeightmapToLoad(TerrainObjectID);
+
+	std::wstring					GetTextureFileName(TerrainObjectID ID) const;
+	std::wstring					GetHeighmapFileName(TerrainObjectID ID) const;
+
 private:
 
 	bool InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
@@ -100,6 +107,8 @@ private:
 
 	bool SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
 	void DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
+
+	bool UpdateTextureLoad();
 
 	PSRenderingMode					_RenderingMode = PSRenderingMode::STANDARD;
 
@@ -142,12 +151,19 @@ private:
 	UINT							_uiHeightfieldsCountParam = -1;
 
 	std::thread*					_pTriangulationsThread = nullptr;
-	bool							_bTriangulationThreadFinished = false;
+	std::thread*					_pTextureLoadThread = nullptr;
 
+	bool							_bTriangulationThreadFinished = false;
+	bool							_bTexturesThreadFinished = false;
+
+	std::mutex						_objMutex;
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
 
 	int								_visibleObjsCount = 0;
 	std::list<TerrainObjectID>		_lstRenderQueue;
 
 	std::mutex						_loadMutex;
+
+	std::list<TerrainObjectID>		_lstTexturesQueue;
+	std::list<TerrainObjectID>		_lstHeightmapsQueue;
 };

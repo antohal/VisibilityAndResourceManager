@@ -34,7 +34,6 @@ public:
 	void InvalidateData() {
 		_bTriangulationsReady = false;
 		_bTextureReady = false;
-		_bHeightmapReady = false;
 	}
 
 	/*void SetDataReady() {
@@ -44,11 +43,7 @@ public:
 	void SetTextureReady() {
 		_bTextureReady = true;
 	}
-
-	void SetHeightmapReady() {
-		_bHeightmapReady = true;
-	}
-
+	
 	bool IsTriangulationReady() const {
 		return _bTriangulationsReady;
 	}
@@ -63,7 +58,7 @@ public:
 	}
 
 	virtual bool							IsDataReady() const {
-		return _bTriangulationsReady && _bTextureReady && _bHeightmapReady;
+		return _bTriangulationsReady && _bTextureReady;
 	}
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals);
@@ -105,7 +100,6 @@ private:
 	bool						_bTriangulationsReady = false;
 	//bool						_bOtherDataReady = false;
 	bool						_bTextureReady = false;
-	bool						_bHeightmapReady = false;
 
 	std::wstring				_textureFileName;
 	std::wstring				_heightmapFileName;
@@ -141,17 +135,18 @@ public:
 	// объекты, которые нужно удалить
 	void Update(float in_fDeltaTime);
 
-	bool UpdateTriangulations();
-
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
 
 	// получить имя карты высот для данного объекта
 	const wchar_t*	GetHeightmapFileName(TerrainObjectID ID) const;
 
+	const wchar_t*	GetRootDirectory() const {
+		return _pTerrainObjectManager->GetRootDirectory();
+	}
 
 	//Получить описание объекта Земли по идентификатору
-	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
+	void	GetTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams* out_pParams) const;
 
 	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation);
 
@@ -176,6 +171,12 @@ public:
 	size_t GetVisibleObjectsCount() const;
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
+
+	//@{ Список объектов для которых нужно загрузить карту высот
+	size_t GetNewHeightmapsCount() const;
+	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
+	//@}
+
 
 	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
 	void SetTextureReady(TerrainObjectID ID);
@@ -204,10 +205,6 @@ public:
 
 	//@}
 
-	void SetWaitForExternalHeightmaps(bool wait) {
-		_bWaitForExternalHeightmaps = wait;
-	}
-
 	//@{ Функции получения параметров для шейдеров
 
 	// заполнить структуру с глобальными шейдерными параметрами
@@ -219,9 +216,10 @@ public:
 	//@}
 
 
+	bool UpdateTriangulations();
+
 private:
 
-	void SetObjectHeightmapLoaded(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
 
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
@@ -270,13 +268,16 @@ private:
 
 	//@{ following containers are guarded by mutex (_containersMutex)
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
-	std::set<TerrainObjectID>							_setNotCheckedForTriangulations;
+	std::set<TerrainObjectID>							_setNotReadyTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 	std::vector<TerrainObjectID>						_vecPreliminaryObjectsToDelete;
 
 	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
 	std::set<CInternalTerrainObject*>					_setPreliminaryVisibleObjects;
+
+
+	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
 	//@}
 
 	//@}
@@ -286,16 +287,17 @@ private:
 		STriangulation	_triangulation;
 		double			_timeSinceDead = 0;
 		bool			_alive = false;
+		bool			_ready = false;
 	};
 
 	struct SObjectHeightfield
 	{
 		SHeightfield	_heightfield;
 		double			_timeSinceLastRequest = 0;
+		bool			_ready = false;
 	};
 
 	SHeightfield*		RequestObjectHeightfield(TerrainObjectID ID);
-	bool				HasLoadedHeightfield(TerrainObjectID ID) const;
 
 	mutable std::mutex									_objectTriangulationsMutex;
 	std::map<TerrainObjectID, SObjectTriangulation>		_mapObjectTriangulations;
@@ -303,10 +305,7 @@ private:
 	mutable std::mutex									_objectHeightfieldsMutex;
 	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectHeightfields;
 
-	mutable std::mutex									_objectPreloadedHeightfieldsMutex;
-	std::map<TerrainObjectID, SObjectHeightfield>		_mapObjectPreloadedHeightfields;
-
-	bool			_bAwaitingVisibleForDataReady = true;
+	bool												_bAwaitingVisibleForDataReady = true;
 
 	struct SCameraParams
 	{
@@ -327,7 +326,4 @@ private:
 
 	float					_fMaxPixelsPerTexel = 10;
 	bool					_bRecalculateLodsDistances = false;
-
-	//bool					_bWaitForExternalHeightmaps = true;
-	bool					_bWaitForExternalHeightmaps = false;
 };

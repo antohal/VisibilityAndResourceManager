@@ -2,6 +2,8 @@
 
 #include <d3d11.h>
 
+#include <string>
+
 #include "TerrainDataManager.h"
 #include "TerrainShaderParams.h"
 
@@ -72,8 +74,7 @@ public:
 	// Рассчитать триангуляции [Функция может вызываться в другом потоке, она дергает ComputeShader, поэтому вызов должен находится вне пределов Present]
 	bool UpdateTriangulations();
 
-	// Ожидать передачи загруженных карт высот снаружи перед тем, как генерировать триангуляцию
-	void SetWaitForExternalHeightmaps(bool wait);
+	const wchar_t*	GetRootDirectory() const;
 
 	// получить имя текстуры для данного объекта
 	const wchar_t*	GetTextureFileName(TerrainObjectID ID) const;
@@ -82,7 +83,7 @@ public:
 	const wchar_t*	GetHeightmapFileName(TerrainObjectID ID) const;
 
 	//Получить описание объекта Земли по идентификатору
-	const STerrainBlockParams*	GetTerrainObjectParams(TerrainObjectID ID) const;
+	void GetTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams* out_pParams) const;
 
 	// Получить триангуляцию по объекту Земли. Эту функцию обязательно вызывать перед установкой вершин и индексов.
 	void GetTerrainObjectTriangulation(TerrainObjectID ID, STriangulation** out_ppTriangulation) const;
@@ -96,7 +97,15 @@ public:
 	// Получить количество готовых карт высот
 	size_t GetHeightfieldsCount() const;
 
-	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
+	//@{ Список объектов для которых нужно загрузить карту высот
+	size_t GetNewHeightmapsCount() const;
+	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
+	//@}
+
+	// Установить загруженную карту высот
+	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
+
+	//@{ Список новых объектов, которые нужно создать (могут стать видимыми), для них необходимо загрузить текстуры
 	size_t GetNewObjectsCount() const;
 	TerrainObjectID	GetNewObjectID(size_t index) const;
 	//@}
@@ -113,7 +122,6 @@ public:
 
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
 	void SetTextureReady(TerrainObjectID ID);
-	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
 	//@}
 
 	// Проверить - готова ли триангуляция для объекта Земли

@@ -30,37 +30,37 @@ CSimpleTerrainRenderObject::CSimpleTerrainRenderObject(CSimpleTerrainRenderer * 
 	_wsTextureFileName = wsTextureFileName;
 	_wsHeightmapFileName = wsHeightmapFileName;
 
-	_pLoadThread = new std::thread([this]() {
+	//_pLoadThread = new std::thread([this]() {
 
-		//_owner->LockLoadMutex();
+	//	//_owner->LockLoadMutex();
 
-		ID3D11ShaderResourceView* pResourceViewTex = nullptr;
+	//	ID3D11ShaderResourceView* pResourceViewTex = nullptr;
 
-		// Загружаем текстуру
-		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
+	//	// Загружаем текстуру
+	//	D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsTextureFileName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
 
-		ID3D11ShaderResourceView* pResourceViewHF = nullptr;
-		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsHeightmapFileName.c_str(), NULL, NULL, &pResourceViewHF, NULL);
+	//	ID3D11ShaderResourceView* pResourceViewHF = nullptr;
+	//	D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), _wsHeightmapFileName.c_str(), NULL, NULL, &pResourceViewHF, NULL);
 
-		_pTextureSRV = pResourceViewTex;
-		_pHeightmapSRV = pResourceViewHF;
+	//	_pTextureSRV = pResourceViewTex;
+	//	_pHeightmapSRV = pResourceViewHF;
 
-		_owner->GetTerrainManager()->SetTextureReady(_ID);
-		_owner->GetTerrainManager()->SetHeightmapReady(_ID, pResourceViewHF);
+	//	_owner->GetTerrainManager()->SetTextureReady(_ID);
+	//	_owner->GetTerrainManager()->SetHeightmapReady(_ID, pResourceViewHF);
 
-		//_owner->UnlockLoadMutex();
-	});
+	//	//_owner->UnlockLoadMutex();
+	//});
 
 }
 
 CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 {
-	if (_pLoadThread)
+	/*if (_pLoadThread)
 	{
 		_pLoadThread->detach();
 
 		delete _pLoadThread;
-	}
+	}*/
 
 	// освобождаем текстуру
 	if (_pTextureSRV)
@@ -132,9 +132,9 @@ unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
 
 void CSimpleTerrainRenderer::Stop()
 {
+	// delete triangulations thread
 	if (_pTriangulationsThread)
 	{
-
 		_bTriangulationThreadFinished = true;
 
 		if (_pTriangulationsThread->joinable() && _pTriangulationsThread->native_handle())
@@ -145,6 +145,21 @@ void CSimpleTerrainRenderer::Stop()
 		delete _pTriangulationsThread;
 
 		_pTriangulationsThread = nullptr;
+	}
+
+	// delete texture load thread
+	if (_pTextureLoadThread)
+	{
+		_bTexturesThreadFinished = true;
+
+		if (_pTextureLoadThread->joinable() && _pTextureLoadThread->native_handle())
+		{
+			_pTextureLoadThread->join();
+		}
+
+		delete _pTextureLoadThread;
+
+		_pTextureLoadThread = nullptr;
 	}
 }
 
@@ -179,6 +194,61 @@ CSimpleTerrainRenderer::~CSimpleTerrainRenderer()
 
 	FinalizeShader();
 }
+
+std::wstring CSimpleTerrainRenderer::GetTextureFileName(TerrainObjectID ID) const
+{
+	STerrainBlockParams params;
+	_pTerrainManager->GetTerrainObjectParams(ID, &params);
+
+	std::wstring wsTextureName = _pTerrainManager->GetRootDirectory();
+
+	for (unsigned int i = 0; i <= params.uiDepth; i++)
+	{
+		std::wstring wsXX = std::to_wstring(params.aTreePosition[i].ucLattitudeIndex);
+		std::wstring wsYY = std::to_wstring(params.aTreePosition[i].ucLongitudeIndex);
+
+		if (wsXX.size() == 1)
+			wsXX = L"0" + wsXX;
+
+		if (wsYY.size() == 1)
+			wsYY = L"0" + wsYY;
+
+		if (i < params.uiDepth)
+			wsTextureName += L"\\" + wsXX + L"_" + wsYY;
+		else
+			wsTextureName += L"\\T_" + wsXX + L"_" + wsYY + L".dds";
+	}
+
+	return wsTextureName;
+}
+
+std::wstring CSimpleTerrainRenderer::GetHeighmapFileName(TerrainObjectID ID) const
+{
+	STerrainBlockParams params;
+	_pTerrainManager->GetTerrainObjectParams(ID, &params);
+
+	std::wstring wsTextureName = _pTerrainManager->GetRootDirectory();
+
+	for (unsigned int i = 0; i <= params.uiDepth; i++)
+	{
+		std::wstring wsXX = std::to_wstring(params.aTreePosition[i].ucLattitudeIndex);
+		std::wstring wsYY = std::to_wstring(params.aTreePosition[i].ucLongitudeIndex);
+
+		if (wsXX.size() == 1)
+			wsXX = L"0" + wsXX;
+
+		if (wsYY.size() == 1)
+			wsYY = L"0" + wsYY;
+
+		if (i < params.uiDepth)
+			wsTextureName += L"\\" + wsXX + L"_" + wsYY;
+		else
+			wsTextureName += L"\\H_" + wsXX + L"_" + wsYY + L".dds";
+	}
+
+	return wsTextureName;
+}
+
 
 void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_fWorldScale)
 {
@@ -228,11 +298,17 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 
 	//StartUpdateTriangulationsThread();
+	StartTextureLoadThread();
 }
 
 CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID ID)
 {
-	CSimpleTerrainRenderObject* pNewObject = new CSimpleTerrainRenderObject(this, _pTerrainManager->GetTerrainObjectParams(ID), ID);
+	std::lock_guard<std::mutex> hfLock(_objMutex);
+
+	STerrainBlockParams params;
+	_pTerrainManager->GetTerrainObjectParams(ID, &params);
+
+	CSimpleTerrainRenderObject* pNewObject = new CSimpleTerrainRenderObject(this, &params, ID);
 	_mapTerrainRenderObjects[ID] = pNewObject;
 
 	return pNewObject;
@@ -240,6 +316,8 @@ CSimpleTerrainRenderObject* CSimpleTerrainRenderer::CreateObject(TerrainObjectID
 
 void CSimpleTerrainRenderer::DeleteObject(TerrainObjectID ID)
 {
+	std::lock_guard<std::mutex> hfLock(_objMutex);
+
 	auto it = _mapTerrainRenderObjects.find(ID);
 
 	if (it != _mapTerrainRenderObjects.end())
@@ -296,6 +374,8 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	for (const TerrainObjectID& ID : _lstRenderQueue)
 	{
+		std::lock_guard<std::mutex> hfLock(_objMutex);
+
 		auto itObj = _mapTerrainRenderObjects.find(ID);
 
 		if (itObj == _mapTerrainRenderObjects.end())
@@ -490,6 +570,103 @@ void CSimpleTerrainRenderer::StartUpdateTriangulationsThread()
 
 	});
 }
+
+
+void CSimpleTerrainRenderer::StartTextureLoadThread()
+{
+	_pTextureLoadThread = new std::thread([this]() {
+
+		while (!_bTexturesThreadFinished)
+		{
+			if (!UpdateTextureLoad())
+			{
+				std::this_thread::sleep_for(1ms);
+			}
+		}
+
+	});
+}
+
+bool CSimpleTerrainRenderer::UpdateTextureLoad()
+{
+	std::list<TerrainObjectID> lstTexturesToLoad;
+	std::list<TerrainObjectID> lstHeightmapsToLoad;
+
+	LockLoadMutex();
+
+	lstTexturesToLoad = _lstTexturesQueue;
+	lstHeightmapsToLoad = _lstHeightmapsQueue;
+
+	_lstTexturesQueue.clear();
+	_lstHeightmapsQueue.clear();
+
+	UnlockLoadMutex();
+
+	if (lstTexturesToLoad.empty() && lstHeightmapsToLoad.empty())
+		return false;
+
+	for (TerrainObjectID ID : lstTexturesToLoad)
+	{
+		std::wstring wsTextureFileName = GetTextureFileName(ID);
+
+		ID3D11ShaderResourceView* pResourceViewTex = nullptr;
+		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), wsTextureFileName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
+
+		GetTerrainManager()->SetTextureReady(ID);
+
+		_objMutex.lock();
+		
+		if (CSimpleTerrainRenderObject* pObj = _mapTerrainRenderObjects[ID])
+		{
+			pObj->_pTextureSRV = pResourceViewTex;
+		}
+		
+		_objMutex.unlock();
+	}
+
+
+	for (TerrainObjectID ID : lstHeightmapsToLoad)
+	{
+		std::wstring wsHeightmapFileName = GetHeighmapFileName(ID);
+
+		ID3D11ShaderResourceView* pResourceViewTex = nullptr;
+		D3DX11CreateShaderResourceViewFromFileW(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), wsHeightmapFileName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
+
+		GetTerrainManager()->SetHeightmapReady(ID, pResourceViewTex);
+
+		_objMutex.lock();
+		
+		if (CSimpleTerrainRenderObject* pObj = _mapTerrainRenderObjects[ID])
+		{
+			pObj->_pHeightmapSRV = pResourceViewTex;
+		}
+		
+		_objMutex.unlock();
+	}
+
+//	std::wstring wsHeightmapFileName = _owner->GetTerrainManager()->GetHeightmapFileName(ID);
+
+	return true;
+}
+
+void CSimpleTerrainRenderer::AppendTextureToLoad(TerrainObjectID ID)
+{
+	LockLoadMutex();
+
+	_lstTexturesQueue.push_back(ID);
+
+	UnlockLoadMutex();
+}
+
+void CSimpleTerrainRenderer::AppendHeightmapToLoad(TerrainObjectID ID)
+{
+	LockLoadMutex();
+
+	_lstHeightmapsQueue.push_back(ID);
+
+	UnlockLoadMutex();
+}
+
 
 bool CSimpleTerrainRenderer::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename)
 {
