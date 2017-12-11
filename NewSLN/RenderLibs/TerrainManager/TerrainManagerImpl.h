@@ -278,6 +278,8 @@ private:
 
 
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
+
+	std::set<TerrainObjectID>							_setCachedHFRequest;
 	//@}
 
 	//@}

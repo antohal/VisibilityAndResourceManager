@@ -446,7 +446,7 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 		{
 			_mapObjectHeightfields[ID] = SObjectHeightfield();
 
-			_vecHeightmapsToCreate.push_back(ID);
+			_setCachedHFRequest.insert(ID);
 		}
 
 	} // unlock mutex
@@ -492,8 +492,8 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		_bRecalculateLodsDistances = false;
 	}
 
-	_vecNewObjectIDs.clear();
-	_vecObjectsToDelete.clear();
+	_vecNewObjectIDs.resize(0);
+	_vecObjectsToDelete.resize(0);
 
 	if (_pTerrainVisibility)
 		_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
@@ -541,7 +541,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		_setPreliminaryVisibleObjectIDs = _pTerrainVisibility->GetVisibleObjects();
 
 		_vecObjectsToDelete = _vecPreliminaryObjectsToDelete;
-		_vecPreliminaryObjectsToDelete.clear();
+		_vecPreliminaryObjectsToDelete.resize(0);
 
 		for (TerrainObjectID deadObj : _vecObjectsToDelete)
 		{
@@ -589,16 +589,16 @@ void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>
 		return;
 	}
 
-	_vecRefPoints.clear();
-	_vecRefNormals.clear();
+	_vecRefPoints.resize(0);
+	_vecRefNormals.resize(0);
 
 	double dfMinLat =  _params.fMinLattitude;
 	double dfMaxLat =  _params.fMaxLattitude;
 	double dfMinLong = _params.fMinLongitude;
 	double dfMaxLong = _params.fMaxLongitude;
 
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 5;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 5;
 
 	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
 	{
@@ -625,7 +625,7 @@ Vector3 ToVec3(const vm::Vector3df& v)
 
 void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
 {
-	_vecReadyVisibleObjects.clear();
+	_vecReadyVisibleObjects.resize(0);
 
 	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
 	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
@@ -645,7 +645,8 @@ void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
 
 		for (size_t i = 0; i < (*vecRefNormals).size(); i++)
 		{
-			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
+			//if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
+			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefNormals)[i])) < 0)
 			{
 				bFullBackSided = false;
 				break;
@@ -734,13 +735,11 @@ void CTerrainManager::CTerrainManagerImpl::UpdateTriangulationsAndHeightfieldLif
 
 bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 {
-	_vecHeightmapsToCreate.clear();
-
 	if (!_pHeightfieldConverter)
 		return false;
 
 	static std::vector<std::pair<TerrainObjectID, SObjectTriangulation*>> s_vecTriangulationsToCreate;
-	s_vecTriangulationsToCreate.clear();
+	s_vecTriangulationsToCreate.resize(0);
 
 	// lock
 	{
@@ -748,6 +747,9 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		for (auto it = _setNotReadyTriangulations.begin(); it != _setNotReadyTriangulations.end(); )
 		{
+			if (s_vecTriangulationsToCreate.size() > 1)
+				break;
+
 			TerrainObjectID ID = *it;
 			CInternalTerrainObject* pInternalObject = nullptr;
 
@@ -848,6 +850,13 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 	UpdateTriangulationsAndHeightfieldLifetime();
 
+	_vecHeightmapsToCreate.resize(0);
+	for (TerrainObjectID ID : _setCachedHFRequest)
+		_vecHeightmapsToCreate.push_back(ID);
+
+	// TODO: remove not needed any more HF from here
+	_setCachedHFRequest.clear();
+
 	return true;
 }
 
@@ -857,7 +866,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectParams(TerrainObjectI
 
 	auto it = _mapId2Object.find(ID);
 
-	if (it == _mapId2Object.end())
+	if (it == _mapId2Object.end() || it->second == nullptr)
 	{
 		_pTerrainObjectManager->ComputeTerrainObjectParams(ID, *out_pParams);
 		return;
@@ -1175,8 +1184,8 @@ void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
 		static std::vector<SHeightfield*> vecObjHF;
 		static std::vector<STriangulation*> vecObjT;
 
-		vecObjHF.clear();
-		vecObjT.clear();
+		vecObjHF.resize(0);
+		vecObjT.resize(0);
 
 		{
 			std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
@@ -1279,7 +1288,7 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 
 	if (!pHeightfield)
 	{
-		LogMessage("Error in FillTerrainBlockShaderParams: cannot find heightfield for object %d", ID);
+//		LogMessage("Error in FillTerrainBlockShaderParams: cannot find heightfield for object %d", ID);
 		return;
 	}
 
