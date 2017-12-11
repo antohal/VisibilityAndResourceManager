@@ -25,16 +25,16 @@ CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, flo
 
 	_vecRootObjects = objectManager->GetRootObjects();
 }
-
-void CTerrainVisibility::SetNewObjectHandler(const std::function<void(TerrainObjectID)>& newObjectHandler)
-{
-	_newObjectHandler = newObjectHandler;
-}
-
-void CTerrainVisibility::SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>& deleteObjectHandler)
-{
-	_deleteObjectHandler = deleteObjectHandler;
-}
+//
+//void CTerrainVisibility::SetNewObjectHandler(const std::function<void(TerrainObjectID)>& newObjectHandler)
+//{
+//	_newObjectHandler = newObjectHandler;
+//}
+//
+//void CTerrainVisibility::SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>& deleteObjectHandler)
+//{
+//	_deleteObjectHandler = deleteObjectHandler;
+//}
 
 void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 {
@@ -77,7 +77,7 @@ void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::
 
 	UpdateVisibleBlocks(vPos, uiMaxDepth);
 
-	UpdateObjectsLifetime(in_fDeltaTime);
+	//UpdateObjectsLifetime(in_fDeltaTime);
 }
 
 void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFDimensions, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel)
@@ -354,69 +354,69 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
 }
 
-void CTerrainVisibility::RequestForAlive(TerrainObjectID ID)
-{
-	auto it = _mapAliveObjects.find(ID);
+//void CTerrainVisibility::RequestForAlive(TerrainObjectID ID)
+//{
+//	auto it = _mapAliveObjects.find(ID);
+//
+//	// object not alive yet
+//	if (it == _mapAliveObjects.end())
+//	{
+//		_mapAliveObjects[ID] = SAliveObject(ID);
+//
+//		// call handler
+//		if (_newObjectHandler)
+//			_newObjectHandler(ID);
+//	}
+//	else
+//	{
+//		// zero invisible time
+//		it->second.timeBeingInvisible = 0;
+//	}
+//}
 
-	// object not alive yet
-	if (it == _mapAliveObjects.end())
-	{
-		_mapAliveObjects[ID] = SAliveObject(ID);
 
-		// call handler
-		if (_newObjectHandler)
-			_newObjectHandler(ID);
-	}
-	else
-	{
-		// zero invisible time
-		it->second.timeBeingInvisible = 0;
-	}
-}
-
-
-void CTerrainVisibility::UpdateObjectsLifetime(float in_fDeltaTime)
-{
-	// 1. advance all objects invisible time
-	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); it++)
-	{
-		SAliveObject& aliveObject = it->second;
-		aliveObject.timeBeingInvisible += in_fDeltaTime;
-	}
-
-	// 2. zero it for those, who visible, and create objects that are visible for the first time
-	for (TerrainObjectID ID : _setVisibleObjects)
-	{
-
-		auto it = _mapAliveObjects.find(ID);
-
-		// object not alive yet
-		if (it == _mapAliveObjects.end())
-		{
-			_mapAliveObjects[ID] = SAliveObject(ID);
-
-			// call handler
-			if (_newObjectHandler)
-				_newObjectHandler(ID);
-		}
-		else
-		{
-			// zero invisible time
-			it->second.timeBeingInvisible = 0;
-		}
-	}
-
-	// 3. check for dead objects
-	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); )
-	{
-		if (it->second.timeBeingInvisible > _fMaxInvisibleTime)
-		{
-			if (_deleteObjectHandler)
-				_deleteObjectHandler(it->first);
-
-			it = _mapAliveObjects.erase(it);
-		}
-		else
-			it++;
-	}
-}
+//void CTerrainVisibility::UpdateObjectsLifetime(float in_fDeltaTime)
+//{
+//	// 1. advance all objects invisible time
+//	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); it++)
+//	{
+//		SAliveObject& aliveObject = it->second;
+//		aliveObject.timeBeingInvisible += in_fDeltaTime;
+//	}
+//
+//	// 2. zero it for those, who visible, and create objects that are visible for the first time
+//	for (TerrainObjectID ID : _setVisibleObjects)
+//	{
+//
+//		auto it = _mapAliveObjects.find(ID);
+//
+//		// object not alive yet
+//		if (it == _mapAliveObjects.end())
+//		{
+//			_mapAliveObjects[ID] = SAliveObject(ID);
+//
+//			// call handler
+//			if (_newObjectHandler)
+//				_newObjectHandler(ID);
+//		}
+//		else
+//		{
+//			// zero invisible time
+//			it->second.timeBeingInvisible = 0;
+//		}
+//	}
+//
+//	// 3. check for dead objects
+//	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); )
+//	{
+//		if (it->second.timeBeingInvisible > _fMaxInvisibleTime)
+//		{
+//			if (_deleteObjectHandler)
+//				_deleteObjectHandler(it->first);
+//
+//			it = _mapAliveObjects.erase(it);
+//		}
+//		else
+//			it++;
+//	}
+//}

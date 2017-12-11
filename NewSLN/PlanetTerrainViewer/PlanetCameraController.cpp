@@ -91,7 +91,7 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 		double heightMin = _fWorldScale * 6357000;
 		double heightMax = _fWorldScale * 10000000.0;
 
-		double coeffMin = 0.005;
+		double coeffMin = 0.001;
 		double coeffMax = 1;
 
 		double coeff = coeffMax;

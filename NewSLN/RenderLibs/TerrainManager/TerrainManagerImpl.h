@@ -80,6 +80,8 @@ public:
 	/*const vm::Vector3df&					GetAABBMin() const { return _vAABBMin; }
 	const vm::Vector3df&					GetAABBMax() const { return _vAABBMax; }*/
 
+	float						timeSinceUnused = 0;
+
 private:
 
 	TerrainObjectID				_ID = -1;
@@ -224,7 +226,7 @@ private:
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
 
-	void CreateObject(TerrainObjectID ID);
+	CInternalTerrainObject* CreateObject(TerrainObjectID ID);
 	void DestroyObject(TerrainObjectID ID);
 	void DestroyObjects();
 
@@ -236,6 +238,7 @@ private:
 
 	bool FillTerrainBlockParams(TerrainObjectID ID, STerrainBlockParams& out_Params) const;
 	void UpdateTriangulationsAndHeightfieldLifetime();
+	void UpdateObjectsLifetime(float in_fDeltatime);
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -270,7 +273,7 @@ private:
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
 	std::set<TerrainObjectID>							_setNotReadyTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
-	std::vector<TerrainObjectID>						_vecPreliminaryObjectsToDelete;
+	std::set<TerrainObjectID>							_setPreliminaryObjectsToDelete;
 
 	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;

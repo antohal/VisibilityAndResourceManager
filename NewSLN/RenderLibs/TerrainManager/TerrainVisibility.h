@@ -17,13 +17,13 @@ public:
 
 	CTerrainVisibility(CTerrainObjectManager*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
-	void	SetNewObjectHandler(const std::function<void(TerrainObjectID)>&);
-	void	SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>&);
+	//void	SetNewObjectHandler(const std::function<void(TerrainObjectID)>&);
+	//void	SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>&);
 
 	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
-	void	SetMaxInvisibleTime(float in_fMaxInvisibleTime) {
+	/*void	SetMaxInvisibleTime(float in_fMaxInvisibleTime) {
 		_fMaxInvisibleTime = in_fMaxInvisibleTime;
-	}
+	}*/
 
 	void	SetLastLODDistanceOnSurface(double in_dfDistM) {
 		_dfLastLODDistanceOnEarth = in_dfDistM;
@@ -38,7 +38,7 @@ public:
 		return _setVisibleObjects;
 	}
 
-	void	RequestForAlive(TerrainObjectID ID);
+	//void	RequestForAlive(TerrainObjectID ID);
 
 private:
 
@@ -49,7 +49,7 @@ private:
 	void			UpdateVisibleBlocks(const vm::Vector3df& in_vPos, unsigned int uiMaxDepth);
 	void			AddVisibleBlock(TerrainObjectID ID);
 
-	void			UpdateObjectsLifetime(float in_fDeltaTime);
+	//void			UpdateObjectsLifetime(float in_fDeltaTime);
 	void			CalculateLodDistanceCoeff(double height);
 
 	enum class EUpdateVisibilityResult
@@ -62,32 +62,32 @@ private:
 	EUpdateVisibilityResult UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos);
 
 
-	struct SAliveObject
+	/*struct SAliveObject
 	{
 		SAliveObject() {};
 		SAliveObject(TerrainObjectID id) : ID(id) {}
 
 		TerrainObjectID ID;
 		float			timeBeingInvisible = 0;
-	};
+	};*/
 
 
 	CTerrainObjectManager*					_objectManager = nullptr;
 
-	std::function<void(TerrainObjectID)>	_newObjectHandler;
-	std::function<void(TerrainObjectID)>	_deleteObjectHandler;
+	//std::function<void(TerrainObjectID)>	_newObjectHandler;
+	//std::function<void(TerrainObjectID)>	_deleteObjectHandler;
 
 	double									_aLodDistances[MAX_LODS];
 
 	float									_fWorldScale = 1;
 	unsigned int							_uiMaxDepth = 0;
 
-	float									_fMaxInvisibleTime = 5.f;
+//	float									_fMaxInvisibleTime = 5.f;
 	double									_dfLastLODDistanceOnEarth = -1;
 	double									_dfDistancesCoeff = 1.f;
 
 	std::set<TerrainObjectID>				_setVisibleObjects;
-	std::map<TerrainObjectID, SAliveObject> _mapAliveObjects;
+//	std::map<TerrainObjectID, SAliveObject> _mapAliveObjects;
 
 	std::vector<TerrainObjectID>			_vecRootObjects;
 };
