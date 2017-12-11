@@ -806,8 +806,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		for (auto it = _setNotReadyTriangulations.begin(); it != _setNotReadyTriangulations.end(); )
 		{
-			/*if (s_vecTriangulationsToCreate.size() > 1)
-				break;*/
+			if (s_vecTriangulationsToCreate.size() > 1)
+				break;
 
 			TerrainObjectID ID = *it;
 			CInternalTerrainObject* pInternalObject = nullptr;
