@@ -483,8 +483,6 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 
 void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 {
-	UpdateObjectsLifetime(in_fDeltaTime);
-
 	if (_bRecalculateLodsDistances && _cameraParams.fVFovAngleRad >= 30 * D2R && _cameraParams.uiScreenResolutionY > 0)
 	{
 		_pTerrainVisibility->CalculateLodDistances(_cameraParams.fVFovAngleRad, _vecLODResolution, _vecLODDiameter,
@@ -496,8 +494,12 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	_vecNewObjectIDs.resize(0);
 	_vecObjectsToDelete.resize(0);
 
+	// Обновление списка видимых объектов
 	if (_pTerrainVisibility)
 		_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
+
+	// Управление временем жизни объектов
+	UpdateObjectsLifetime(in_fDeltaTime);
 
 	
 	static std::set<CInternalTerrainObject*> setVisObjs;
@@ -534,263 +536,73 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		else
 		{
 			bAllReady = false;
-			break;
+			//break;
 		}
 	}
 
+	_vecObjectsToDelete.resize(0);
 
 	if (bAllReady)
 	{
+		// Swap visible sets
 		_setPreliminaryVisibleObjects = setVisObjs;
 		_setPreliminaryVisibleObjectIDs = _pTerrainVisibility->GetVisibleObjects();
 
-		_vecObjectsToDelete.resize(0);
 		for (TerrainObjectID prelDel : _setPreliminaryObjectsToDelete)
 			_vecObjectsToDelete.push_back(prelDel);
 
 		_setPreliminaryObjectsToDelete.clear();
-
-		for (TerrainObjectID deadObj : _vecObjectsToDelete)
-		{
-			{
-				std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
-
-				auto itTri = _mapObjectTriangulations.find(deadObj);
-				if (itTri == _mapObjectTriangulations.end())
-				{
-					LogMessage("Object %d has no triangulation while was alive", deadObj);
-					//continue;
-				}
-				else
-					itTri->second._alive = false;
-			}
-
-			{
-				std::lock_guard<std::mutex> objectsLock(_objectsMutex);
-
-				auto it = _mapId2Object.find(deadObj);
-				if (it != _mapId2Object.end())
-				{
-					CInternalTerrainObject* pObject = it->second;
-
-					delete pObject;
-
-					_mapId2Object.erase(it);
-				}
-			}
-
-		}
 	}
 
+	// поместить на удаление все объекты, которые должны быть удалены немедленно
+	for (const TerrainObjectID ID : _setObjectsToImmediateDelete)
+	{
+		_vecObjectsToDelete.push_back(ID);
+	}
+	_setObjectsToImmediateDelete.clear();
+
+	// Управление списком объектов на удаление
+	ManageDeadObjects();
+
+	// Расчет списка реально видимых объектов
 	CalculateReadyAndVisibleSet();
 }
 
-void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDeltatime)
+// Удаление объектов из списка "на удаление"
+void CTerrainManager::CTerrainManagerImpl::ManageDeadObjects()
 {
-	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects();
-	std::set<TerrainObjectID> setObjsToDelete;
-
-	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end(); )
+	for (TerrainObjectID deadObj : _vecObjectsToDelete)
 	{
-		TerrainObjectID ID = it->first;
-		CInternalTerrainObject* pObj = it->second;
-
-		if (!pObj)
+		// Триангуляция помечается как "ненужная" и удалиться по истечении некоторого времени, если ее статус не изменится
 		{
-			LogMessage("Updating null object %d", ID);
+			std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
 
-			it = _mapId2Object.erase(it);
-			continue;
-		}
-
-		bool bAlive = false;
-
-		if (_setPreliminaryVisibleObjectIDs.find(ID) != _setPreliminaryVisibleObjectIDs.end() ||
-			setVisibleObjs.find(ID) != setVisibleObjs.end())
-		{
-			bAlive = true;
-		}
-
-		if (bAlive)
-		{
-			pObj->timeSinceUnused = 0;
-
-			auto itPrevDelObj = _setPreliminaryObjectsToDelete.find(ID);
-			if (itPrevDelObj != _setPreliminaryObjectsToDelete.end())
+			auto itTri = _mapObjectTriangulations.find(deadObj);
+			if (itTri == _mapObjectTriangulations.end())
 			{
-				_setPreliminaryObjectsToDelete.erase(itPrevDelObj);
-			}
-		}
-		else
-			pObj->timeSinceUnused += in_fDeltatime;
-
-		if (pObj->timeSinceUnused > 5.f)
-		{
-			setObjsToDelete.insert(ID);
-		}
-
-		it++;
-	}
-
-	for (TerrainObjectID ID : setObjsToDelete)
-	{
-		DestroyObject(ID);
-	}
-}
-
-void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals)
-{
-	if (_bReferencePointsCalulated)
-	{
-		*out_pvecPoints = &_vecRefPoints;
-		*out_pvecNormals = &_vecRefNormals;
-
-		return;
-	}
-
-	_vecRefPoints.resize(0);
-	_vecRefNormals.resize(0);
-
-	double dfMinLat =  _params.fMinLattitude;
-	double dfMaxLat =  _params.fMaxLattitude;
-	double dfMinLong = _params.fMinLongitude;
-	double dfMaxLong = _params.fMaxLongitude;
-
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 5;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 5;
-
-	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
-	{
-		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
-		{
-			vm::Vector3df vPoint = GetWGS84SurfacePoint(dfLong, dfLat);
-			vm::Vector3df vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
-
-			_vecRefPoints.push_back(vPoint);
-			_vecRefNormals.push_back(vNormal);
-		}
-	}
-
-	*out_pvecPoints = &_vecRefPoints;
-	*out_pvecNormals = &_vecRefNormals;
-
-	_bReferencePointsCalulated = true;
-}
-
-Vector3 ToVec3(const vm::Vector3df& v)
-{
-	return Vector3((float)v[0], (float)v[1], (float)v[2]);
-}
-
-void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
-{
-	_vecReadyVisibleObjects.resize(0);
-
-	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
-	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
-
-	for (CInternalTerrainObject* pObj : _setPreliminaryVisibleObjects)
-	{
-		pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
-
-		if (!_pVisibilityManager->CheckOBBInCamera(ToVec3(pObj->GetPos()), ToVec3(pObj->GetX()), ToVec3(pObj->GetY()), ToVec3(pObj->GetZ()), ToVec3(pObj->GetHalfSizes())))
-			continue;
-
-	//	if (!_pVisibilityManager->CheckAABBInCamera(ToVec3(pObj->GetAABBMin()), ToVec3(pObj->GetAABBMax())))
-	//		continue;
-
-		// check backfaces
-		//bool bFullBackSided = true;
-
-		//for (size_t i = 0; i < (*vecRefNormals).size(); i++)
-		//{
-		//	//if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
-		//	if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefNormals)[i])) < 0)
-		//	{
-		//		bFullBackSided = false;
-		//		break;
-		//	}
-		//}
-
-		//if (!bFullBackSided)
-			_vecReadyVisibleObjects.push_back(pObj->GetID());
-	}
-}
-
-size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
-{
-	std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
-	return _mapObjectTriangulations.size();
-}
-
-size_t CTerrainManager::CTerrainManagerImpl::GetHeightfieldsCount() const
-{
-	std::lock_guard<std::mutex> lock(_objectHeightfieldsMutex);
-	return _mapObjectHeightfields.size();
-}
-
-
-void CTerrainManager::CTerrainManagerImpl::UpdateTriangulationsAndHeightfieldLifetime()
-{
-	if (!_pHeightfieldConverter)
-		return;
-
-
-	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
-
-	double deltaTime = elapsed.count() / 1000.0;
-
-	if (deltaTime > 1)
-		deltaTime = 1;
-
-	_prevFrameTime = thisFrameTime;
-
-	{
-		std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
-		for (auto it = _mapObjectHeightfields.begin(); it != _mapObjectHeightfields.end();)
-		{
-			if (it->second._timeSinceLastRequest > g_fMaxHFAliveTime)
-			{
-				_pHeightfieldConverter->ReleaseHeightfield(&it->second._heightfield);
-
-				it = _mapObjectHeightfields.erase(it);
+				LogMessage("Object %d has no triangulation while was alive", deadObj);
+				//continue;
 			}
 			else
-			{
-				it->second._timeSinceLastRequest += deltaTime;
-				it++;
-			}
+				itTri->second._alive = false;
 		}
-	}
 
-
-	{
-		std::lock_guard<std::mutex> triLock(_objectTriangulationsMutex);
-		for (auto it = _mapObjectTriangulations.begin(); it != _mapObjectTriangulations.end();)
+		// Объект удаляется из списка объектов
 		{
-			if (it->second._alive)
-			{
-				it++;
-				continue;
-			}
+			std::lock_guard<std::mutex> objectsLock(_objectsMutex);
 
-			if (it->second._timeSinceDead > g_fMaxHFAliveTime)
+			auto it = _mapId2Object.find(deadObj);
+			if (it != _mapId2Object.end())
 			{
-				_pHeightfieldConverter->ReleaseTriangulation(&it->second._triangulation);
-				it = _mapObjectTriangulations.erase(it);
-			}
-			else
-			{
-				if (!it->second._alive)
-					it->second._timeSinceDead += deltaTime;
+				CInternalTerrainObject* pObject = it->second;
 
-				it++;
+				delete pObject;
+
+				_mapId2Object.erase(it);
 			}
 		}
 	}
 }
-
 
 bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 {
@@ -806,8 +618,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		for (auto it = _setNotReadyTriangulations.begin(); it != _setNotReadyTriangulations.end(); )
 		{
-			if (s_vecTriangulationsToCreate.size() > 1)
-				break;
+			//			if (s_vecTriangulationsToCreate.size() >= 1)
+			//				break;
 
 			TerrainObjectID ID = *it;
 			CInternalTerrainObject* pInternalObject = nullptr;
@@ -825,7 +637,10 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 			if (!pInternalObject)
 			{
 				//LogMessage("Creating triangulation for deleted object id: %d, removing", ID);
+
+				// Если объект уже удален, то стирать его из списка на триангуляцию
 				it = _setNotReadyTriangulations.erase(it);
+
 				continue;
 			}
 
@@ -921,6 +736,225 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 	return true;
 }
+
+void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDeltatime)
+{
+	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects();
+	std::set<TerrainObjectID> setObjsToDelete;
+
+	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end(); )
+	{
+		TerrainObjectID ID = it->first;
+		CInternalTerrainObject* pObj = it->second;
+
+		if (!pObj)
+		{
+			LogMessage("Updating null object %d", ID);
+
+			it = _mapId2Object.erase(it);
+			continue;
+		}
+
+		bool bAlive = false;
+
+		auto itPrelIt = _setPreliminaryVisibleObjectIDs.find(ID);
+		auto itVisIt = setVisibleObjs.find(ID);
+
+		// Если объект не является ни видимым, ни потенциально видимым, то удалить его
+		if (itPrelIt == _setPreliminaryVisibleObjectIDs.end() && itVisIt == setVisibleObjs.end())
+		{
+			_setObjectsToImmediateDelete.insert(ID);
+			it++;
+			continue;
+		}
+
+		if (itPrelIt != _setPreliminaryVisibleObjectIDs.end() ||
+			itVisIt != setVisibleObjs.end())
+		{
+			bAlive = true;
+		}
+
+		if (bAlive)
+		{
+			pObj->timeSinceUnused = 0;
+
+			auto itPrevDelObj = _setPreliminaryObjectsToDelete.find(ID);
+			if (itPrevDelObj != _setPreliminaryObjectsToDelete.end())
+			{
+				_setPreliminaryObjectsToDelete.erase(itPrevDelObj);
+			}
+		}
+		else
+			pObj->timeSinceUnused += in_fDeltatime;
+
+		if (pObj->timeSinceUnused > 1.f)
+		{
+			setObjsToDelete.insert(ID);
+		}
+
+		it++;
+	}
+
+	for (TerrainObjectID ID : setObjsToDelete)
+	{
+		DestroyObject(ID);
+	}
+}
+
+void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals)
+{
+	if (_bReferencePointsCalulated)
+	{
+		*out_pvecPoints = &_vecRefPoints;
+		*out_pvecNormals = &_vecRefNormals;
+
+		return;
+	}
+
+	_vecRefPoints.resize(0);
+	_vecRefNormals.resize(0);
+
+	double dfMinLat =  _params.fMinLattitude;
+	double dfMaxLat =  _params.fMaxLattitude;
+	double dfMinLong = _params.fMinLongitude;
+	double dfMaxLong = _params.fMaxLongitude;
+
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / 5;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / 5;
+
+	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	{
+		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		{
+			vm::Vector3df vPoint = GetWGS84SurfacePoint(dfLong, dfLat);
+			vm::Vector3df vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
+
+			_vecRefPoints.push_back(vPoint);
+			_vecRefNormals.push_back(vNormal);
+		}
+	}
+
+	*out_pvecPoints = &_vecRefPoints;
+	*out_pvecNormals = &_vecRefNormals;
+
+	_bReferencePointsCalulated = true;
+}
+
+Vector3 ToVec3(const vm::Vector3df& v)
+{
+	return Vector3((float)v[0], (float)v[1], (float)v[2]);
+}
+
+void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
+{
+	_vecReadyVisibleObjects.resize(0);
+
+	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
+	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
+
+	for (CInternalTerrainObject* pObj : _setPreliminaryVisibleObjects)
+	{
+		pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
+
+		if (!_pVisibilityManager->CheckOBBInCamera(ToVec3(pObj->GetPos()), ToVec3(pObj->GetX()), ToVec3(pObj->GetY()), ToVec3(pObj->GetZ()), ToVec3(pObj->GetHalfSizes())))
+			continue;
+
+		//@{ Проверка объектов на другой стороне Земли
+		bool bFullBackSided = true;
+
+		for (size_t i = 0; i < (*vecRefNormals).size(); i++)
+		{
+			//if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
+			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefNormals)[i])) < 0)
+			{
+				bFullBackSided = false;
+				break;
+			}
+		}
+
+		if (!bFullBackSided)
+			_vecReadyVisibleObjects.push_back(pObj->GetID());
+
+		//@}
+	}
+}
+
+size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
+{
+	std::lock_guard<std::mutex> lock(_objectTriangulationsMutex);
+	return _mapObjectTriangulations.size();
+}
+
+size_t CTerrainManager::CTerrainManagerImpl::GetHeightfieldsCount() const
+{
+	std::lock_guard<std::mutex> lock(_objectHeightfieldsMutex);
+	return _mapObjectHeightfields.size();
+}
+
+
+void CTerrainManager::CTerrainManagerImpl::UpdateTriangulationsAndHeightfieldLifetime()
+{
+	if (!_pHeightfieldConverter)
+		return;
+
+
+	std::chrono::time_point<std::chrono::steady_clock> thisFrameTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> elapsed = thisFrameTime - _prevFrameTime;
+
+	double deltaTime = elapsed.count() / 1000.0;
+
+	if (deltaTime > 1)
+		deltaTime = 1;
+
+	_prevFrameTime = thisFrameTime;
+
+	{
+		std::lock_guard<std::mutex> hfLock(_objectHeightfieldsMutex);
+		for (auto it = _mapObjectHeightfields.begin(); it != _mapObjectHeightfields.end();)
+		{
+			if (it->second._timeSinceLastRequest > g_fMaxHFAliveTime)
+			{
+				_pHeightfieldConverter->ReleaseHeightfield(&it->second._heightfield);
+
+				it = _mapObjectHeightfields.erase(it);
+			}
+			else
+			{
+				it->second._timeSinceLastRequest += deltaTime;
+				it++;
+			}
+		}
+	}
+
+
+	{
+		std::lock_guard<std::mutex> triLock(_objectTriangulationsMutex);
+		for (auto it = _mapObjectTriangulations.begin(); it != _mapObjectTriangulations.end();)
+		{
+			if (it->second._alive)
+			{
+				it++;
+				continue;
+			}
+
+			if (it->second._timeSinceDead > g_fMaxHFAliveTime)
+			{
+				_pHeightfieldConverter->ReleaseTriangulation(&it->second._triangulation);
+				it = _mapObjectTriangulations.erase(it);
+			}
+			else
+			{
+				if (!it->second._alive)
+					it->second._timeSinceDead += deltaTime;
+
+				it++;
+			}
+		}
+	}
+}
+
+
+
 
 void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams* out_pParams) const
 {
@@ -1133,8 +1167,8 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	vm::BoundBox<double> vBoundBox(vm::Vector3f(0, 0, 0)); // -> for OBB
 //	vm::BoundBox<double> vBoundBox(vMiddlePoint); // -> For AABB
 
-	double dfMinHeight = -10000.0;
-	double dfMaxHeight = 20000.0;
+	double dfMinHeight =  -200.0;// -10000.0;
+	double dfMaxHeight = 12000.0;// 20000.0;
 
 	/*if (_pHeightfieldConverter)
 	{

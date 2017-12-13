@@ -240,6 +240,8 @@ private:
 	void UpdateTriangulationsAndHeightfieldLifetime();
 	void UpdateObjectsLifetime(float in_fDeltatime);
 
+	void ManageDeadObjects();
+
 	//@{ Main objects
 	//---------------------- New mechanism
 	CTerrainObjectManager*	_pTerrainObjectManager = nullptr;
@@ -283,6 +285,7 @@ private:
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
 
 	std::set<TerrainObjectID>							_setCachedHFRequest;
+	std::set<TerrainObjectID>							_setObjectsToImmediateDelete;
 	//@}
 
 	//@}

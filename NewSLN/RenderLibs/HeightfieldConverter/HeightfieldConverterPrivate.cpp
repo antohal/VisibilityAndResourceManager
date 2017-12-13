@@ -107,6 +107,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::ReadHeightfieldDataFromT
 {
 	// Load the texture in.
 	HRESULT result = D3DX11CreateShaderResourceViewFromFileW(_ptrD3DDevice, in_pcwszTextureFileName, NULL, NULL, &out_Heightfield.pTextureSRV, NULL);
+
 	if (FAILED(result))
 	{
 		LogMessage("HeightfieldConverter:ReadHeightfieldDataFromTexture error D3DX11CreateShaderResourceViewFromFileW");
