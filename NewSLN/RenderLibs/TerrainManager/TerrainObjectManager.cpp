@@ -299,7 +299,7 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 	}
 
 	if (_vecLodInfos[depth].HasBorder)
-		return std::make_pair<unsigned int, unsigned int>(((unsigned int)_vecLodInfos[depth].AltWidth + 1) / in_uiCompressionRatio, ((unsigned int)_vecLodInfos[depth].AltHeight + 1) / in_uiCompressionRatio);
+		return std::make_pair<unsigned int, unsigned int>(((unsigned int)_vecLodInfos[depth].AltWidth) / in_uiCompressionRatio + 1, ((unsigned int)_vecLodInfos[depth].AltHeight) / in_uiCompressionRatio + 1);
 
 	return std::make_pair<unsigned int, unsigned int>((unsigned int)_vecLodInfos[depth].AltWidth / in_uiCompressionRatio, (unsigned int)_vecLodInfos[depth].AltHeight / in_uiCompressionRatio);
 }

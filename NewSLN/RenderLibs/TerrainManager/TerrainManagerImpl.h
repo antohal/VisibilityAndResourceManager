@@ -178,6 +178,11 @@ public:
 	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
 	//@}
 
+	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
+	size_t GetAwaitingHeightmapsCount() const;
+	TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
+	//@}
+
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 
@@ -287,6 +292,8 @@ private:
 
 	std::set<TerrainObjectID>							_setCachedHFRequest;
 	std::set<TerrainObjectID>							_setObjectsToImmediateDelete;
+	std::set<TerrainObjectID>							_setAwaitingHeightmaps;
+	std::vector<TerrainObjectID>						_vecAwaitingHeightmaps;
 	//@}
 
 	//@}

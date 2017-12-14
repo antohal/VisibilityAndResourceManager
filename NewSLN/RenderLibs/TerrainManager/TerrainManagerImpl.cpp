@@ -11,6 +11,7 @@
 //#include "Geometry/InFrustum.h"
 #include "Geometry/Vector3D.h"
 #include "Geometry/Matrix.h"
+#include "StlUtil.h"
 
 
 #define USE_ENGINE_SCALE
@@ -485,6 +486,19 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	return pHeightfield;
 }
 
+//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
+size_t CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapsCount() const
+{
+	return _vecAwaitingHeightmaps.size();
+}
+
+TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapObjectID(size_t index) const
+{
+	return _vecAwaitingHeightmaps[index];
+}
+//@}
+
+
 void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 {
 	if (_bRecalculateLodsDistances && _cameraParams.fVFovAngleRad >= 30 * D2R && _cameraParams.uiScreenResolutionY > 0)
@@ -570,6 +584,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 	// Расчет списка реально видимых объектов
 	CalculateReadyAndVisibleSet();
+
+	// Сформировать список ожидающих карт высот
+	ConvertSetToVector<TerrainObjectID>(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
 }
 
 // Удаление объектов из списка "на удаление"
@@ -612,6 +629,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 {
 	if (!_pHeightfieldConverter)
 		return false;
+
+	_setAwaitingHeightmaps.clear();
 
 	static std::vector<std::pair<TerrainObjectID, SObjectTriangulation*>> s_vecTriangulationsToCreate;
 	s_vecTriangulationsToCreate.resize(0);
@@ -690,7 +709,10 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		SHeightfield* pHeightfield = RequestObjectHeightfield(ID);
 
 		if (!pHeightfield)
+		{
 			someNotReadyHF = true;
+			_setAwaitingHeightmaps.insert(ID);
+		}
 
 		TerrainObjectID neighbours[8];
 		GetTerrainObjectNeighbours(ID, neighbours);
@@ -706,6 +728,7 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 				if (!neighbourHeightfields[i])
 				{
 					someNotReadyHF = true;
+					_setAwaitingHeightmaps.insert(neighbours[i]);
 					//break;
 				}
 			}

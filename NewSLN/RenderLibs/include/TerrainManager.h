@@ -102,6 +102,11 @@ public:
 	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
 	//@}
 
+	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
+	size_t GetAwaitingHeightmapsCount() const;
+	TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
+	//@}
+
 	// Установить загруженную карту высот
 	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
 
