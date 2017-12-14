@@ -120,6 +120,9 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
+	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
+	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
+
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
 	void SetTextureReady(TerrainObjectID ID);
 	//@}

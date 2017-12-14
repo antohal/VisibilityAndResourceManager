@@ -226,18 +226,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 
 
-	//GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
-	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface6\\Data_bicubic\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface6\\Data_bicubic\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	SGlobalTerrainShaderParams globalShaderParams;
 	pTerrainManager->FillGlobalShaderParams(&globalShaderParams);
 
 
-	pTerrainManager->CalculateLodDistances(1, 1280, 960);
+	pTerrainManager->CalculateLodDistances(2, 1280, 960);
 	pTerrainManager->SetLastLodDistanceOnSurface(1000);
+	pTerrainManager->SetHeightfieldCompressionRatio(2);
 	//pTerrainManager->SetAwaitVisibleForDataReady(false);
 
 	// создаем простой рендерер

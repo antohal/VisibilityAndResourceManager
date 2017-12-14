@@ -8,7 +8,6 @@
 #include <d3dx10math.h>
 #include <algorithm>
 
-#include "TerrainVisibilityManagerImpl.h"
 //#include "Geometry/InFrustum.h"
 #include "Geometry/Vector3D.h"
 #include "Geometry/Matrix.h"
@@ -208,6 +207,11 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 //{
 //	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
 //}
+
+void CTerrainManager::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * out_pvCenter) const
+{
+	_implementation->GetTerrainObjectCenter(ID, out_pvCenter);
+}
 
 void CTerrainManager::SetTextureReady(TerrainObjectID ID)
 {
@@ -1075,6 +1079,29 @@ size_t CTerrainManager::CTerrainManagerImpl::GetVisibleObjectsCount() const
 TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetVisibleObjectID(size_t index) const
 {
 	return _vecReadyVisibleObjects[index];
+}
+
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * out_pvCenter) const
+{
+	if (!out_pvCenter)
+		return;
+
+	STerrainBlockParams params;
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+	vm::Vector3df vPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat) * _fWorldScale;
+
+	out_pvCenter->x = vPoint[0];
+	out_pvCenter->y = vPoint[1];
+	out_pvCenter->z = vPoint[2];
 }
 
 void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)

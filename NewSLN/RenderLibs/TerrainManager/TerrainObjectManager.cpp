@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "vecmath.h"
 
+#pragma comment (lib, "Shlwapi.lib")
+
 struct LodInfoStruct_Ver10
 {
 	short Width;			// ширины тексутры

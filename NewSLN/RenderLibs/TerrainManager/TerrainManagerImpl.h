@@ -5,7 +5,6 @@
 
 #include "VisibilityManager.h"
 #include "ResourceManager.h"
-#include "TerrainVisibilityManager.h"
 
 #include "TerrainObjectManager.h"
 #include "TerrainVisibility.h"
@@ -179,6 +178,8 @@ public:
 	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
 	//@}
 
+	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
+	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 
 	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
 	void SetTextureReady(TerrainObjectID ID);

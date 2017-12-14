@@ -128,7 +128,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
 
 	STerrainBlockParams params;
-	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS);
+	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
 
 	double dfMinLat = params.fMinLattitude;
 	double dfMaxLat = params.fMaxLattitude;
