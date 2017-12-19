@@ -325,27 +325,47 @@ copy "$(ProjectDir)SimpleTerrain.vs" "$(OutDir)\PlanetTerrainViewerShaders\Simpl
   <ItemGroup>
     <ClCompile Include="..\RenderLibs\Common\Log.cpp" />
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="BasicEffect.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CommonStates.cpp" />
     <ClCompile Include="Direct3DSystem.cpp" />
+    <ClCompile Include="EffectCommon.cpp" />
     <ClCompile Include="GraphicsContext.cpp" />
+    <ClCompile Include="GraphicsMemory.cpp" />
     <ClCompile Include="KeyboardInput.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MouseInput.cpp" />
     <ClCompile Include="PlanetCameraController.cpp" />
+    <ClCompile Include="PrimitiveBatch.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SimpleTerrainRenderer.cpp" />
+    <ClCompile Include="TextureLoadQueue.cpp" />
+    <ClCompile Include="VertexTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\RenderLibs\Common\Log.h" />
+    <ClInclude Include="AlignedNew.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CommonStates.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="DemandCreate.h" />
     <ClInclude Include="Direct3DSystem.h" />
+    <ClInclude Include="DirectXHelpers.h" />
+    <ClInclude Include="EffectCommon.h" />
+    <ClInclude Include="Effects.h" />
     <ClInclude Include="GraphicsContext.h" />
+    <ClInclude Include="GraphicsMemory.h" />
     <ClInclude Include="KeyboardInput.h" />
     <ClInclude Include="MouseInput.h" />
     <ClInclude Include="PlanetCameraController.h" />
+    <ClInclude Include="PlatformHelpers.h" />
+    <ClInclude Include="PrimitiveBatch.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="SharedResourcePool.h" />
     <ClInclude Include="SimpleTerrainRenderer.h" />
+    <ClInclude Include="TextureLoadQueue.h" />
+    <ClInclude Include="VertexTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SimpleTerrain.ps" />

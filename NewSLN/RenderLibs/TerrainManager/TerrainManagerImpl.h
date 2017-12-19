@@ -61,6 +61,7 @@ public:
 	}
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals);
+	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;
 
 	const wchar_t* GetTextureFileName() const {
 		return _textureFileName.c_str();
@@ -186,6 +187,8 @@ public:
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 
+	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
+
 	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
 	void SetTextureReady(TerrainObjectID ID);
 	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);
@@ -281,7 +284,7 @@ private:
 	std::vector<TerrainObjectID>						_vecNewObjectIDs;
 	std::set<TerrainObjectID>							_setNotReadyTriangulations;
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
-	std::set<TerrainObjectID>							_setPreliminaryObjectsToDelete;
+	std::set<TerrainObjectID>							_setObjectsToDelete;
 
 	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
@@ -291,7 +294,6 @@ private:
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
 
 	std::set<TerrainObjectID>							_setCachedHFRequest;
-	std::set<TerrainObjectID>							_setObjectsToImmediateDelete;
 	std::set<TerrainObjectID>							_setAwaitingHeightmaps;
 	std::vector<TerrainObjectID>						_vecAwaitingHeightmaps;
 	//@}

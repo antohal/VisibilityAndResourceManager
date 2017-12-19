@@ -214,6 +214,11 @@ void CTerrainManager::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * o
 	_implementation->GetTerrainObjectCenter(ID, out_pvCenter);
 }
 
+void CTerrainManager::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
+{
+	_implementation->GetTerrainObjectBoundBoxCorners(ID, out_pvCorners);
+}
+
 void CTerrainManager::SetTextureReady(TerrainObjectID ID)
 {
 	_implementation->SetTextureReady(ID);
@@ -264,6 +269,16 @@ size_t CTerrainManager::GetNewHeightmapsCount() const
 TerrainObjectID CTerrainManager::GetNewHeightmapObjectID(size_t index) const
 {
 	return _implementation->GetNewHeightmapObjectID(index);
+}
+
+size_t CTerrainManager::GetAwaitingHeightmapsCount() const
+{
+	return _implementation->GetAwaitingHeightmapsCount();
+}
+
+TerrainObjectID CTerrainManager::GetAwaitingHeightmapObjectID(size_t index) const
+{
+	return _implementation->GetAwaitingHeightmapObjectID(index);
 }
 
 //@}
@@ -368,14 +383,6 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);
 
 	_pTerrainVisibility = new CTerrainVisibility(_pTerrainObjectManager, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
-
-	//_pTerrainVisibility->SetNewObjectHandler([this](TerrainObjectID ID) {
-	//	CreateObject(ID);
-	//});
-
-	//_pTerrainVisibility->SetDeleteObjectHandler([this](TerrainObjectID ID) {
-	//	DestroyObject(ID);
-	//});
 
 	_pVisibilityManager = new CVisibilityManager(nullptr, _fWorldScale * 20000000.0f, 1000 * _fWorldScale);
 }
@@ -558,26 +565,16 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		}
 	}
 
-	_vecObjectsToDelete.resize(0);
-
 	if (bAllReady)
 	{
 		// Swap visible sets
 		_setPreliminaryVisibleObjects = setVisObjs;
 		_setPreliminaryVisibleObjectIDs = _pTerrainVisibility->GetVisibleObjects();
-
-		for (TerrainObjectID prelDel : _setPreliminaryObjectsToDelete)
-			_vecObjectsToDelete.push_back(prelDel);
-
-		_setPreliminaryObjectsToDelete.clear();
 	}
 
 	// поместить на удаление все объекты, которые должны быть удалены немедленно
-	for (const TerrainObjectID ID : _setObjectsToImmediateDelete)
-	{
-		_vecObjectsToDelete.push_back(ID);
-	}
-	_setObjectsToImmediateDelete.clear();
+	ConvertSetToVector(_setObjectsToDelete, _vecObjectsToDelete);
+	_setObjectsToDelete.clear();
 
 	// Управление списком объектов на удаление
 	ManageDeadObjects();
@@ -586,7 +583,8 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	CalculateReadyAndVisibleSet();
 
 	// Сформировать список ожидающих карт высот
-	ConvertSetToVector<TerrainObjectID>(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
+	ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
+	_setAwaitingHeightmaps.clear();
 }
 
 // Удаление объектов из списка "на удаление"
@@ -622,6 +620,7 @@ void CTerrainManager::CTerrainManagerImpl::ManageDeadObjects()
 				_mapId2Object.erase(it);
 			}
 		}
+
 	}
 }
 
@@ -767,33 +766,16 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDeltatime)
 {
 	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects();
-	std::set<TerrainObjectID> setObjsToDelete;
 
-	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end(); )
+	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end();)
 	{
 		TerrainObjectID ID = it->first;
 		CInternalTerrainObject* pObj = it->second;
-
-		if (!pObj)
-		{
-			LogMessage("Updating null object %d", ID);
-
-			it = _mapId2Object.erase(it);
-			continue;
-		}
 
 		bool bAlive = false;
 
 		auto itPrelIt = _setPreliminaryVisibleObjectIDs.find(ID);
 		auto itVisIt = setVisibleObjs.find(ID);
-
-		// Если объект не является ни видимым, ни потенциально видимым, то удалить его
-		if (itPrelIt == _setPreliminaryVisibleObjectIDs.end() && itVisIt == setVisibleObjs.end())
-		{
-			_setObjectsToImmediateDelete.insert(ID);
-			it++;
-			continue;
-		}
 
 		if (itPrelIt != _setPreliminaryVisibleObjectIDs.end() ||
 			itVisIt != setVisibleObjs.end())
@@ -801,30 +783,32 @@ void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDelta
 			bAlive = true;
 		}
 
-		if (bAlive)
+		if (!bAlive)
 		{
-			pObj->timeSinceUnused = 0;
-
-			auto itPrevDelObj = _setPreliminaryObjectsToDelete.find(ID);
-			if (itPrevDelObj != _setPreliminaryObjectsToDelete.end())
-			{
-				_setPreliminaryObjectsToDelete.erase(itPrevDelObj);
-			}
-		}
-		else
-			pObj->timeSinceUnused += in_fDeltatime;
-
-		if (pObj->timeSinceUnused > 1.f)
-		{
-			setObjsToDelete.insert(ID);
+			DestroyObject(ID);
 		}
 
 		it++;
 	}
+}
 
-	for (TerrainObjectID ID : setObjsToDelete)
+void CInternalTerrainObject::GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const
+{
+	vm::Vector3df vPoints[8];
+
+	vPoints[0] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	vPoints[1] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	vPoints[2] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	vPoints[3] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+
+	vPoints[4] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	vPoints[5] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	vPoints[6] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	vPoints[7] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+
+	for (int i = 0; i < 8; i++)
 	{
-		DestroyObject(ID);
+		out_pvCorners[i] = D3DXVECTOR3(vPoints[i][0], vPoints[i][1], vPoints[i][2]);
 	}
 }
 
@@ -1127,6 +1111,28 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectI
 	out_pvCenter->z = vPoint[2];
 }
 
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
+{
+	CInternalTerrainObject* pObj = nullptr;
+	{
+		std::lock_guard<std::mutex> lock(_objectsMutex);
+		auto it = _mapId2Object.find(ID);
+
+		if (it != _mapId2Object.end())
+		{
+			pObj = it->second;
+		}
+	}
+
+	if (!pObj)
+	{
+		LogMessage("Error! CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners, object ID %d is deleted.", ID);
+		return;
+	}
+
+	pObj->GetBoundBoxCorners(out_pvCorners);
+}
+
 void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)
 {
 	std::lock_guard<std::mutex> lock(_objectsMutex);
@@ -1218,7 +1224,7 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 //	vm::BoundBox<double> vBoundBox(vMiddlePoint); // -> For AABB
 
 	double dfMinHeight =  -200.0;// -10000.0;
-	double dfMaxHeight = 12000.0;// 20000.0;
+	double dfMaxHeight = 9000.0;// 20000.0;
 
 	/*if (_pHeightfieldConverter)
 	{
@@ -1231,16 +1237,28 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	double dfMinLong = in_Coords.fMinLongitude;
 	double dfMaxLong = in_Coords.fMaxLongitude;
 
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 10;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 10;
+	const int N = 10;
 
-	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / N;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / N;
+
+	double dfLat = dfMinLat;
+
+	for (int i = 0; i < N + 1; i++)
 	{
-		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		double dfLong = dfMinLong;
+
+
+		for (int j = 0; j < N + 1; j++)
 		{
 			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight, vMiddlePoint, vEast, vNormal, vNorth);
 			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight, vMiddlePoint, vEast, vNormal, vNorth);
+
+			dfLong += dfDeltaLong;
 		}
+		
+
+		dfLat += dfDeltaLat;
 	}
 
 
@@ -1311,7 +1329,8 @@ CInternalTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(Terra
 
 void CTerrainManager::CTerrainManagerImpl::DestroyObject(TerrainObjectID ID)
 {
-	_setPreliminaryObjectsToDelete.insert(ID);
+	//_setPreliminaryObjectsToDelete.insert(ID);
+	_setObjectsToDelete.insert(ID);
 }
 
 void CTerrainManager::CTerrainManagerImpl::DestroyObjects()

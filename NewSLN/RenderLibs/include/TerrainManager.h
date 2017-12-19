@@ -128,6 +128,9 @@ public:
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 
+	// Получить узловые точки баунд бокса
+	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
+
 	//@{ Установить признак того, что данные для объекта готовы, и его можно делать видимым
 	void SetTextureReady(TerrainObjectID ID);
 	//@}

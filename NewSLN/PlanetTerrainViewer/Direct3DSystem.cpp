@@ -452,6 +452,11 @@ void CDirect3DSystem::BeginScene(float red, float green, float blue, float alpha
 	// Clear the depth buffer.
 	_ptrDeviceContext->ClearDepthStencilView(_ptrDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	if (_bWireframe)
+		_ptrDeviceContext->RSSetState(_ptrRasterStateWire);
+	else
+		_ptrDeviceContext->RSSetState(_ptrRasterStateSolid);
+
 	return;
 }
 

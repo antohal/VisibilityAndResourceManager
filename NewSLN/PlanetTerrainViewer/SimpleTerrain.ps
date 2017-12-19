@@ -27,6 +27,7 @@ struct PixelInputType
 	float3 normal : NORMAL;
     float2 tex : TEXCOORD0;
 	float3 tangent : TANGENT;
+	float4 color : COLOR0;
 };
 
 
@@ -77,7 +78,7 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 	}
 	else if (mode == 3)
 	{
-		color = textureColor;
+		color = textureColor * input.color;
 	}
 
     return color;

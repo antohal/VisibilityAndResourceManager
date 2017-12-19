@@ -12,8 +12,7 @@ cbuffer HeightfieldSettings  : register(b0)
 
 	uint	nCountX;					// количество точек по X
 	uint	nCountY;					// количество точек по Y
-
-
+	
 	float	fLongitudeCoeff;			// максимальная текстурная координата по долготе
 	float	fLattitudeCoeff;			// максимальная текстурная координата по широте
 
@@ -163,9 +162,26 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 
 float2 CalcTexcoords(uint ix, uint iy, float longCoeff, float latCoeff)
 {
+	float u = (float) iy / (nCountY - 1) ;
+	float v = (float) ix / (nCountX - 1) ;
+
 	return float2(
-		longCoeff *(float)iy / (nCountY - 1),
-		latCoeff * (1 - (float)ix / (nCountX - 1))
+		longCoeff *u,
+		latCoeff * (1 - v)
+		);
+}
+
+float2 CalcTexcoordsHF(uint ix, uint iy, float longCoeff, float latCoeff, float Width, float Height)
+{
+	float yCoeff = longCoeff * (float)iy / (nCountY - 1);
+	float xCoeff = latCoeff * (float)ix / (nCountX - 1);
+
+	float u = lerp(0.5 / Width, 1 - 0.5 / Width, yCoeff);
+	float v = lerp(0.5 / Height, 1 - 0.5 / Height, xCoeff);
+
+	return float2(
+		u,
+		(1 - v)
 		);
 }
 
@@ -177,7 +193,10 @@ float GetVertexHeight(uint ix, uint iy, in Texture2D tex, float longCoeff, float
 	float fx = ix;
 	float fy = iy;
 
-	texCoord = CalcTexcoords(ix, iy, longCoeff, latCoeff);
+	float Width, Height, NoL;
+	tex.GetDimensions(0, Width, Height, NoL);
+
+	texCoord = CalcTexcoordsHF(ix, iy, longCoeff, latCoeff, Width, Height);
 
 	float4 TexColor = tex.SampleLevel(HeightTextureSampler, texCoord, 0);
 
@@ -401,6 +420,7 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	for (int i = 0; i < 8; i++)
 		neighbourQuads[i] = thisQuad;
 
+	
 	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY,		neighbourQuads[0]);
 	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY + 1,	neighbourQuads[1]);
 	ComputeNeighbourQuadGeom(iQuadX,	 iQuadY + 1,	neighbourQuads[2]);
@@ -410,7 +430,6 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY - 1,	neighbourQuads[5]);
 	ComputeNeighbourQuadGeom(iQuadX,     iQuadY - 1,	neighbourQuads[6]);
 	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY - 1,	neighbourQuads[7]);
-
 
 	Vertex v[6];
 

@@ -52,10 +52,12 @@ public:
 
 		if (in_wKey == VK_F6)
 		{
-			static bool surfaceDistSwitch = false;
+			/*static bool surfaceDistSwitch = false;
 
 			surfaceDistSwitch = !surfaceDistSwitch;
-			_pTerrainManager->SetLastLodDistanceOnSurface(surfaceDistSwitch ? 10000 : -1);
+			_pTerrainManager->SetLastLodDistanceOnSurface(surfaceDistSwitch ? 10000 : -1);*/
+
+			_pTerrainRenderer->SwitchDebugRender();
 		}
 	}
 
@@ -75,6 +77,9 @@ public:
 		vUp.y = (float)_pCamera->GetUp()[1];
 		vUp.z = (float)_pCamera->GetUp()[2];
 
+		
+		_pTerrainRenderer->ProcessLoadedTextures();
+		
 		_pTerrainManager->SetViewProjection(&vPos, &vDir, &vUp, _pContext->GetSystem()->GetProjectionMatrix());
 
 		_pTerrainManager->Update(in_fFrameTime);
@@ -88,16 +93,26 @@ public:
 			_pTerrainRenderer->CreateObject(newObjID);
 
 			_pTerrainRenderer->AppendTextureToLoad(newObjID);
+			_pTerrainRenderer->AppendHeightmapToLoad(newObjID);
+
+			TerrainObjectID neighbours[8];
+			_pTerrainManager->GetTerrainObjectNeighbours(newObjID, neighbours);
+
+			for (TerrainObjectID neighbour : neighbours)
+			{
+				if (neighbour != INVALID_TERRAIN_OBJECT_ID)
+					_pTerrainRenderer->AppendHeightmapToLoad(neighbour);
+			}
 		}
 
 		// добавляем новые карты высот
 
-		for (size_t iObj = 0; iObj < _pTerrainManager->GetNewHeightmapsCount(); iObj++)
+		/*for (size_t iObj = 0; iObj < _pTerrainManager->GetNewHeightmapsCount(); iObj++)
 		{
 			TerrainObjectID newObjID = _pTerrainManager->GetNewHeightmapObjectID(iObj);
 
 			_pTerrainRenderer->AppendHeightmapToLoad(newObjID);
-		}
+		}*/
 
 
 		// удаляем старые
@@ -105,6 +120,19 @@ public:
 		for (size_t iObj = 0; iObj < _pTerrainManager->GetObjectsToDeleteCount(); iObj++)
 		{
 			TerrainObjectID oldObjID = _pTerrainManager->GetObjectToDeleteID(iObj);
+
+			_pTerrainRenderer->RemoveTextureFromLoad(oldObjID);
+			_pTerrainRenderer->RemoveHeightmapFromLoad(oldObjID);
+
+			TerrainObjectID neighbours[8];
+			_pTerrainManager->GetTerrainObjectNeighbours(oldObjID, neighbours);
+
+			for (TerrainObjectID neighbour : neighbours)
+			{
+				if (neighbour != INVALID_TERRAIN_OBJECT_ID)
+					_pTerrainRenderer->RemoveHeightmapFromLoad(neighbour);
+			}
+
 			_pTerrainRenderer->DeleteObject(oldObjID);
 		}
 
@@ -177,6 +205,9 @@ void GenerateDatabaseInfo(const char* fileName)
 	fclose(fp);
 }
 
+#define SCREEN_X 2560
+#define SCREEN_Y 1440
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
@@ -187,7 +218,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	CD3DApplication* pApplication = new CD3DApplication;
 
 
-	if (!pApplication->Initialize(L"TerrainViewer", 1280, 960, g_fWorldScale * 10000.f, g_fWorldScale * 50000000.f * 100.f, false))
+	if (!pApplication->Initialize(L"TerrainViewer", SCREEN_X, SCREEN_Y, g_fWorldScale * 10000.f, g_fWorldScale * 50000000.f * 100.f, false))
 	{
 		delete pApplication;
 
@@ -236,10 +267,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pTerrainManager->FillGlobalShaderParams(&globalShaderParams);
 
 
-	pTerrainManager->CalculateLodDistances(2, 1280, 960);
-	pTerrainManager->SetLastLodDistanceOnSurface(1000);
+	pTerrainManager->CalculateLodDistances(1, SCREEN_X, SCREEN_Y);
+	//pTerrainManager->SetLastLodDistanceOnSurface(1000);
 	pTerrainManager->SetHeightfieldCompressionRatio(2);
-	//pTerrainManager->SetAwaitVisibleForDataReady(false);
 
 	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();

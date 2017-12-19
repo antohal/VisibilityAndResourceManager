@@ -171,14 +171,17 @@ float2 CalcTexcoords(uint ix, uint iy, float longCoeff, float latCoeff)
 		);
 }
 
-float2 CalcTexcoordsHF(uint ix, uint iy, float longCoeff, float latCoeff)
+float2 CalcTexcoordsHF(uint ix, uint iy, float longCoeff, float latCoeff, float Width, float Height)
 {
-	float u = (float) iy / (nCountY ) + 0.5 / nCountY;
-	float v = (float) ix / (nCountX ) + 0.5 / nCountX;
+	float yCoeff = longCoeff * (float)iy / (nCountY - 1);
+	float xCoeff = latCoeff * (float)ix / (nCountX - 1);
+
+	float u = lerp(0.5 / Width, 1 - 0.5 / Width, yCoeff);
+	float v = lerp(0.5 / Height, 1 - 0.5 / Height, xCoeff);
 
 	return float2(
-		longCoeff *u,
-		latCoeff * (1 - v)
+		u,
+		(1 - v)
 		);
 }
 
@@ -190,7 +193,10 @@ float GetVertexHeight(uint ix, uint iy, in Texture2D tex, float longCoeff, float
 	float fx = ix;
 	float fy = iy;
 
-	texCoord = CalcTexcoordsHF(ix, iy, longCoeff, latCoeff);
+	float Width, Height, NoL;
+	tex.GetDimensions(0, Width, Height, NoL);
+
+	texCoord = CalcTexcoordsHF(ix, iy, longCoeff, latCoeff, Width, Height);
 
 	float4 TexColor = tex.SampleLevel(HeightTextureSampler, texCoord, 0);
 

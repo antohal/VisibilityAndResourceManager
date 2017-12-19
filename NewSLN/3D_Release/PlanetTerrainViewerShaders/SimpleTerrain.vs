@@ -31,6 +31,7 @@ struct PixelInputType
 	float3 normal : NORMAL;
     float2 tex : TEXCOORD0;
 	float3 tangent : TANGENT;
+	float4 color : COLOR0;
 };
 
 
@@ -54,6 +55,11 @@ PixelInputType LightVertexShader(VertexInputType input)
     output.normal = input.normal;
 
 	output.tangent = input.tangent;
+
+	output.color = float4(1,1,1,1);
+
+	if (input.tex.x == 0 || input.tex.y == 0 || input.tex.x == 1 || input.tex.y == 1)
+		output.color = float4(1,0,0,1);
 
     return output;
 }

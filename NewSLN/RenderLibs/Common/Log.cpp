@@ -3,12 +3,16 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string>
+#include <mutex>
 
 static bool g_enabled = false;
 static bool g_inited = false;
 static FILE* g_fp = NULL;
 std::string g_sFileName;
 static std::function<void(const std::string&)> g_Handler;
+
+std::mutex g_logMutex;
+
 //
 //class CFileCloser
 //{
@@ -26,6 +30,8 @@ static std::function<void(const std::string&)> g_Handler;
 
 void LogInit(const char* fileName)
 {
+	std::lock_guard<std::mutex> lock(g_logMutex);
+
 	FILE* fp = nullptr;
 	fopen_s(&fp, fileName, "w");
 
@@ -41,11 +47,15 @@ void LogInit(const char* fileName)
 
 void LogEnable(bool enable/* = true*/)
 {
+	std::lock_guard<std::mutex> lock(g_logMutex);
+
 	g_enabled = enable;
 }
 
 void LogMessage (const char* strFmt, ...)
 {
+	std::lock_guard<std::mutex> lock(g_logMutex);
+
 	if (!g_inited)
 	{
 		LogInit("visresman.log");
@@ -87,10 +97,14 @@ void LogMessage (const char* strFmt, ...)
 
 void AddLogHandler(const std::function<void(const std::string&)>& handler)
 {
+	std::lock_guard<std::mutex> lock(g_logMutex);
+
 	g_Handler = handler;
 }
 
 void RemoveLogHandler()
 {
+	std::lock_guard<std::mutex> lock(g_logMutex);
+
 	g_Handler = std::function<void(const std::string&)>();
 }

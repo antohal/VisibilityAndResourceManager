@@ -3,11 +3,18 @@
 #include "Scene.h"
 #include "TerrainManager.h"
 #include "HeightfieldConverter.h"
+#include "TextureLoadQueue.h"
+#include "VertexTypes.h"
+#include "PrimitiveBatch.h"
+
+#include "Effects.h"
 
 #include <map>
 #include <mutex>
 #include <thread>
 #include <d3dx11effect.h>
+
+using namespace DirectX;
 
 class CSimpleTerrainRenderer;
 
@@ -30,12 +37,7 @@ private:
 
 	TerrainObjectID					_ID;
 
-	std::wstring					_wsTextureFileName;
-	std::wstring					_wsHeightmapFileName;
-
-	//std::thread*					_pLoadThread = nullptr;
 	ID3D11ShaderResourceView*		_pTextureSRV = nullptr;
-	ID3D11ShaderResourceView*		_pHeightmapSRV = nullptr;
 
 	CSimpleTerrainRenderer*			_owner = nullptr;
 
@@ -76,30 +78,40 @@ public:
 	void							SetRenderingMode(PSRenderingMode mode) { _RenderingMode = mode; }
 	PSRenderingMode					GetRenderingMode() const { return _RenderingMode; }
 
+	void							SwitchDebugRender();
+
 	void							SetLightParameters(const vm::Vector3df& in_vDirection, const vm::Vector3df& in_vDiffuse);
-	
+
 	CTerrainManager*				GetTerrainManager() { return _pTerrainManager; };
 
 	HeightfieldConverter*			GetHeightfieldConverter() { return _pHeightfieldConverter; }
 
-	void							StartUpdateTriangulationsThread();
-	void							StartTextureLoadThread();
+	//	void							StartUpdateTriangulationsThread();
+	//	void							StartTextureLoadThread();
 
 
 	virtual void					LockDeviceContext() override;
 	virtual void					UnlockDeviceContext() override;
 
 
-	void							LockLoadMutex();
-	void							UnlockLoadMutex();
+	//	void							LockLoadMutex();
+	//	void							UnlockLoadMutex();
 
 	void							AppendTextureToLoad(TerrainObjectID);
 	void							AppendHeightmapToLoad(TerrainObjectID);
 
+	void							RemoveTextureFromLoad(TerrainObjectID);
+	void							RemoveHeightmapFromLoad(TerrainObjectID);
+
 	std::wstring					GetTextureFileName(TerrainObjectID ID) const;
 	std::wstring					GetHeighmapFileName(TerrainObjectID ID) const;
 
+	void							ProcessLoadedTextures();
+
 private:
+
+	void TextureLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex);
+	void HeightmapLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex);
 
 	bool InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
 	void OutputShaderErrorMessage(ID3D10Blob* errorMessage, WCHAR* shaderFilename);
@@ -108,7 +120,7 @@ private:
 	bool SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
 	void DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
 
-	bool UpdateTextureLoad();
+	//bool UpdateTextureLoad();
 
 	PSRenderingMode					_RenderingMode = PSRenderingMode::STANDARD;
 
@@ -150,11 +162,11 @@ private:
 	UINT							_uiTriangulationsCountParam = -1;
 	UINT							_uiHeightfieldsCountParam = -1;
 
-	std::thread*					_pTriangulationsThread = nullptr;
-	std::thread*					_pTextureLoadThread = nullptr;
+	UINT							_uiTexturesQueueParam = -1;
+	UINT							_uiHeightmapsQueueParam = -1;
 
-	bool							_bTriangulationThreadFinished = false;
-	bool							_bTexturesThreadFinished = false;
+	CTextureLoadQueue*				_pTexturesQueue = nullptr;
+	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;
 
 	std::mutex						_objMutex;
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
@@ -162,8 +174,14 @@ private:
 	int								_visibleObjsCount = 0;
 	std::list<TerrainObjectID>		_lstRenderQueue;
 
-	std::mutex						_loadMutex;
+	// DEBUG RENDERING
+	void InitDebugRenderer();
+	void RenderDebug();
 
-	std::list<TerrainObjectID>		_lstTexturesQueue;
-	std::list<TerrainObjectID>		_lstHeightmapsQueue;
+	std::unique_ptr<BasicEffect>	_debugEffect;
+	ID3D11InputLayout*				_debugInputLayout = nullptr;
+	PrimitiveBatch<VertexPositionColor>*	_primitiveBatch = nullptr;
+
+	float							_fWorldScale = 1.f;
+	bool							_bDebugRenderEnabled = false;
 };
