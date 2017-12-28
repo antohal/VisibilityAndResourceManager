@@ -437,6 +437,12 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	_heightfield.Config.nCountY *= _fLongitudeCoeff;
 	_heightfield.Config.nCountX *= _fLattitudeCoeff;
 
+	if (_heightfield.Config.nCountX < 2)
+		_heightfield.Config.nCountX = 2;
+
+	if (_heightfield.Config.nCountY < 2)
+		_heightfield.Config.nCountY = 2;
+
 	//_triangulation.nVertexCount = _heightfield.Config.nCountX * _heightfield.Config.nCountY;
 	//_triangulation.nIndexCount = (_heightfield.Config.nCountX - 1) * (_heightfield.Config.nCountY - 1) * 2 * 3;
 
@@ -483,7 +489,16 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	ID3D11UnorderedAccessView* aUAViews[2] = { _ptrVertexBufferUAV, _ptrIndexBufferUAV };
 
 
-	constantData.Config = _heightfield.Config;
+	//constantData.Config = _heightfield.Config;
+
+	constantData.fMinLattitude = _heightfield.Config.Coords.fMinLattitude;
+	constantData.fMaxLattitude = _heightfield.Config.Coords.fMaxLattitude;
+	constantData.fMinLongitude = _heightfield.Config.Coords.fMinLongitude;
+	constantData.fMaxLongitude = _heightfield.Config.Coords.fMaxLongitude;
+
+	constantData.nCountX = _heightfield.Config.nCountX;
+	constantData.nCountY = _heightfield.Config.nCountY;
+
 	constantData.fWorldScale = _owner->_owner->GetWorldScale();
 	constantData.fHeightScale = _owner->_owner->GetHeightScale();
 	constantData.fLongitudeCoeff = _fLongitudeCoeff;
@@ -544,8 +559,8 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 	_owner->_owner->LockDeviceContext();
 
 	RunComputeShader(_owner->_ptrDeviceContext, _owner->_ptrComputeShader, 9, aRViews, _ptrConstantBuffer, &constantData, sizeof(ConstantBufferData), 2, aUAViews,
-		_heightfield.Config.nCountX - 1, 
-		_heightfield.Config.nCountY - 1,
+		_heightfield.Config.nCountY - 1, 
+		_heightfield.Config.nCountX - 1,
 		1);
 
 	_owner->_owner->UnlockDeviceContext();

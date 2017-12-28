@@ -1497,8 +1497,8 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	out_pTerrainBlockShaderParams->fMinLongitude = params.fMinLongitude;
 	out_pTerrainBlockShaderParams->fMaxLongitude = params.fMaxLongitude;
 
-	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX;
-	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY;
+	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX * params.fLongitude—utCoeff;
+	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY * params.fLattitudeCutCoeff;
 
 
 	out_pTerrainBlockShaderParams->fLongitudeCoeff = params.fLongitude—utCoeff;

@@ -10,8 +10,8 @@ cbuffer HeightfieldSettings  : register(b0)
 	float	fMinLongitude;				// минимальная долгота
 	float	fMaxLongitude;				// максимальная долгота
 
-	uint	nCountX;					// количество точек по X
-	uint	nCountY;					// количество точек по Y
+	uint	nCountLat;					// количество точек по X
+	uint	nCountLong;					// количество точек по Y
 	
 	float	fLongitudeCoeff;			// максимальная текстурная координата по долготе
 	float	fLattitudeCoeff;			// максимальная текстурная координата по широте
@@ -160,43 +160,40 @@ double3 GetWGS84SurfaceNormal(double3 in_vSurfacePoint)
 	return normalize(vUnnormalizedNormal);
 }
 
-float2 CalcTexcoords(uint ix, uint iy, float longCoeff, float latCoeff)
+float2 CalcTexcoords(uint iLong, uint iLat, float longCoeff, float latCoeff)
 {
-	float u = (float) iy / (nCountY - 1) ;
-	float v = (float) ix / (nCountX - 1) ;
+	float u = (float) iLong / (nCountLong - 1) ;
+	float v = (float) iLat / (nCountLat - 1) ;
 
 	return float2(
 		longCoeff *u,
 		latCoeff * (1 - v)
-		);
+	);
 }
 
-float2 CalcTexcoordsHF(uint ix, uint iy, float longCoeff, float latCoeff, float Width, float Height)
+float2 CalcTexcoordsHF(uint iLong, uint iLat, float longCoeff, float latCoeff, float Width, float Height)
 {
-	float yCoeff = longCoeff * (float)iy / (nCountY - 1);
-	float xCoeff = latCoeff * (float)ix / (nCountX - 1);
+	float longA = longCoeff * (float)iLong / (nCountLong - 1);
+	float latA = latCoeff * (float)iLat / (nCountLat - 1);
 
-	float u = lerp(0.5 / Width, 1 - 0.5 / Width, yCoeff);
-	float v = lerp(0.5 / Height, 1 - 0.5 / Height, xCoeff);
+	float u = lerp(0.5 / Width, 1 - 0.5 / Width, longA);
+	float v = lerp(0.5 / Height, 1 - 0.5 / Height, latA);
 
 	return float2(
 		u,
 		(1 - v)
-		);
+	);
 }
 
 // получить высоту вершины по индексам вдоль осей x и y
-float GetVertexHeight(uint ix, uint iy, in Texture2D tex, float longCoeff, float latCoeff)
+float GetVertexHeight(uint iLong, uint iLat, in Texture2D tex, float longCoeff, float latCoeff)
 {
 	float2 texCoord;
-
-	float fx = ix;
-	float fy = iy;
 
 	float Width, Height, NoL;
 	tex.GetDimensions(0, Width, Height, NoL);
 
-	texCoord = CalcTexcoordsHF(ix, iy, longCoeff, latCoeff, Width, Height);
+	texCoord = CalcTexcoordsHF(iLong, iLat, longCoeff, latCoeff, Width, Height);
 
 	float4 TexColor = tex.SampleLevel(HeightTextureSampler, texCoord, 0);
 
@@ -204,18 +201,18 @@ float GetVertexHeight(uint ix, uint iy, in Texture2D tex, float longCoeff, float
 }
 
 // получить позицию вершины
-float3 GetVertexPos(uint ix, uint iy, in Texture2D tex, float longCoeff, float latCoeff, float minLat, float maxLat, float minLong, float maxLong)
+float3 GetVertexPos(uint iLong, uint iLat, in Texture2D tex, float longCoeff, float latCoeff, float minLat, float maxLat, float minLong, float maxLong)
 {
-	float height = GetVertexHeight(ix, iy, tex, longCoeff, latCoeff);
+	float height = GetVertexHeight(iLong, iLat, tex, longCoeff, latCoeff);
 
 	float fLongitudeAmpl = maxLong - minLong;
 	float fLattitudeAmpl = maxLat - minLat;
 
-	float dlong = fLongitudeAmpl / (nCountY - 1);
-	float dlat = fLattitudeAmpl / (nCountX - 1);
+	float dlong = fLongitudeAmpl / (nCountLong - 1);
+	float dlat = fLattitudeAmpl / (nCountLat - 1);
 
-	float longitude = minLong + iy * dlong;
-	float lattitude = minLat + ix * dlat;
+	float longitude = minLong + iLong * dlong;
+	float lattitude = minLat + iLat * dlat;
 
 	double3 vSurfacePoint = fWorldScale * GetWGS84SurfacePoint(longitude, lattitude);
 	double3 vSurfaceNormal = GetWGS84SurfaceNormal(vSurfacePoint);
@@ -267,22 +264,22 @@ struct QuadGeometry
 	float2	 tex[4];
 };
 
-void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out QuadGeometry geom, float longCoeff, float latCoeff, float minLat, float maxLat, float minLong, float maxLong)
+void ComputeQuadGeometry(in int iQuadLat, in int iQuadLong, in Texture2D tex, out QuadGeometry geom, float longCoeff, float latCoeff, float minLat, float maxLat, float minLong, float maxLong)
 {
-	uint	ix[4], iy[4];
+	uint	iLat[4], iLong[4];
 	float3	v[4];
 	float2	texCoords[4];
 	
-	ix[1] = ix[2] = iQuadX;
-	ix[0] = ix[3] = iQuadX + 1;
+	iLat[1] = iLat[2] = iQuadLat;
+	iLat[0] = iLat[3] = iQuadLat + 1;
 
-	iy[0] = iy[1] = iQuadY;
-	iy[2] = iy[3] = iQuadY + 1;
+	iLong[0] = iLong[1] = iQuadLong;
+	iLong[2] = iLong[3] = iQuadLong + 1;
 
 	for (int i = 0; i < 4; i++)
 	{
-		v[i] = GetVertexPos(ix[i], iy[i], tex, longCoeff, latCoeff, minLat, maxLat, minLong, maxLong);
-		texCoords[i] = CalcTexcoords(ix[i], iy[i], longCoeff, latCoeff);
+		v[i] = GetVertexPos(iLong[i], iLat[i], tex, longCoeff, latCoeff, minLat, maxLat, minLong, maxLong);
+		texCoords[i] = CalcTexcoords(iLong[i], iLat[i], longCoeff, latCoeff);
 	}
 
 	geom.vertex[0] = v[0];
@@ -311,58 +308,58 @@ void ComputeQuadGeometry(in int iQuadX, in int iQuadY, in Texture2D tex, out Qua
 	geom.t[1].n = ComputeTriangleNormal(geom.t[1]);
 }
 
-void ComputeNeighbourQuadGeom(int iQuadX, int iQuadY, inout QuadGeometry neighbourQuadGeom)
+void ComputeNeighbourQuadGeom(int iQuadLat, int iQuadLong, inout QuadGeometry neighbourQuadGeom)
 {
 
-	if (iQuadX >= 0 && iQuadX < (int)nCountX - 1 &&
-		iQuadY >= 0 && iQuadY < (int)nCountY - 1)
+	if (iQuadLat >= 0 && iQuadLat < (int)nCountLat - 1 &&
+		iQuadLong >= 0 && iQuadLong < (int)nCountLong - 1)
 	{
-		ComputeQuadGeometry(iQuadX, iQuadY, InputHeightTexture, neighbourQuadGeom, fLongitudeCoeff, fLattitudeCoeff, fMinLattitude, fMaxLattitude, fMinLongitude, fMaxLongitude);
+		ComputeQuadGeometry(iQuadLat, iQuadLong, InputHeightTexture, neighbourQuadGeom, fLongitudeCoeff, fLattitudeCoeff, fMinLattitude, fMaxLattitude, fMinLongitude, fMaxLongitude);
 	}
 	else
 	{
 	
-		if (iQuadX >= 0 && iQuadX < (int)nCountY - 1)
+		if (iQuadLat >= 0 && iQuadLat < (int)nCountLong - 1)
 		{
 			// left
-			if (iQuadY < 0)
-				ComputeQuadGeometry(iQuadX, (int)nCountY - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
+			if (iQuadLong < 0)
+				ComputeQuadGeometry(iQuadLat, (int)nCountLong - 2, WestNeighbourTexture, neighbourQuadGeom, fWestBlockLongCoeff, fWestBlockLatCoeff, fWestMinLat, fWestMaxLat, fWestMinLong, fWestMaxLong);
 
 			// right
-			if (iQuadY >= (int)nCountY - 1)
-				ComputeQuadGeometry(iQuadX, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
+			if (iQuadLong >= (int)nCountLong - 1)
+				ComputeQuadGeometry(iQuadLat, 0, EastNeighbourTexture, neighbourQuadGeom, fEastBlockLongCoeff, fEastBlockLatCoeff, fEastMinLat, fEastMaxLat, fEastMinLong, fEastMaxLong);
 		}
 		
-		else if (iQuadY >= 0 && iQuadY < (int)nCountY - 1)
+		else if (iQuadLong >= 0 && iQuadLong < (int)nCountLong - 1)
 		{
 			// top
-			if (iQuadX >= (int)nCountX - 1)
-				ComputeQuadGeometry(0, iQuadY, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
+			if (iQuadLat >= (int)nCountLat - 1)
+				ComputeQuadGeometry(0, iQuadLong, NorthNeighbourTexture, neighbourQuadGeom, fNorthBlockLongCoeff, fNorthBlockLatCoeff, fNorthMinLat, fNorthMaxLat, fNorthMinLong, fNorthMaxLong);
 
 			// bottom
-			if (iQuadX < 0)
-				ComputeQuadGeometry((int)nCountX - 2, iQuadY, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
+			if (iQuadLat < 0)
+				ComputeQuadGeometry((int)nCountLat - 2, iQuadLong, SouthNeighbourTexture, neighbourQuadGeom, fSouthBlockLongCoeff, fSouthBlockLatCoeff, fSouthMinLat, fSouthMaxLat, fSouthMinLong, fSouthMaxLong);
 		}
 
-		else if ((iQuadX < 0) && (iQuadY < 0))
+		else if ((iQuadLat < 0) && (iQuadLong < 0))
 		{
 			// left bottom
-			ComputeQuadGeometry((int)nCountX - 2, (int)nCountY - 2, SouthWestNeighbourTexture, neighbourQuadGeom, fSouthWestBlockLongCoeff, fSouthWestBlockLatCoeff, fSouthWestMinLat, fSouthWestMaxLat, fSouthWestMinLong, fSouthWestMaxLong);
+			ComputeQuadGeometry((int)nCountLat - 2, (int)nCountLong - 2, SouthWestNeighbourTexture, neighbourQuadGeom, fSouthWestBlockLongCoeff, fSouthWestBlockLatCoeff, fSouthWestMinLat, fSouthWestMaxLat, fSouthWestMinLong, fSouthWestMaxLong);
 		}
 		
-		else if ((iQuadX < 0) && (iQuadY >= (int)nCountY - 1))
+		else if ((iQuadLat < 0) && (iQuadLong >= (int)nCountLong - 1))
 		{
 			// right bottom
-			ComputeQuadGeometry((int)nCountX - 2, 0, SouthEastNeighbourTexture, neighbourQuadGeom, fSouthEastBlockLongCoeff, fSouthEastBlockLatCoeff, fSouthEastMinLat, fSouthEastMaxLat, fSouthEastMinLong, fSouthEastMaxLong);
+			ComputeQuadGeometry((int)nCountLat - 2, 0, SouthEastNeighbourTexture, neighbourQuadGeom, fSouthEastBlockLongCoeff, fSouthEastBlockLatCoeff, fSouthEastMinLat, fSouthEastMaxLat, fSouthEastMinLong, fSouthEastMaxLong);
 		}
 		
-		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY < 0))
+		else if ((iQuadLat >= (int)nCountLat - 1) && (iQuadLong < 0))
 		{
 			// left top
-			ComputeQuadGeometry(0, (int)nCountY - 2, NorthWestNeighbourTexture, neighbourQuadGeom, fNorthWestBlockLongCoeff, fNorthWestBlockLatCoeff, fNorthWestMinLat, fNorthWestMaxLat, fNorthWestMinLong, fNorthWestMaxLong);
+			ComputeQuadGeometry(0, (int)nCountLong - 2, NorthWestNeighbourTexture, neighbourQuadGeom, fNorthWestBlockLongCoeff, fNorthWestBlockLatCoeff, fNorthWestMinLat, fNorthWestMaxLat, fNorthWestMinLong, fNorthWestMaxLong);
 		}
 
-		else if ((iQuadX >= (int)nCountX - 1) && (iQuadY >= (int)nCountY - 1))
+		else if ((iQuadLat >= (int)nCountLat - 1) && (iQuadLong >= (int)nCountLong - 1))
 		{
 			// right top
 			ComputeQuadGeometry(0, 0, NorthEastNeighbourTexture, neighbourQuadGeom, fNorthEastBlockLongCoeff, fNorthEastBlockLatCoeff, fNorthEastMinLat, fNorthEastMaxLat, fNorthEastMinLong, fNorthEastMaxLong);
@@ -411,25 +408,25 @@ void ComputeVertexNormalAndTangent(inout Triangle neighbourTriangles[6], inout V
 	v.tangent = -cross(float3(1, 0, 0), v.normal);
 }
 
-void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
+void ComputeQuadOutputData(int iQuadLat, int iQuadLong, out OutputQuadData data)
 {
 	QuadGeometry thisQuad;
-	ComputeQuadGeometry(iQuadX, iQuadY, InputHeightTexture, thisQuad, fLongitudeCoeff, fLattitudeCoeff, fMinLattitude, fMaxLattitude, fMinLongitude, fMaxLongitude);
+	ComputeQuadGeometry(iQuadLat, iQuadLong, InputHeightTexture, thisQuad, fLongitudeCoeff, fLattitudeCoeff, fMinLattitude, fMaxLattitude, fMinLongitude, fMaxLongitude);
 
 	QuadGeometry neighbourQuads[8];
 	for (int i = 0; i < 8; i++)
 		neighbourQuads[i] = thisQuad;
 
 	
-	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY,		neighbourQuads[0]);
-	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY + 1,	neighbourQuads[1]);
-	ComputeNeighbourQuadGeom(iQuadX,	 iQuadY + 1,	neighbourQuads[2]);
-	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY + 1,	neighbourQuads[3]);
+	ComputeNeighbourQuadGeom(iQuadLat + 1, iQuadLong,		neighbourQuads[0]);
+	ComputeNeighbourQuadGeom(iQuadLat + 1, iQuadLong + 1,	neighbourQuads[1]);
+	ComputeNeighbourQuadGeom(iQuadLat,	 iQuadLong + 1,	neighbourQuads[2]);
+	ComputeNeighbourQuadGeom(iQuadLat - 1, iQuadLong + 1,	neighbourQuads[3]);
 
-	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY,		neighbourQuads[4]);
-	ComputeNeighbourQuadGeom(iQuadX - 1, iQuadY - 1,	neighbourQuads[5]);
-	ComputeNeighbourQuadGeom(iQuadX,     iQuadY - 1,	neighbourQuads[6]);
-	ComputeNeighbourQuadGeom(iQuadX + 1, iQuadY - 1,	neighbourQuads[7]);
+	ComputeNeighbourQuadGeom(iQuadLat - 1, iQuadLong,		neighbourQuads[4]);
+	ComputeNeighbourQuadGeom(iQuadLat - 1, iQuadLong - 1,	neighbourQuads[5]);
+	ComputeNeighbourQuadGeom(iQuadLat,     iQuadLong - 1,	neighbourQuads[6]);
+	ComputeNeighbourQuadGeom(iQuadLat + 1, iQuadLong - 1,	neighbourQuads[7]);
 
 	Vertex v[6];
 
@@ -562,13 +559,13 @@ void ComputeQuadOutputData(int iQuadX, int iQuadY, out OutputQuadData data)
 [numthreads(1, 1, 1)]
 void HeightfieldConverterCS(uint3 DTid : SV_DispatchThreadID)
 {
-	int iQuadX = DTid.x;
-	int iQuadY = DTid.y;
-
+	int iQuadLong = DTid.x;
+	int iQuadLat = DTid.y;
+	
 	OutputQuadData outData;
-	ComputeQuadOutputData(iQuadX, iQuadY, outData);
+	ComputeQuadOutputData(iQuadLat, iQuadLong, outData);
 
-	uint nStartIndex = (iQuadY * (nCountX - 1) + iQuadX) * 6;
+	uint nStartIndex = (iQuadLong * (nCountLat - 1) + iQuadLat) * 6;
 	uint VERTEX_SIZE = 44;
 
 	Vertex outVertex;

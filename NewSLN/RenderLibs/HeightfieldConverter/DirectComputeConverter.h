@@ -38,7 +38,16 @@ private:
 
 	struct ConstantBufferData
 	{
-		SHeightfield::SConfig Config;
+		//SHeightfield::SConfig Config;
+
+		float			fMinLattitude = 0;				// минимальная широта (рад)
+		float			fMaxLattitude = 0;				// максимальная широта (рад)
+
+		float			fMinLongitude = 0;				// минимальная долгота (рад)
+		float			fMaxLongitude = 0;				// максимальная долгота (рад)
+
+		unsigned int	nCountX = 256;					
+		unsigned int	nCountY = 256;					
 
 		float	fLongitudeCoeff = 1;
 		float	fLattitudeCoeff = 1;

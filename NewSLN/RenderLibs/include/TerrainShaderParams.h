@@ -28,9 +28,8 @@ struct STerrainBlockShaderParams
 	float			fMinLongitude = 0;				// минимальная долгота
 	float			fMaxLongitude = 0;				// максимальная долгота
 
-	unsigned int	nCountX = 0;					// количество точек по X
-	unsigned int	nCountY = 0;					// количество точек по Y
-
+	unsigned int	nCountX = 0;					// количество точек по долготе (может не совпадать с разрешением текстуры)
+	unsigned int	nCountY = 0;					// количество точек по широте (может не совпадать с разрешением текстуры)
 
 	float			fLongitudeCoeff = 0;			// максимальная текстурная координата по долготе
 	float			fLattitudeCoeff = 0;			// максимальная текстурная координата по широте
