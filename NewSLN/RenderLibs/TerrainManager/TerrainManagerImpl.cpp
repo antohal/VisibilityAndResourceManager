@@ -14,6 +14,8 @@
 #include "StlUtil.h"
 
 
+#define MAX_TRIANGULATIONS_PER_FRAME 5
+
 #define USE_ENGINE_SCALE
 
 #ifdef USE_ENGINE_SCALE
@@ -23,6 +25,23 @@ const float g_fMasterScale = 1.f;
 #endif
 
 const float g_fMaxHFAliveTime = 2.f;
+
+
+Vector3 ToVisManVec3(const vm::Vector3df& v)
+{
+	return Vector3((float)v[0], (float)v[1], (float)v[2]);
+}
+
+static Vector3f ToVec3(const Vector3& v)
+{
+	return Vector3f(v.x, v.y, v.z);
+}
+
+static Vector3 FromVec3(const Vector3f& v)
+{
+	return Vector3(v.x, v.y, v.z);
+}
+
 
 CInternalTerrainObject::CInternalTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
 	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName)
@@ -392,17 +411,6 @@ void CTerrainManager::CTerrainManagerImpl::SetHeightfieldConverter(HeightfieldCo
 	_pHeightfieldConverter = in_pHeightfieldConverter;
 }
 
-
-static Vector3f ToVec3(const Vector3& v)
-{
-	return Vector3f(v.x, v.y, v.z);
-}
-
-static Vector3 FromVec3(const Vector3f& v)
-{
-	return Vector3(v.x, v.y, v.z);
-}
-
 void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 * in_vPos, const D3DXVECTOR3 * in_vDir, const D3DXVECTOR3 * in_vUp, const D3DMATRIX * in_pmProjection)
 {
 	Vector3 v3Pos, v3Dir, v3Up;
@@ -469,7 +477,7 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 	//std::wstring wsHeightmapFileName = _pTerrainObjectManager->GetHeighmapFileName(ID); 
 
 	STerrainBlockParams params;
-	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
 
 	auto objRes = _pTerrainObjectManager->GetObjectHfResolution(ID, _heightfieldCompressionRatio);
 
@@ -527,7 +535,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	UpdateObjectsLifetime(in_fDeltaTime);
 
 	
-	static std::set<CInternalTerrainObject*> setVisObjs;
+	static std::set<TerrainObjectID> setVisObjs;
 	setVisObjs.clear();
 
 	bool bAllReady = true;
@@ -556,7 +564,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 		if (pTerrainObject->IsDataReady() || !_bAwaitingVisibleForDataReady)
 		{
-			setVisObjs.insert(pTerrainObject);
+			setVisObjs.insert(visID);
 		}
 		else
 		{
@@ -565,11 +573,23 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		}
 	}
 
+	bool bUsePreliminarySet = true;
+
 	if (bAllReady)
 	{
 		// Swap visible sets
 		_setPreliminaryVisibleObjects = setVisObjs;
 		_setPreliminaryVisibleObjectIDs = _pTerrainVisibility->GetVisibleObjects();
+	}
+	else
+	{
+		// Если не весь потенциально видимый набор готов, проверить только часть во фрустуме, и если она готова - выдать ее на выход
+		const std::vector<TerrainObjectID>& vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects());
+		if (IsAllObjectsReady(vecCurrentVisibleObjsInFrustum))
+		{
+			bUsePreliminarySet = false;
+			_vecReadyVisibleObjects = vecCurrentVisibleObjsInFrustum;
+		}
 	}
 
 	// поместить на удаление все объекты, которые должны быть удалены немедленно
@@ -580,11 +600,80 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	ManageDeadObjects();
 
 	// Расчет списка реально видимых объектов
-	CalculateReadyAndVisibleSet();
+	if (bUsePreliminarySet)
+		CalculateReadyAndVisibleSetAccordingToPreliminary();
 
 	// Сформировать список ожидающих карт высот
 	ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
 	_setAwaitingHeightmaps.clear();
+}
+
+std::vector<TerrainObjectID> CTerrainManager::CTerrainManagerImpl::GetObjsInFrustum(const std::set<TerrainObjectID>& objsToCheck) const
+{
+	std::vector<TerrainObjectID> result;
+
+	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
+	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
+
+	for (TerrainObjectID ID : objsToCheck)
+	{
+		const CInternalTerrainObject* pObj = nullptr;
+
+		auto it = _mapId2Object.find(ID);
+		if (it == _mapId2Object.end())
+		{
+			LogMessage("CTerrainManagerImpl::GetObjsInFrustum: unknown object ID: %d", ID);
+			continue;
+		}
+
+		pObj = it->second;
+
+		pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
+
+		if (!_pVisibilityManager->CheckOBBInCamera(ToVisManVec3(pObj->GetPos()), ToVisManVec3(pObj->GetX()), ToVisManVec3(pObj->GetY()), ToVisManVec3(pObj->GetZ()), ToVisManVec3(pObj->GetHalfSizes())))
+			continue;
+
+		//@{ Проверка объектов на другой стороне Земли
+		bool bFullBackSided = true;
+
+		for (size_t i = 0; i < (*vecRefNormals).size(); i++)
+		{
+			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefNormals)[i])) < 0)
+			{
+				bFullBackSided = false;
+				break;
+			}
+		}
+
+		if (!bFullBackSided)
+			result.push_back(pObj->GetID());
+
+		//@}
+	}
+
+	return result;
+}
+
+bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const
+{
+	for (TerrainObjectID ID : vecObjs)
+	{
+		CInternalTerrainObject* pObj = nullptr;
+
+		auto it = _mapId2Object.find(ID);
+		if (it == _mapId2Object.end())
+		{
+			LogMessage("CTerrainManagerImpl::GetObjsInFrustum: unknown object ID: %d", ID);
+			continue;
+		}
+
+		pObj = it->second;
+
+		if (!pObj->IsDataReady())
+			return false;
+	}
+
+	return true;
 }
 
 // Удаление объектов из списка "на удаление"
@@ -640,8 +729,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		for (auto it = _setNotReadyTriangulations.begin(); it != _setNotReadyTriangulations.end(); )
 		{
-			//			if (s_vecTriangulationsToCreate.size() >= 1)
-			//				break;
+			if (s_vecTriangulationsToCreate.size() >= MAX_TRIANGULATIONS_PER_FRAME)
+				break;
 
 			TerrainObjectID ID = *it;
 			CInternalTerrainObject* pInternalObject = nullptr;
@@ -701,7 +790,7 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		TerrainObjectID ID = pt.first;
 		SObjectTriangulation& objTri = *(pt.second);
 
-		_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params);
+		_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
 
 		bool someNotReadyHF = false;
 
@@ -765,6 +854,9 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDeltatime)
 {
+	if (!_pTerrainVisibility)
+		return;
+
 	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects();
 
 	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end();)
@@ -812,7 +904,7 @@ void CInternalTerrainObject::GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) co
 	}
 }
 
-void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals)
+void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const
 {
 	if (_bReferencePointsCalulated)
 	{
@@ -825,24 +917,34 @@ void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>
 	_vecRefPoints.resize(0);
 	_vecRefNormals.resize(0);
 
-	double dfMinLat =  _params.fMinLattitude;
-	double dfMaxLat =  _params.fMaxLattitude;
+	double dfMinLat = _params.fMinLattitude;
+	double dfMaxLat = _params.fMaxLattitude;
 	double dfMinLong = _params.fMinLongitude;
 	double dfMaxLong = _params.fMaxLongitude;
 
-	double dfDeltaLat = (dfMaxLat - dfMinLat) / 5;
-	double dfDeltaLong = (dfMaxLong - dfMinLong) / 5;
+	const int N = 5;
 
-	for (double dfLat = dfMinLat; dfLat <= dfMaxLat; dfLat += dfDeltaLat)
+	double dfDeltaLat = (dfMaxLat - dfMinLat) / N;
+	double dfDeltaLong = (dfMaxLong - dfMinLong) / N;
+
+	double dfLat = dfMinLat;
+
+	for (int i = 0; i < N + 1; i++)
 	{
-		for (double dfLong = dfMinLong; dfLong <= dfMaxLong; dfLong += dfDeltaLong)
+		double dfLong = dfMinLong;
+
+		for (int j = 0; j < N + 1; j++)
 		{
 			vm::Vector3df vPoint = GetWGS84SurfacePoint(dfLong, dfLat);
 			vm::Vector3df vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
 
 			_vecRefPoints.push_back(vPoint);
 			_vecRefNormals.push_back(vNormal);
+
+			dfLong += dfDeltaLong;
 		}
+
+		dfLat += dfDeltaLat;
 	}
 
 	*out_pvecPoints = &_vecRefPoints;
@@ -851,43 +953,9 @@ void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>
 	_bReferencePointsCalulated = true;
 }
 
-Vector3 ToVec3(const vm::Vector3df& v)
+void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSetAccordingToPreliminary()
 {
-	return Vector3((float)v[0], (float)v[1], (float)v[2]);
-}
-
-void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSet()
-{
-	_vecReadyVisibleObjects.resize(0);
-
-	std::vector<vm::Vector3df>* vecRefPoints = nullptr;
-	std::vector<vm::Vector3df>* vecRefNormals = nullptr;
-
-	for (CInternalTerrainObject* pObj : _setPreliminaryVisibleObjects)
-	{
-		pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
-
-		if (!_pVisibilityManager->CheckOBBInCamera(ToVec3(pObj->GetPos()), ToVec3(pObj->GetX()), ToVec3(pObj->GetY()), ToVec3(pObj->GetZ()), ToVec3(pObj->GetHalfSizes())))
-			continue;
-
-		//@{ Проверка объектов на другой стороне Земли
-		bool bFullBackSided = true;
-
-		for (size_t i = 0; i < (*vecRefNormals).size(); i++)
-		{
-			//if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefPoints)[i])) < 0.2)
-			if (vm::dot_prod(normalize((*vecRefPoints)[i] - _cameraParams.vPos), normalize((*vecRefNormals)[i])) < 0)
-			{
-				bFullBackSided = false;
-				break;
-			}
-		}
-
-		if (!bFullBackSided)
-			_vecReadyVisibleObjects.push_back(pObj->GetID());
-
-		//@}
-	}
+	_vecReadyVisibleObjects = GetObjsInFrustum(_setPreliminaryVisibleObjects);
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const

@@ -120,6 +120,8 @@ private:
 	bool SetShaderParameters(CD3DGraphicsContext* in_pContext, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix);
 	void DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
 
+	float GetTerrainObjectCosToCameraDir(TerrainObjectID ID);
+
 	//bool UpdateTextureLoad();
 
 	PSRenderingMode					_RenderingMode = PSRenderingMode::STANDARD;
@@ -167,6 +169,8 @@ private:
 
 	CTextureLoadQueue*				_pTexturesQueue = nullptr;
 	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;
+
+	CTextureLoadQueue::SortQueueHandler	_sortLoadQueueFunc;
 
 	std::mutex						_objMutex;
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;

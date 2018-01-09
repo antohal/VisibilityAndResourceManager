@@ -4,8 +4,8 @@
 #include <d3dx11async.h>
 #include <algorithm>
 
-CTextureLoadQueue::CTextureLoadQueue(ID3D11Device* device, const FinishedLoadHandler& finishedHandler)
-	:	_device (device), _handler(finishedHandler)
+CTextureLoadQueue::CTextureLoadQueue(ID3D11Device* device, const FinishedLoadHandler& finishedHandler, const SortQueueHandler& sortHandler)
+	:	_device (device), _finishHandler(finishedHandler), _sortHandler(sortHandler)
 {
 	StartTextureLoadThreadFunc();
 }
@@ -40,7 +40,7 @@ void CTextureLoadQueue::AddToLoad(size_t ID, const std::wstring& wsTextureFileNa
 
 		if (asyncTex._loaded)
 		{
-			_handler(ID, asyncTex._pResView);
+			_finishHandler(ID, asyncTex._pResView);
 		}
 	}
 	else
@@ -108,10 +108,24 @@ void CTextureLoadQueue::Process()
 			asyncTex._loaded = true;
 			asyncTex._pResView = pt.second;
 
-			_handler(pt.first, asyncTex._pResView);
+			_finishHandler(pt.first, asyncTex._pResView);
 		}
 
 		_lstJustLoaded.clear();
+	}
+
+	if (_sortHandler)
+	{
+		std::lock_guard<std::mutex> lg(_queueMutex);
+
+		for (SLoadRequest& lr : _lstLoadQueue)
+		{
+			lr._sortValue = _sortHandler(lr._object);
+		}
+
+		_lstLoadQueue.sort([](const SLoadRequest& a, const SLoadRequest& b) -> bool {
+			return a._sortValue > b._sortValue;
+		});
 	}
 }
 

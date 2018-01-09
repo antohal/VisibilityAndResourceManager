@@ -14,8 +14,9 @@ class CTextureLoadQueue
 {
 public:
 	typedef std::function<void(size_t, ID3D11ShaderResourceView*)> FinishedLoadHandler;
+	typedef std::function<float(size_t)> SortQueueHandler;
 
-	CTextureLoadQueue(ID3D11Device* device, const FinishedLoadHandler& finishedHandler);
+	CTextureLoadQueue(ID3D11Device* device, const FinishedLoadHandler& finishedHandler, const SortQueueHandler& sortHandler);
 	~CTextureLoadQueue();
 
 	//@{ This functions must be called from one thread
@@ -35,6 +36,7 @@ private:
 	{
 		size_t			_object = -1;
 		std::wstring	_textureName;
+		float			_sortValue = 0;
 
 		SLoadRequest() {}
 		SLoadRequest(size_t obj, const std::wstring& wsTextureFileName) : _object(obj), _textureName(wsTextureFileName) {}
@@ -48,7 +50,8 @@ private:
 	};
 
 	ID3D11Device*			_device = nullptr;
-	FinishedLoadHandler		_handler;
+	FinishedLoadHandler		_finishHandler;
+	SortQueueHandler		_sortHandler;
 
 	std::thread*			_pTextureLoadThread = nullptr;
 	bool					_bTexturesThreadFinished = false;

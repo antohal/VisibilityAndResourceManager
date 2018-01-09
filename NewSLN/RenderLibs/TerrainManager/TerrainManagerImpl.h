@@ -60,7 +60,7 @@ public:
 		return _bTriangulationsReady && _bTextureReady;
 	}
 
-	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals);
+	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const;
 	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;
 
 	const wchar_t* GetTextureFileName() const {
@@ -106,9 +106,9 @@ private:
 	std::wstring				_textureFileName;
 	std::wstring				_heightmapFileName;
 
-	std::vector<vm::Vector3df>	_vecRefPoints;
-	std::vector<vm::Vector3df>	_vecRefNormals;
-	bool						_bReferencePointsCalulated = false;
+	mutable std::vector<vm::Vector3df>	_vecRefPoints;
+	mutable std::vector<vm::Vector3df>	_vecRefNormals;
+	mutable bool				_bReferencePointsCalulated = false;
 };
 
 
@@ -243,11 +243,14 @@ private:
 
 	void ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords, unsigned int nLod);
 
-	void CalculateReadyAndVisibleSet();
+	void CalculateReadyAndVisibleSetAccordingToPreliminary();
 
 	bool FillTerrainBlockParams(TerrainObjectID ID, STerrainBlockParams& out_Params) const;
 	void UpdateTriangulationsAndHeightfieldLifetime();
 	void UpdateObjectsLifetime(float in_fDeltatime);
+
+	std::vector<TerrainObjectID> GetObjsInFrustum(const std::set<TerrainObjectID>& objsToCheck) const;
+	bool IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const;
 
 	void ManageDeadObjects();
 
@@ -288,7 +291,7 @@ private:
 
 	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
-	std::set<CInternalTerrainObject*>					_setPreliminaryVisibleObjects;
+	std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
 
 
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;

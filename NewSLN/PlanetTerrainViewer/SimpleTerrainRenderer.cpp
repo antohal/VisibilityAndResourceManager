@@ -219,17 +219,29 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 
-
+	_sortLoadQueueFunc = [this](size_t ID) -> float {
+		return GetTerrainObjectCosToCameraDir(ID);
+	};
 
 	_pTexturesQueue = new CTextureLoadQueue(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), [this](size_t ID, ID3D11ShaderResourceView* tex) {
 		TextureLoadFinished(ID, tex);
-	});
+	}, _sortLoadQueueFunc);
 
 	_pHeightmapsQueue = new CTextureLoadQueue(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), [this](size_t ID, ID3D11ShaderResourceView* tex) {
 		HeightmapLoadFinished(ID, tex);
-	});
+	}, _sortLoadQueueFunc);
 
 	InitDebugRenderer();
+}
+
+float CSimpleTerrainRenderer::GetTerrainObjectCosToCameraDir(TerrainObjectID ID)
+{
+	CD3DCamera* pCamera = GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera();
+	
+	D3DXVECTOR3 vObjPos;
+	_pTerrainManager->GetTerrainObjectCenter(ID, &vObjPos);
+
+	return vm::dot_prod(vm::normalize(vm::Vector3df(vObjPos.x, vObjPos.y, vObjPos.z) - pCamera->GetPos()), pCamera->GetDir());
 }
 
 void CSimpleTerrainRenderer::TextureLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex)

@@ -182,40 +182,39 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 		return vm::length(vRefPoint - in_vPos);
 	}
 
-	std::vector<double> vecDists;
-
-	vecDists.reserve(9);
+	static std::vector<double> vecDists;
+	vecDists.resize(9);
 
 	// corners
 	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[0] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[1] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[2] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[3] = (vm::length(in_vPos - vRefPoint));
 
 	// mid points
 
 	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[4] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[5] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[6] = (vm::length(in_vPos - vRefPoint));
 
 	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[7] = (vm::length(in_vPos - vRefPoint));
 	// center
 
 	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
-	vecDists.push_back(vm::length(in_vPos - vRefPoint));
+	vecDists[8] = (vm::length(in_vPos - vRefPoint));
 
 
 	std::sort(vecDists.begin(), vecDists.end(), std::less<double>());
@@ -353,70 +352,3 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
 }
-
-//void CTerrainVisibility::RequestForAlive(TerrainObjectID ID)
-//{
-//	auto it = _mapAliveObjects.find(ID);
-//
-//	// object not alive yet
-//	if (it == _mapAliveObjects.end())
-//	{
-//		_mapAliveObjects[ID] = SAliveObject(ID);
-//
-//		// call handler
-//		if (_newObjectHandler)
-//			_newObjectHandler(ID);
-//	}
-//	else
-//	{
-//		// zero invisible time
-//		it->second.timeBeingInvisible = 0;
-//	}
-//}
-
-
-//void CTerrainVisibility::UpdateObjectsLifetime(float in_fDeltaTime)
-//{
-//	// 1. advance all objects invisible time
-//	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); it++)
-//	{
-//		SAliveObject& aliveObject = it->second;
-//		aliveObject.timeBeingInvisible += in_fDeltaTime;
-//	}
-//
-//	// 2. zero it for those, who visible, and create objects that are visible for the first time
-//	for (TerrainObjectID ID : _setVisibleObjects)
-//	{
-//
-//		auto it = _mapAliveObjects.find(ID);
-//
-//		// object not alive yet
-//		if (it == _mapAliveObjects.end())
-//		{
-//			_mapAliveObjects[ID] = SAliveObject(ID);
-//
-//			// call handler
-//			if (_newObjectHandler)
-//				_newObjectHandler(ID);
-//		}
-//		else
-//		{
-//			// zero invisible time
-//			it->second.timeBeingInvisible = 0;
-//		}
-//	}
-//
-//	// 3. check for dead objects
-//	for (std::map<TerrainObjectID, SAliveObject>::iterator it = _mapAliveObjects.begin(); it != _mapAliveObjects.end(); )
-//	{
-//		if (it->second.timeBeingInvisible > _fMaxInvisibleTime)
-//		{
-//			if (_deleteObjectHandler)
-//				_deleteObjectHandler(it->first);
-//
-//			it = _mapAliveObjects.erase(it);
-//		}
-//		else
-//			it++;
-//	}
-//}
