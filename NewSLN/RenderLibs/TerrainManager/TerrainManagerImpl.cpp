@@ -381,11 +381,17 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height) / 2;
 			_vecLODDiameter[i] = (float)(Rmax*sqrt(2*(1 - cos(dfCurrentLatDiam))));
 
-			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].Width;
-			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].Height;
+			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].AltHeight;
+			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].AltWidth;
 
-			_globalTerrainShaderParams.aPartitionCoefficients[i][0] = _pTerrainObjectManager->GetLodInfos()[i].CountX;
-			_globalTerrainShaderParams.aPartitionCoefficients[i][1] = _pTerrainObjectManager->GetLodInfos()[i].CountY;
+			if (_pTerrainObjectManager->GetLodInfos()[i].HasBorder)
+			{
+				_globalTerrainShaderParams.aVertexCounts[i][0] += 1;
+				_globalTerrainShaderParams.aVertexCounts[i][1] += 1;
+			}
+
+			_globalTerrainShaderParams.aPartitionCoefficients[i][0] = _pTerrainObjectManager->GetLodInfos()[i].CountY;
+			_globalTerrainShaderParams.aPartitionCoefficients[i][1] = _pTerrainObjectManager->GetLodInfos()[i].CountX;
 		}
 
 	}
@@ -1577,8 +1583,15 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	out_pTerrainBlockShaderParams->fMinLongitude = params.fMinLongitude;
 	out_pTerrainBlockShaderParams->fMaxLongitude = params.fMaxLongitude;
 
-	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX * params.fLongitude—utCoeff;
-	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY * params.fLattitudeCutCoeff;
+	out_pTerrainBlockShaderParams->nCountX = pHeightfield->Config.nCountX * params.fLattitudeCutCoeff;
+	out_pTerrainBlockShaderParams->nCountY = pHeightfield->Config.nCountY * params.fLongitude—utCoeff;
+
+	if (out_pTerrainBlockShaderParams->nCountX < 2)
+		out_pTerrainBlockShaderParams->nCountX = 2;
+
+	if (out_pTerrainBlockShaderParams->nCountY < 2)
+		out_pTerrainBlockShaderParams->nCountY = 2;
+
 
 
 	out_pTerrainBlockShaderParams->fLongitudeCoeff = params.fLongitude—utCoeff;
