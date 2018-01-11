@@ -252,6 +252,9 @@ private:
 	std::vector<TerrainObjectID> GetObjsInFrustum(const std::set<TerrainObjectID>& objsToCheck) const;
 	bool IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const;
 
+	bool IsObjectInFrustumAndNotBacksided(TerrainObjectID ID) const;
+	bool IsObjectDataReady(TerrainObjectID ID) const;
+
 	void ManageDeadObjects();
 
 	//@{ Main objects
@@ -289,7 +292,6 @@ private:
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 	std::set<TerrainObjectID>							_setObjectsToDelete;
 
-	std::set<TerrainObjectID>							_setPreliminaryVisibleObjectIDs;
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
 	std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
 

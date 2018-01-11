@@ -18,6 +18,10 @@ public:
 	CTerrainVisibility(CTerrainObjectManager*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
 	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
+	
+	bool	UpdateReadyAndPreliminaryVisibleSet(std::set<TerrainObjectID>& out_setReadyAndVisible,
+		const std::function<bool(TerrainObjectID)>& checkReadyFunc);
+
 	void	SetLastLODDistanceOnSurface(double in_dfDistM) {
 		_dfLastLODDistanceOnEarth = in_dfDistM;
 	}
@@ -48,7 +52,12 @@ private:
 		NOT_READY = 2,
 	};
 
-	EUpdateVisibilityResult UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos);
+	EUpdateVisibilityResult UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos,
+		const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
+		const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc);
+
+	void UpdateFinalVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos, std::vector<TerrainObjectID>& out_vecReadyAndVisible, 
+		const std::function<bool(TerrainObjectID)>& checkVisFunc, const std::function<bool(TerrainObjectID)>& checkReadyFunc);
 
 	CTerrainObjectManager*					_objectManager = nullptr;
 
@@ -59,6 +68,9 @@ private:
 
 	double									_dfLastLODDistanceOnEarth = -1;
 	double									_dfDistancesCoeff = 1.f;
+
+	unsigned int							_uiLastMaxDepth = 0;
+	vm::Vector3df							_vLastPos = vm::Vector3df(0, 0, 0);
 
 	std::set<TerrainObjectID>				_setVisibleObjects;
 

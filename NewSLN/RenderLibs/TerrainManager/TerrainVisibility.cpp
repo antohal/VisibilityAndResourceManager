@@ -77,6 +77,9 @@ void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::
 
 	UpdateVisibleBlocks(vPos, uiMaxDepth);
 
+	_uiLastMaxDepth = uiMaxDepth;
+	_vLastPos = in_vPos;
+
 	//UpdateObjectsLifetime(in_fDeltaTime);
 }
 
@@ -274,7 +277,7 @@ void CTerrainVisibility::UpdateVisibleBlocks(const vm::Vector3df & in_vPos, unsi
 	{
 		for (TerrainObjectID rootID : _vecRootObjects)
 		{
-			UpdateVisibilityRecursive(rootID, in_vPos);
+			UpdateVisibilityRecursive(rootID, in_vPos, [this](TerrainObjectID ID) {AddVisibleBlock(ID); }, nullptr);
 		}
 	}
 }
@@ -287,9 +290,14 @@ void CTerrainVisibility::AddVisibleBlock(TerrainObjectID ID)
 	_setVisibleObjects.insert(ID);
 }
 
-CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df & in_vPos)
+CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df & in_vPos,
+	const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
+	const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc)
 {
 	if (!_objectManager->IsObjectValid(ID))
+		return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
+
+	if (in_pAdditionalCheckFunc && !(*in_pAdditionalCheckFunc)(ID))
 		return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
 
 	bool bRes = false;
@@ -302,8 +310,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 	if (objectDepth == requiredLodDepth)
 	{
-		AddVisibleBlock(ID);
-
+		in_AddVisObjFunc(ID);
 		return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
 	}
 
@@ -315,7 +322,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 		if (vecChildren.size() == 0)
 		{
-			AddVisibleBlock(ID);
+			in_AddVisObjFunc(ID);
 
 			return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
 		}
@@ -329,7 +336,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 		{
 			TerrainObjectID childBlock = vecChildren[i];
 
-			if (UpdateVisibilityRecursive(childBlock, in_vPos) == CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE)
+			if (UpdateVisibilityRecursive(childBlock, in_vPos, in_AddVisObjFunc, in_pAdditionalCheckFunc) == CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE)
 			{
 				bSomeChildVisible = true;
 			}
@@ -343,7 +350,7 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 		{
 			for (TerrainObjectID invisibleChild : vecInvisibleChilds)
 			{
-				AddVisibleBlock(invisibleChild);
+				in_AddVisObjFunc(invisibleChild);
 			}
 
 			return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
@@ -351,4 +358,41 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 	}
 
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
+}
+
+
+void  CTerrainVisibility::UpdateFinalVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos, std::vector<TerrainObjectID>& out_vecReadyAndVisible,
+	const std::function<bool(TerrainObjectID)>& checkVisFunc, const std::function<bool(TerrainObjectID)>& checkReadyFunc)
+{
+	//if (!_objectManager->IsObjectValid(ID))
+	//	return;
+
+
+}
+
+bool CTerrainVisibility::UpdateReadyAndPreliminaryVisibleSet(std::set<TerrainObjectID>& out_setReadyAndVisible,
+	const std::function<bool(TerrainObjectID)>& checkReadyFunc)
+{
+	/*out_setReadyAndVisible.clear();
+
+	auto fnAddVisibleBlock = [&](TerrainObjectID ID)
+	{
+		if (checkReadyFunc(ID))
+			out_setReadyAndVisible.insert(ID);
+	};
+
+	if (_uiLastMaxDepth == 0)
+	{
+		for (TerrainObjectID rootID : _vecRootObjects)
+			fnAddVisibleBlock(rootID);
+	}
+	else
+	{
+		for (TerrainObjectID rootID : _vecRootObjects)
+		{
+			UpdateFinalVisibilityRecursive(rootID, _vLastPos, out_vecReadyAndVisible, checkVisFunc, checkReadyFunc);
+		}
+	}*/
+
+	return false;
 }
