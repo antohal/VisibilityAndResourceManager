@@ -11,6 +11,33 @@
 
 #define MAX_LODS 20
 
+class CTerrainObjectVisibleSubtree
+{
+public:
+
+	CTerrainObjectVisibleSubtree(CTerrainObjectManager* in_pObjectManager) : _pObjectManager(in_pObjectManager) {}
+
+	void setToObjects(const std::set<TerrainObjectID>& setObjects) {
+		_setObjects = setObjects;
+	}
+
+	const std::set<TerrainObjectID>&	objects() const {
+		return _setObjects;
+	}
+
+	bool hasObject(TerrainObjectID ID) const {
+		return _setObjects.find(ID) != _setObjects.end();
+	}
+
+	void update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects);
+
+private:
+
+	std::set<TerrainObjectID>	_setObjects;
+
+	CTerrainObjectManager*		_pObjectManager = nullptr;
+};
+
 class CTerrainVisibility
 {
 public:
@@ -19,9 +46,6 @@ public:
 
 	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
 	
-	bool	UpdateReadyAndPreliminaryVisibleSet(std::set<TerrainObjectID>& out_setReadyAndVisible,
-		const std::function<bool(TerrainObjectID)>& checkReadyFunc);
-
 	void	SetLastLODDistanceOnSurface(double in_dfDistM) {
 		_dfLastLODDistanceOnEarth = in_dfDistM;
 	}
@@ -55,9 +79,6 @@ private:
 	EUpdateVisibilityResult UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos,
 		const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
 		const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc);
-
-	void UpdateFinalVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos, std::vector<TerrainObjectID>& out_vecReadyAndVisible, 
-		const std::function<bool(TerrainObjectID)>& checkVisFunc, const std::function<bool(TerrainObjectID)>& checkReadyFunc);
 
 	CTerrainObjectManager*					_objectManager = nullptr;
 

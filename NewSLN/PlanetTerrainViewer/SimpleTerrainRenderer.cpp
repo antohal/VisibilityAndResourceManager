@@ -38,7 +38,7 @@ CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 	LogMessage("Removing terrain object '%d'", _ID);
 }
 
-void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext)
+bool CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext)
 {
 	// Set vertex buffer stride and offset.
 	unsigned int stride = sizeof(SVertex);
@@ -49,7 +49,7 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 	if (!pTriangulation)
 	{
-		return;
+		return false;
 	}
 
 	ID3D11Buffer* pVertexBuffer = pTriangulation->pVertexBuffer;
@@ -69,7 +69,10 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 		_owner->GetHeightfieldConverter()->UnlockDeviceContext();
 
+		return true;
 	}
+
+	return false;
 }
 
 unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
@@ -307,11 +310,12 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 {
 	_pTextBlock = block;
 
-	_uiTriangulationsCountParam = _pTextBlock->AddParameter(L"Количество триангуляций в памяти");
-	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Количество карт высот в памяти");
+	_uiTriangulationsCountParam = _pTextBlock->AddParameter(L"Триангуляций");
+	_uiPotentiallyVisibleCount = _pTextBlock->AddParameter(L"Потенциально видимых объектов");
+	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Карт высот");
 
-	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Количество текстур на загрузку:");
-	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Количество карт высот на загрузку:");
+	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Текстур в очереди:");
+	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Карт высот в очереди:");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -362,11 +366,12 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		if (!pObj || pObj->GetIndexCount() == 0)
 			continue;
 
-		pObj->SetIndexAndVertexBuffers(in_pContext);
+		if (pObj->SetIndexAndVertexBuffers(in_pContext))
+		{
+			DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), pObj->GetTextureResourceView(), pObj->GetIndexCount());
 
-		DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), pObj->GetTextureResourceView(), pObj->GetIndexCount());
-
-		numPrimitives += pObj->GetIndexCount() / 3;
+			numPrimitives += pObj->GetIndexCount() / 3;
+		}
 	}
 
 	_visibleObjsCount = _lstRenderQueue.size();
@@ -380,6 +385,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		int heightmapsCountToLoad = _pHeightmapsQueue->CountInQueue();
 
 		_pTextBlock->SetParameterValue(_uiTriangulationsCountParam, _pTerrainManager->GetTriangulationsCount());
+		_pTextBlock->SetParameterValue(_uiPotentiallyVisibleCount, _pTerrainManager->GetPotentiallyVisibleObjectsCount());
 		_pTextBlock->SetParameterValue(_uiHeightfieldsCountParam, _pTerrainManager->GetHeightfieldsCount());
 
 		_pTextBlock->SetParameterValue(_uiTexturesQueueParam, texturesCountToLoad);

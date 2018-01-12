@@ -15,6 +15,8 @@
 #include <thread>
 #include <chrono>
 
+#define MAX_LOD_LEVELS 20
+
 class CInternalTerrainObject  //: public C3DBaseObject
 {
 public:
@@ -111,7 +113,6 @@ private:
 	mutable bool				_bReferencePointsCalulated = false;
 };
 
-
 class CTerrainManager::CTerrainManagerImpl // : public C3DBaseTerrainObjectManager
 {
 public:
@@ -157,6 +158,10 @@ public:
 	size_t GetTriangulationsCount() const;
 
 	size_t GetHeightfieldsCount() const;
+
+	size_t GetPotentiallyVisibleObjectsCount() const {
+		return _pPreliminaryVisibleSubtree->objects().size();
+	}
 
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
@@ -256,6 +261,9 @@ private:
 	bool IsObjectDataReady(TerrainObjectID ID) const;
 
 	void ManageDeadObjects();
+	
+	void UpdatePreliminaryObjects();
+
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -292,8 +300,12 @@ private:
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 	std::set<TerrainObjectID>							_setObjectsToDelete;
 
+	mutable std::mutex									_dataReadyMutex;
+	std::set<TerrainObjectID>							_setDataReadyObjects;
+
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
-	std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
+	//std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
+	CTerrainObjectVisibleSubtree*						_pPreliminaryVisibleSubtree = nullptr;
 
 
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;

@@ -306,6 +306,8 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 
 void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecChildren)
 {
+	out_vecChildren.resize(0);
+
 	if (!IsObjectHasSubhierarchy(ID))
 		return;
 
@@ -322,7 +324,6 @@ void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::ve
 	unsigned short startX = nextLodInfo.CountX * X;
 	unsigned short startY = nextLodInfo.CountY * Y;
 
-	out_vecChildren.clear();
 	out_vecChildren.reserve(nextLodInfo.CountX * nextLodInfo.CountY);
 
 	for (unsigned short iX = 0; iX < nextLodInfo.CountX; iX++)

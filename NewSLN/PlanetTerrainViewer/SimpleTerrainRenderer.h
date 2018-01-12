@@ -27,7 +27,7 @@ protected:
 
 	~CSimpleTerrainRenderObject();
 
-	void SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext);
+	bool SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext);
 	unsigned int GetIndexCount() const;
 
 	ID3D11ShaderResourceView* GetTextureResourceView() { return _pTextureSRV; }
@@ -163,6 +163,7 @@ private:
 
 	UINT							_uiTriangulationsCountParam = -1;
 	UINT							_uiHeightfieldsCountParam = -1;
+	UINT							_uiPotentiallyVisibleCount = -1;
 
 	UINT							_uiTexturesQueueParam = -1;
 	UINT							_uiHeightmapsQueueParam = -1;

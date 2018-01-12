@@ -186,6 +186,11 @@ size_t CTerrainManager::GetHeightfieldsCount() const
 	return _implementation->GetHeightfieldsCount();
 }
 
+size_t CTerrainManager::GetPotentiallyVisibleObjectsCount() const
+{
+	return _implementation->GetPotentiallyVisibleObjectsCount();
+}
+
 //@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 size_t CTerrainManager::GetNewObjectsCount() const
 {
@@ -331,6 +336,7 @@ CTerrainManager::CTerrainManagerImpl::CTerrainManagerImpl()
 	_vecLODDiameter[0] = (float) (2 * Rmin);
 
 	_pTerrainObjectManager = new CTerrainObjectManager;
+	_pPreliminaryVisibleSubtree = new CTerrainObjectVisibleSubtree(_pTerrainObjectManager);
 }
 
 CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
@@ -340,6 +346,9 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 
 	if (_pTerrainObjectManager)
 		delete _pTerrainObjectManager;
+
+	if (_pPreliminaryVisibleSubtree)
+		delete _pPreliminaryVisibleSubtree;
 
 	if (_pTerrainVisibility)
 		delete _pTerrainVisibility;
@@ -571,7 +580,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	if (bAllReady)
 	{
 		// Swap visible sets
-		_setPreliminaryVisibleObjects = _pTerrainVisibility->GetVisibleObjects();
+		_pPreliminaryVisibleSubtree->setToObjects(_pTerrainVisibility->GetVisibleObjects());
 	}
 	else
 	{
@@ -582,17 +591,11 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 			bUsePreliminarySet = false;
 			_vecReadyVisibleObjects = vecCurrentVisibleObjsInFrustum;
 		}
-		/*else
+		else
 		{
-			if (_pTerrainVisibility)
-			{
-				std::set<TerrainObjectID> setPreliminaryVisibleSet;
-				if (_pTerrainVisibility->UpdateReadyAndPreliminaryVisibleSet(setPreliminaryVisibleSet, [this](TerrainObjectID ID) -> bool {	return IsObjectDataReady(ID); }))
-				{
-					_setPreliminaryVisibleObjects = setPreliminaryVisibleSet;
-				}
-			}
-		}*/
+			UpdatePreliminaryObjects();
+		}
+
 	}
 
 	// поместить на удаление все объекты, которые должны быть удалены немедленно
@@ -609,6 +612,11 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	// Сформировать список ожидающих карт высот
 	ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
 	_setAwaitingHeightmaps.clear();
+}
+
+void CTerrainManager::CTerrainManagerImpl::UpdatePreliminaryObjects()
+{
+	_pPreliminaryVisibleSubtree->update(_pTerrainVisibility->GetVisibleObjects(), _setDataReadyObjects);
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsObjectInFrustumAndNotBacksided(TerrainObjectID ID) const
@@ -663,18 +671,8 @@ std::vector<TerrainObjectID> CTerrainManager::CTerrainManagerImpl::GetObjsInFrus
 
 bool CTerrainManager::CTerrainManagerImpl::IsObjectDataReady(TerrainObjectID ID) const
 {
-	CInternalTerrainObject* pObj = nullptr;
-
-	auto it = _mapId2Object.find(ID);
-	if (it == _mapId2Object.end())
-	{
-		LogMessage("CTerrainManagerImpl::GetObjsInFrustum: unknown object ID: %d", ID);
-		return false;
-	}
-
-	pObj = it->second;
-
-	return pObj->IsDataReady();
+	std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+	return _setDataReadyObjects.find(ID) != _setDataReadyObjects.end();
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const
@@ -722,6 +720,11 @@ void CTerrainManager::CTerrainManagerImpl::ManageDeadObjects()
 			}
 		}
 
+		// Удалить из списка готовых объектов
+		{
+			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+			_setDataReadyObjects.erase(deadObj);
+		}
 	}
 }
 
@@ -777,6 +780,12 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 				itExisting->second._timeSinceDead = 0;
 
 				pInternalObject->SetTriangulationReady(&itExisting->second._triangulation);
+
+				if (pInternalObject->IsDataReady())
+				{
+					std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+					_setDataReadyObjects.insert(ID);
+				}
 
 				it = _setNotReadyTriangulations.erase(it);
 
@@ -846,7 +855,15 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		auto it = _mapId2Object.find(ID);
 
 		if (it != _mapId2Object.end())
+		{
 			it->second->SetTriangulationReady(&objTri._triangulation);
+
+			if (it->second->IsDataReady())
+			{
+				std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+				_setDataReadyObjects.insert(ID);
+			}
+		}
 		else
 			objTri._alive = false;
 	}
@@ -878,10 +895,9 @@ void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDelta
 
 		bool bAlive = false;
 
-		auto itPrelIt = _setPreliminaryVisibleObjects.find(ID);
 		auto itVisIt = setVisibleObjs.find(ID);
 
-		if (itPrelIt != _setPreliminaryVisibleObjects.end() ||
+		if (_pPreliminaryVisibleSubtree->hasObject(ID) ||
 			itVisIt != setVisibleObjs.end())
 		{
 			bAlive = true;
@@ -967,7 +983,7 @@ void CInternalTerrainObject::CalculateReferencePoints(std::vector<vm::Vector3df>
 
 void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSetAccordingToPreliminary()
 {
-	_vecReadyVisibleObjects = GetObjsInFrustum(_setPreliminaryVisibleObjects);
+	_vecReadyVisibleObjects = GetObjsInFrustum(_pPreliminaryVisibleSubtree->objects());
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const
@@ -1221,6 +1237,12 @@ void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)
 	if (it != _mapId2Object.end())
 	{
 		it->second->SetTextureReady();
+
+		if (it->second->IsDataReady())
+		{
+			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+			_setDataReadyObjects.insert(ID);
+		}
 	}
 }
 
@@ -1397,7 +1419,15 @@ CInternalTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(Terra
 	}
 
 	if (!_pHeightfieldConverter)
+	{
 		pObject->SetTriangulationReady(nullptr);
+
+		if (pObject->IsDataReady())
+		{
+			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+			_setDataReadyObjects.insert(ID);
+		}
+	}
 
 	_vecNewObjectIDs.push_back(pObject->GetID());
 
@@ -1549,12 +1579,12 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	{
 		if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
 		{
-			if ((_setPreliminaryVisibleObjects.find(neighbours[i]) == _setPreliminaryVisibleObjects.end()) &&
+			if (_pPreliminaryVisibleSubtree->hasObject(neighbours[i]) &&
 				(_pTerrainObjectManager->GetObjectDepth(neighbours[i]) != 0))
 			{
 				neighbours[i] = _pTerrainObjectManager->GetTerrainObjectParent(neighbours[i]);
 
-				if (_setPreliminaryVisibleObjects.find(neighbours[i]) == _setPreliminaryVisibleObjects.end())
+				if (_pPreliminaryVisibleSubtree->hasObject(neighbours[i]))
 					neighbours[i] = INVALID_TERRAIN_OBJECT_ID;
 			}
 
@@ -1732,5 +1762,3 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	else
 		out_pTerrainBlockShaderParams->uiAdjacentLOD[3] = -1;
 }
-
-//@}

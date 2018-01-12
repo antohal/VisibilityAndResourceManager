@@ -97,6 +97,9 @@ public:
 	// Получить количество готовых карт высот
 	size_t GetHeightfieldsCount() const;
 
+	// Получить количество потенциально видимых объектов
+	size_t GetPotentiallyVisibleObjectsCount() const;
+
 	//@{ Список объектов для которых нужно загрузить карту высот
 	size_t GetNewHeightmapsCount() const;
 	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;

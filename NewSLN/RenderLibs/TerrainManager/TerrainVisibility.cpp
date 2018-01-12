@@ -361,38 +361,47 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 }
 
 
-void  CTerrainVisibility::UpdateFinalVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos, std::vector<TerrainObjectID>& out_vecReadyAndVisible,
-	const std::function<bool(TerrainObjectID)>& checkVisFunc, const std::function<bool(TerrainObjectID)>& checkReadyFunc)
+
+void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects)
 {
-	//if (!_objectManager->IsObjectValid(ID))
-	//	return;
+	std::vector<TerrainObjectID> vecChildObjects;
 
+	std::vector<TerrainObjectID> vecObjsToDelete;
+	std::vector<TerrainObjectID> vecObjsToInsert;
 
-}
+	// При построении алгоритма учитывалось одно простое правило, которое должно соблюдаться: то что если виден парент, то чилды не могут быть видны
+	// и наоборот. Это касается как списка видимых объектов, так и списка предварительно видимых объектов
 
-bool CTerrainVisibility::UpdateReadyAndPreliminaryVisibleSet(std::set<TerrainObjectID>& out_setReadyAndVisible,
-	const std::function<bool(TerrainObjectID)>& checkReadyFunc)
-{
-	/*out_setReadyAndVisible.clear();
-
-	auto fnAddVisibleBlock = [&](TerrainObjectID ID)
+	for (TerrainObjectID ID : _setObjects)
 	{
-		if (checkReadyFunc(ID))
-			out_setReadyAndVisible.insert(ID);
-	};
+		//1. Если в блоке есть хоть один чилд, который и видим и готов, то разбиваем, если все чилды готовы:
 
-	if (_uiLastMaxDepth == 0)
-	{
-		for (TerrainObjectID rootID : _vecRootObjects)
-			fnAddVisibleBlock(rootID);
-	}
-	else
-	{
-		for (TerrainObjectID rootID : _vecRootObjects)
+		bool hasVisibleAndReadyChildren = false;
+		bool allChildrenReady = true;
+
+		_pObjectManager->GetTerrainObjectChildren(ID, vecChildObjects);
+		for (TerrainObjectID childID : vecChildObjects)
 		{
-			UpdateFinalVisibilityRecursive(rootID, _vLastPos, out_vecReadyAndVisible, checkVisFunc, checkReadyFunc);
-		}
-	}*/
+			bool isVisible = setVisObjects.find(childID) != setVisObjects.end();
+			bool isReady = setDataReadyObjects.find(childID) != setDataReadyObjects.end();
 
-	return false;
+			if (!isReady)
+				allChildrenReady = false;
+
+			if (isVisible && isReady)
+				hasVisibleAndReadyChildren = true;
+		}
+
+		if (hasVisibleAndReadyChildren && allChildrenReady)
+		{
+			vecObjsToInsert.insert(vecObjsToInsert.end(), vecChildObjects.begin(), vecChildObjects.end());
+			vecObjsToDelete.push_back(ID);
+		}
+	}
+
+	for (TerrainObjectID ID : vecObjsToDelete)
+		_setObjects.erase(ID);
+
+	for (TerrainObjectID ID : vecObjsToInsert)
+		_setObjects.insert(ID);
 }
