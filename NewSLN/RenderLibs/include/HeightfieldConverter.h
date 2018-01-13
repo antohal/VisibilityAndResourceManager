@@ -75,6 +75,9 @@ struct STriangulation
 	unsigned int				nVertexCount = 0;			// количество вершин
 	unsigned int				nIndexCount = 0;			// количество индексов
 
+	unsigned int				nCountLat = 0;				// количество вершин по широте
+	unsigned int				nCountLong = 0;				// количество вершин по долготе
+
 	STriangulationCoordsInfo	Info;
 };
 

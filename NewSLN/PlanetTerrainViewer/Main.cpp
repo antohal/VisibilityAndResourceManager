@@ -205,11 +205,11 @@ void GenerateDatabaseInfo(const char* fileName)
 	fclose(fp);
 }
 
-//#define SCREEN_X 2560
-//#define SCREEN_Y 1440
+#define SCREEN_X 1280
+#define SCREEN_Y 1024
 
-#define SCREEN_X 1024
-#define SCREEN_Y 768
+//#define SCREEN_X 1024
+//#define SCREEN_Y 768
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {

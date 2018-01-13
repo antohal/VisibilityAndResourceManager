@@ -167,6 +167,7 @@
     <ClCompile Include="..\Common\vecmath.cpp" />
     <ClCompile Include="..\Common\wgs84.cpp" />
     <ClCompile Include="TerrainManagerImpl.cpp" />
+    <ClCompile Include="TerrainObject.cpp" />
     <ClCompile Include="TerrainObjectManager.cpp" />
     <ClCompile Include="TerrainVisibility.cpp" />
   </ItemGroup>
@@ -179,6 +180,7 @@
     <ClInclude Include="..\include\TerrainManager.h" />
     <ClInclude Include="..\include\TerrainShaderParams.h" />
     <ClInclude Include="TerrainManagerImpl.h" />
+    <ClInclude Include="TerrainObject.h" />
     <ClInclude Include="TerrainObjectManager.h" />
     <ClInclude Include="TerrainVisibility.h" />
   </ItemGroup>
