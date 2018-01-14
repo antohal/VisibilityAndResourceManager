@@ -213,9 +213,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	//_pHeightfieldConverter->SetHeightScale(30.f);
-	//_pHeightfieldConverter->SetHeightScale(20.f);
-
+	_pHeightfieldConverter->SetHeightScale(20.f);
 	//_pHeightfieldConverter->SetHeightScale(0);
 
 	//_pHeightfieldConverter->SetNormalDivisionAngles(1, 2);
@@ -566,6 +564,9 @@ void CSimpleTerrainRenderer::RenderDebug()
 	D3DXMATRIX d3dView;
 	GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera()->GetViewMatrix(d3dView);
 
+	vm::Vector3df vCamPos = GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera()->GetPos();
+	D3DXVECTOR3 cameraPosition(vCamPos[0], vCamPos[1], vCamPos[2]);
+
 	DirectX::XMMATRIX matView;
 	memcpy(&matView, d3dView, sizeof(matView));
 
@@ -583,6 +584,27 @@ void CSimpleTerrainRenderer::RenderDebug()
 	{
 		D3DXVECTOR3 corners[8];
 		_pTerrainManager->GetTerrainObjectBoundBoxCorners(ID, corners);
+
+		D3DXVECTOR3 objectProjection;
+		if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection))
+		{
+			const float fCrossWidth = 0.1 * D3DXVec3Length(&(objectProjection - cameraPosition));
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x - fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x + fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y - fCrossWidth, objectProjection.z), XMFLOAT4(0, 1, 0, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y + fCrossWidth, objectProjection.z), XMFLOAT4(0, 1, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z - fCrossWidth), XMFLOAT4(0, 0, 0.7, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z + fCrossWidth), XMFLOAT4(0, 0, 0.7, 1))
+			);
+		}
 
 		XMFLOAT3 vCorners[8];
 		for (int i = 0; i < 8; i++)

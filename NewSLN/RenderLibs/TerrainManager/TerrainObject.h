@@ -3,6 +3,7 @@
 #include "vecmath.h"
 #include "TerrainManager.h"
 #include "HeightfieldConverter.h"
+#include "TerrainObjectManager.h"
 
 #include <vector>
 #include <string>
@@ -40,9 +41,12 @@ public:
 		return _pTriangulation;
 	}
 
-	virtual bool							IsDataReady() const {
+	virtual bool IsDataReady() const {
 		return _bTriangulationsReady && _bTextureReady;
 	}
+
+	// returns true if in_vPos is above. Position returned in vertex space!
+	bool CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection);
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const;
 	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;

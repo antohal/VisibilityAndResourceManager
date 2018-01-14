@@ -63,7 +63,6 @@ private:
 
 	double			GetDistance(TerrainObjectID ID, const vm::Vector3df& in_vPos, double& out_Diameter);
 	unsigned int	GetLodDepth(double dist) const;
-	double			AngularDistance(double a1, double a2);
 
 	void			UpdateVisibleBlocks(const vm::Vector3df& in_vPos, unsigned int uiMaxDepth);
 	void			AddVisibleBlock(TerrainObjectID ID);

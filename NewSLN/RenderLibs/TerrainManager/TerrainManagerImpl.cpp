@@ -43,6 +43,11 @@ static Vector3 FromVec3(const Vector3f& v)
 }
 
 
+D3DXVECTOR3 ToD3DXVec3(const vm::Vector3df& v)
+{
+	return D3DXVECTOR3(v[0], v[1], v[2]);
+}
+
 CTerrainManager::CTerrainManager()
 {
 	LogInit("TerrainManager.log");
@@ -211,6 +216,11 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 void CTerrainManager::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * out_pvCenter) const
 {
 	_implementation->GetTerrainObjectCenter(ID, out_pvCenter);
+}
+
+bool CTerrainManager::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection) const
+{
+	return _implementation->GetTerrainObjectProjection(ID, in_pvPosFrom, out_pvProjection);
 }
 
 void CTerrainManager::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
@@ -1113,7 +1123,7 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectI
 	out_pvCenter->z = vPoint[2];
 }
 
-void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
+CTerrainObject*	CTerrainManager::CTerrainManagerImpl::GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner) const
 {
 	CTerrainObject* pObj = nullptr;
 	{
@@ -1126,13 +1136,47 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners(Terra
 		}
 	}
 
-	if (!pObj)
+	if (!pObj && !assertOwner.empty())
 	{
-		LogMessage("Error! CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners, object ID %d is deleted.", ID);
-		return;
+		LogMessage("Error! %s, object ID %d is not exist.", assertOwner.c_str(), ID);
+		return nullptr;
 	}
 
-	pObj->GetBoundBoxCorners(out_pvCorners);
+	return pObj;
+}
+
+bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_vPosFrom, vm::Vector3df& out_vProjection) const
+{
+	if (CTerrainObject* pObj = GetTerrainObject(ID))
+		return pObj->CalculateProjectionOnSurface(in_vPosFrom, out_vProjection);
+
+	double dfLong, dfLat;
+	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(ID, in_vPosFrom, dfLat, dfLong);
+
+	out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
+
+	return isPositionAboveBlock;
+}
+
+bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection) const
+{
+	vm::Vector3df vProjection(0, 0, 0);
+	bool result = GetTerrainObjectProjection(ID, vm::Vector3df(in_pvPosFrom->x, in_pvPosFrom->y, in_pvPosFrom->z), vProjection);
+
+	if (out_pvProjection)
+	{
+		out_pvProjection->x = vProjection[0];
+		out_pvProjection->y = vProjection[1];
+		out_pvProjection->z = vProjection[2];
+	}
+
+	return result;
+}
+
+void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
+{
+	if (CTerrainObject* pObj = GetTerrainObject(ID, "GetTerrainObjectBoundBoxCorners"))
+		pObj->GetBoundBoxCorners(out_pvCorners);
 }
 
 void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)

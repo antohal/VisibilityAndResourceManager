@@ -97,6 +97,8 @@ public:
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 
+	bool GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvProjection) const;
+
 	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
 
 	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
@@ -169,6 +171,9 @@ private:
 	
 	void UpdatePreliminaryObjects();
 
+
+	CTerrainObject*	GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner = std::string()) const;
+	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection) const;
 
 	//@{ Main objects
 	//---------------------- New mechanism

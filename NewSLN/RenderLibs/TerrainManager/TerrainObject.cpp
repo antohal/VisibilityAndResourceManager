@@ -117,15 +117,51 @@ void CTerrainObject::initVertexBuffer()
 		return;
 	}
 
-
-
-
-	_apQuadVertices = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1)*6];
+	_apQuadVertices = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1) * 6];
 		
 	_pHeightfieldConverter->UnmapTriangulation(_pTriangulation, _apQuadVertices, nullptr);
-
 }
 
 void CTerrainObject::calculatePreciseBoundBox()
 {
+}
+
+// returns true if in_vPos is above
+bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection)
+{
+	double dfLong, dfLat;
+	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(_ID, in_vPos, dfLat, dfLong);
+
+	if (!_apQuadVertices)
+	{
+		out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
+		return isPositionAboveBlock;
+	}
+
+	//out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
+
+	STerrainBlockParams params;
+	GetObjectManager()->ComputeTerrainObjectParams(_ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfLatCoeff = (dfLat - dfMinLat) / (dfMaxLat - dfMinLat);
+	double dfLongCoeff = (dfLong - dfMinLong) / (dfMaxLong - dfMinLong);
+
+	unsigned int iQuadLat = static_cast<unsigned int>(round((_pTriangulation->nCountLat - 2) * dfLatCoeff));
+	unsigned int iQuadLong = static_cast<unsigned int>(round((_pTriangulation->nCountLong - 2) * dfLongCoeff));
+
+	SVertex* pQuadStartVertex = &_apQuadVertices[(iQuadLong * (_pTriangulation->nCountLat - 1) + iQuadLat) * 6];
+
+	SVertex v0 = pQuadStartVertex[0];
+	SVertex v1 = pQuadStartVertex[1];
+	SVertex v2 = pQuadStartVertex[2];
+	SVertex v3 = pQuadStartVertex[5];
+
+	out_vProjection = vm::Vector3df(v0.position.x, v0.position.y, v0.position.z);
+
+	return isPositionAboveBlock;
 }

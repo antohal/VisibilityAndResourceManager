@@ -25,16 +25,6 @@ CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, flo
 
 	_vecRootObjects = objectManager->GetRootObjects();
 }
-//
-//void CTerrainVisibility::SetNewObjectHandler(const std::function<void(TerrainObjectID)>& newObjectHandler)
-//{
-//	_newObjectHandler = newObjectHandler;
-//}
-//
-//void CTerrainVisibility::SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>& deleteObjectHandler)
-//{
-//	_deleteObjectHandler = deleteObjectHandler;
-//}
 
 void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 {
@@ -45,7 +35,7 @@ void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 
 	double heightAboveEarth = fabs(height);
 
-	if (heightAboveEarth < /*_dfLastLODDistanceOnEarth*/_aLodDistances[_uiMaxDepth])
+	if (heightAboveEarth < _aLodDistances[_uiMaxDepth])
 	{
 		double kMax = 1.0;
 		double kMin = _dfLastLODDistanceOnEarth / _aLodDistances[_uiMaxDepth];
@@ -53,7 +43,7 @@ void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 		if (kMin > 1.0)
 			kMin = 1.0;
 
-		_dfDistancesCoeff = vm::lerp(heightAboveEarth / _aLodDistances[_uiMaxDepth] /*_dfLastLODDistanceOnEarth*/, kMin, kMax);
+		_dfDistancesCoeff = vm::lerp(heightAboveEarth / _aLodDistances[_uiMaxDepth], kMin, kMax);
 	}
 }
 
@@ -79,8 +69,6 @@ void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::
 
 	_uiLastMaxDepth = uiMaxDepth;
 	_vLastPos = in_vPos;
-
-	//UpdateObjectsLifetime(in_fDeltaTime);
 }
 
 void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFDimensions, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel)
@@ -101,12 +89,6 @@ void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const st
 	{
 		_aLodDistances[j] = _aLodDistances[j - 1] * 0.5;
 	}
-
-	/*
-	for (size_t i = 1; i < MAX_LODS; i++)
-	{
-		_aLodDistances[i] += 3000.0;
-	}*/
 }
 
 void CTerrainVisibility::SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods)
@@ -155,7 +137,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	{
 		double dfLongBorder = 0;
 
-		if (AngularDistance(dfLong, dfMaxLong) > 0)
+		if (_objectManager->AngularDistance(dfLong, dfMaxLong) > 0)
 		{
 			dfLongBorder = dfMaxLong;
 		}
@@ -172,7 +154,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	{
 		double dfLatBorder = 0;
 
-		if (AngularDistance(dfLat, dfMaxLat) > 0)
+		if (_objectManager->AngularDistance(dfLat, dfMaxLat) > 0)
 		{
 			dfLatBorder = dfMaxLat;
 		}
@@ -222,8 +204,6 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 
 	std::sort(vecDists.begin(), vecDists.end(), std::less<double>());
 
-	//out_Diameter = bbox.radius() * 2;
-
 	return vecDists.front();
 }
 
@@ -243,27 +223,6 @@ unsigned int CTerrainVisibility::GetLodDepth(double dist) const
 		uiDepth--;
 
 	return uiDepth ;
-}
-
-double CTerrainVisibility::AngularDistance(double a1, double a2)
-{
-	double cos1 = cos(a1);
-	double cos2 = cos(a2);
-
-	double sin1 = sin(a1);
-	double sin2 = sin(a2);
-
-	vm::Vector3df v1(cos1, sin1, 0);
-	vm::Vector3df v2(cos2, sin2, 0);
-
-	double angle = acos(vm::dot_prod(v1, v2));
-
-	vm::Vector3df v = vm::cross(v1, v2);
-
-	if (v[2] > 0)
-		angle = -angle;
-
-	return angle;
 }
 
 void CTerrainVisibility::UpdateVisibleBlocks(const vm::Vector3df & in_vPos, unsigned int uiMaxDepth)
@@ -378,7 +337,9 @@ void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVi
 
 		bool hasVisibleAndReadyChildren = false;
 		bool allChildrenReady = true;
+		
 
+		// TODO: check this recursively
 		_pObjectManager->GetTerrainObjectChildren(ID, vecChildObjects);
 		for (TerrainObjectID childID : vecChildObjects)
 		{
