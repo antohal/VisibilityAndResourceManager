@@ -218,9 +218,9 @@ void CTerrainManager::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * o
 	_implementation->GetTerrainObjectCenter(ID, out_pvCenter);
 }
 
-bool CTerrainManager::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection) const
+bool CTerrainManager::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection, D3DXVECTOR3 * out_pvNormal) const
 {
-	return _implementation->GetTerrainObjectProjection(ID, in_pvPosFrom, out_pvProjection);
+	return _implementation->GetTerrainObjectProjection(ID, in_pvPosFrom, out_pvProjection, out_pvNormal);
 }
 
 void CTerrainManager::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
@@ -395,7 +395,7 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 
 	_wsPlanetRootDirectory = ExtractFileDirectory(wsDbFileName);
 
-	_pTerrainVisibility = new CTerrainVisibility(_pTerrainObjectManager, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
+	_pTerrainVisibility = new CTerrainVisibility(_pTerrainObjectManager, this, _fWorldScale, 6000000.0f, 0.5, uiResultingMaxDepth);
 
 	_pVisibilityManager = new CVisibilityManager(nullptr, _fWorldScale * 20000000.0f, 1000 * _fWorldScale);
 }
@@ -601,6 +601,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 void CTerrainManager::CTerrainManagerImpl::UpdatePreliminaryObjects()
 {
+	_pPreliminaryVisibleSubtree->setLastMaxDepth(_pTerrainVisibility->GetLastMaxDepth());
 	_pPreliminaryVisibleSubtree->update(_pTerrainVisibility->GetVisibleObjects(), _setDataReadyObjects);
 }
 
@@ -1145,29 +1146,37 @@ CTerrainObject*	CTerrainManager::CTerrainManagerImpl::GetTerrainObject(TerrainOb
 	return pObj;
 }
 
-bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_vPosFrom, vm::Vector3df& out_vProjection) const
+bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_vPosFrom, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal) const
 {
 	if (CTerrainObject* pObj = GetTerrainObject(ID))
-		return pObj->CalculateProjectionOnSurface(in_vPosFrom, out_vProjection);
+		return pObj->CalculateProjectionOnSurface(in_vPosFrom, out_vProjection, out_vNormal);
 
 	double dfLong, dfLat;
 	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(ID, in_vPosFrom, dfLat, dfLong);
 
 	out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
+	out_vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
 
 	return isPositionAboveBlock;
 }
 
-bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection) const
+bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3 * in_pvPosFrom, D3DXVECTOR3 * out_pvProjection, D3DXVECTOR3* out_pvNormal) const
 {
-	vm::Vector3df vProjection(0, 0, 0);
-	bool result = GetTerrainObjectProjection(ID, vm::Vector3df(in_pvPosFrom->x, in_pvPosFrom->y, in_pvPosFrom->z), vProjection);
+	vm::Vector3df vProjection(0, 0, 0), vNormal(1, 0, 0);
+	bool result = GetTerrainObjectProjection(ID, vm::Vector3df(in_pvPosFrom->x, in_pvPosFrom->y, in_pvPosFrom->z), vProjection, vNormal);
 
 	if (out_pvProjection)
 	{
 		out_pvProjection->x = vProjection[0];
 		out_pvProjection->y = vProjection[1];
 		out_pvProjection->z = vProjection[2];
+	}
+
+	if (out_pvNormal)
+	{
+		out_pvNormal->x = vNormal[0];
+		out_pvNormal->y = vNormal[1];
+		out_pvNormal->z = vNormal[2];
 	}
 
 	return result;

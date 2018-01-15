@@ -11,6 +11,14 @@
 
 #define MAX_LODS 20
 
+class CTerrainGeometryCalculator
+{
+public:
+
+	virtual bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const = 0;
+
+};
+
 class CTerrainObjectVisibleSubtree
 {
 public:
@@ -29,11 +37,18 @@ public:
 		return _setObjects.find(ID) != _setObjects.end();
 	}
 
+	void setLastMaxDepth(unsigned int in_uiLastMaxDepth) {
+		_uiLastMaxDepth = in_uiLastMaxDepth;
+	}
+
 	void update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects);
 
 private:
 
+	bool getReadyAndVisibleChildrenRecursive(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecReadyAndVisible, const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects) const;
+
 	std::set<TerrainObjectID>	_setObjects;
+	unsigned int				_uiLastMaxDepth = 0;
 
 	CTerrainObjectManager*		_pObjectManager = nullptr;
 };
@@ -42,7 +57,7 @@ class CTerrainVisibility
 {
 public:
 
-	CTerrainVisibility(CTerrainObjectManager*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
+	CTerrainVisibility(CTerrainObjectManager*, CTerrainGeometryCalculator*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
 	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
 	
@@ -57,6 +72,10 @@ public:
 
 	const std::set<TerrainObjectID>&	GetVisibleObjects() const {
 		return _setVisibleObjects;
+	}
+
+	unsigned int GetLastMaxDepth() const {
+		return _uiLastMaxDepth;
 	}
 
 private:
@@ -79,6 +98,8 @@ private:
 		const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
 		const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc);
 
+	
+	CTerrainGeometryCalculator*				_geometryCalculator = nullptr;
 	CTerrainObjectManager*					_objectManager = nullptr;
 
 	double									_aLodDistances[MAX_LODS];

@@ -46,7 +46,7 @@ public:
 	}
 
 	// returns true if in_vPos is above. Position returned in vertex space!
-	bool CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection);
+	bool CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal);
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const;
 	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;

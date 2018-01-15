@@ -586,10 +586,14 @@ void CSimpleTerrainRenderer::RenderDebug()
 		_pTerrainManager->GetTerrainObjectBoundBoxCorners(ID, corners);
 
 		D3DXVECTOR3 objectProjection;
-		if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection))
+		D3DXVECTOR3 objectNormal;
+		//if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection))
+		_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal);
 		{
-			const float fCrossWidth = 0.1 * D3DXVec3Length(&(objectProjection - cameraPosition));
+			const float fCrossWidth = 0.05 * D3DXVec3Length(&(objectProjection - cameraPosition));
+			const float fNormalLength = 0.15 * D3DXVec3Length(&(objectProjection - cameraPosition));
 
+			//@{ cross in point
 			_primitiveBatch->DrawLine(
 				VertexPositionColor(XMFLOAT3(objectProjection.x - fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1)),
 				VertexPositionColor(XMFLOAT3(objectProjection.x + fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1))
@@ -603,6 +607,13 @@ void CSimpleTerrainRenderer::RenderDebug()
 			_primitiveBatch->DrawLine(
 				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z - fCrossWidth), XMFLOAT4(0, 0, 0.7, 1)),
 				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z + fCrossWidth), XMFLOAT4(0, 0, 0.7, 1))
+			);
+			//@}
+
+			// normal
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z), XMFLOAT4(0, 0, 0.7, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x + fNormalLength*objectNormal.x, objectProjection.y + fNormalLength*objectNormal.y, objectProjection.z + fNormalLength*objectNormal.z), XMFLOAT4(1, 1, 0.7, 1))
 			);
 		}
 

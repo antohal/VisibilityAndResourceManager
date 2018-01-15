@@ -5,8 +5,8 @@
 
 #include <algorithm>
 
-CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth) 
-	: _objectManager(objectManager)
+CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, CTerrainGeometryCalculator* geometryCalculator, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
+	: _objectManager(objectManager), _geometryCalculator(geometryCalculator)
 {
 	_fWorldScale = in_fWorldScale;
 	_uiMaxDepth = in_uiMaxDepth;
@@ -109,6 +109,30 @@ void CTerrainVisibility::GetLodDistancesKM(double* in_aLodDistances, size_t in_n
 
 double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df & in_vPos, double & out_Diameter)
 {
+	/*STerrainBlockParams params;
+
+	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+
+	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+	out_Diameter = dfMidAngle * vm::length(vRefPoint);
+
+	vm::Vector3df vProjection, vNormal;
+	_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+
+	vProjection *= 1.0 / _fWorldScale;
+
+	return vm::length(in_vPos - vProjection);*/
+
 	double dfLong, dfLat, dfHeight, dfLen;
 	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
 
@@ -319,12 +343,36 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
 }
 
-
-
-void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects)
+bool CTerrainObjectVisibleSubtree::getReadyAndVisibleChildrenRecursive(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecReadyAndVisible, const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects) const
 {
 	std::vector<TerrainObjectID> vecChildObjects;
 
+	bool allChildrenReady = true;
+
+	_pObjectManager->GetTerrainObjectChildren(ID, vecChildObjects);
+	for (TerrainObjectID childID : vecChildObjects)
+	{
+		bool isVisible = setVisObjects.find(childID) != setVisObjects.end();
+		bool isReady = setDataReadyObjects.find(childID) != setDataReadyObjects.end();
+
+		if (isVisible && isReady)
+			out_vecReadyAndVisible.push_back(childID);
+		else
+		if (!isVisible && _pObjectManager->GetObjectDepth(childID) < _uiLastMaxDepth)
+			isReady = getReadyAndVisibleChildrenRecursive(childID, out_vecReadyAndVisible, setVisObjects, setDataReadyObjects);
+
+		if (!isReady)
+		{
+			allChildrenReady = false;
+			break;
+		}
+	}
+
+	return allChildrenReady;
+}
+
+void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects)
+{
 	std::vector<TerrainObjectID> vecObjsToDelete;
 	std::vector<TerrainObjectID> vecObjsToInsert;
 
@@ -335,27 +383,14 @@ void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVi
 	{
 		//1. Если в блоке есть хоть один чилд, который и видим и готов, то разбиваем, если все чилды готовы:
 
-		bool hasVisibleAndReadyChildren = false;
-		bool allChildrenReady = true;
-		
+		std::vector<TerrainObjectID> vecReadyAndVisibleChilds;
 
-		// TODO: check this recursively
-		_pObjectManager->GetTerrainObjectChildren(ID, vecChildObjects);
-		for (TerrainObjectID childID : vecChildObjects)
-		{
-			bool isVisible = setVisObjects.find(childID) != setVisObjects.end();
-			bool isReady = setDataReadyObjects.find(childID) != setDataReadyObjects.end();
-
-			if (!isReady)
-				allChildrenReady = false;
-
-			if (isVisible && isReady)
-				hasVisibleAndReadyChildren = true;
-		}
+		bool allChildrenReady = getReadyAndVisibleChildrenRecursive(ID, vecReadyAndVisibleChilds, setVisObjects, setDataReadyObjects);
+		bool hasVisibleAndReadyChildren = !vecReadyAndVisibleChilds.empty();
 
 		if (hasVisibleAndReadyChildren && allChildrenReady)
 		{
-			vecObjsToInsert.insert(vecObjsToInsert.end(), vecChildObjects.begin(), vecChildObjects.end());
+			vecObjsToInsert.insert(vecObjsToInsert.end(), vecReadyAndVisibleChilds.begin(), vecReadyAndVisibleChilds.end());
 			vecObjsToDelete.push_back(ID);
 		}
 	}
