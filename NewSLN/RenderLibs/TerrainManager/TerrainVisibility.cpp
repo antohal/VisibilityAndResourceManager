@@ -5,8 +5,8 @@
 
 #include <algorithm>
 
-CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth) 
-	: _objectManager(objectManager)
+CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, CTerrainGeometryCalculator* geometryCalculator, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
+	: _objectManager(objectManager), _geometryCalculator(geometryCalculator)
 {
 	_fWorldScale = in_fWorldScale;
 	_uiMaxDepth = in_uiMaxDepth;
@@ -25,16 +25,6 @@ CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, flo
 
 	_vecRootObjects = objectManager->GetRootObjects();
 }
-//
-//void CTerrainVisibility::SetNewObjectHandler(const std::function<void(TerrainObjectID)>& newObjectHandler)
-//{
-//	_newObjectHandler = newObjectHandler;
-//}
-//
-//void CTerrainVisibility::SetDeleteObjectHandler(const std::function<void(TerrainObjectID)>& deleteObjectHandler)
-//{
-//	_deleteObjectHandler = deleteObjectHandler;
-//}
 
 void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 {
@@ -45,7 +35,7 @@ void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 
 	double heightAboveEarth = fabs(height);
 
-	if (heightAboveEarth < /*_dfLastLODDistanceOnEarth*/_aLodDistances[_uiMaxDepth])
+	if (heightAboveEarth < _aLodDistances[_uiMaxDepth])
 	{
 		double kMax = 1.0;
 		double kMin = _dfLastLODDistanceOnEarth / _aLodDistances[_uiMaxDepth];
@@ -53,7 +43,7 @@ void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 		if (kMin > 1.0)
 			kMin = 1.0;
 
-		_dfDistancesCoeff = vm::lerp(heightAboveEarth / _aLodDistances[_uiMaxDepth] /*_dfLastLODDistanceOnEarth*/, kMin, kMax);
+		_dfDistancesCoeff = vm::lerp(heightAboveEarth / _aLodDistances[_uiMaxDepth], kMin, kMax);
 	}
 }
 
@@ -79,8 +69,6 @@ void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::
 
 	_uiLastMaxDepth = uiMaxDepth;
 	_vLastPos = in_vPos;
-
-	//UpdateObjectsLifetime(in_fDeltaTime);
 }
 
 void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const std::vector<size_t>& in_vecHFDimensions, const std::vector<float>& in_vecLodDiameter, unsigned int in_uiMeanScreenResolution, float in_uiPixelsPerTexel)
@@ -101,12 +89,6 @@ void CTerrainVisibility::CalculateLodDistances(float in_fCameraMeanFOV, const st
 	{
 		_aLodDistances[j] = _aLodDistances[j - 1] * 0.5;
 	}
-
-	/*
-	for (size_t i = 1; i < MAX_LODS; i++)
-	{
-		_aLodDistances[i] += 3000.0;
-	}*/
 }
 
 void CTerrainVisibility::SetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods)
@@ -127,6 +109,30 @@ void CTerrainVisibility::GetLodDistancesKM(double* in_aLodDistances, size_t in_n
 
 double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df & in_vPos, double & out_Diameter)
 {
+	/*STerrainBlockParams params;
+
+	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+
+	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+	out_Diameter = dfMidAngle * vm::length(vRefPoint);
+
+	vm::Vector3df vProjection, vNormal;
+	_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+
+	vProjection *= 1.0 / _fWorldScale;
+
+	return vm::length(in_vPos - vProjection);*/
+
 	double dfLong, dfLat, dfHeight, dfLen;
 	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
 
@@ -155,7 +161,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	{
 		double dfLongBorder = 0;
 
-		if (AngularDistance(dfLong, dfMaxLong) > 0)
+		if (_objectManager->AngularDistance(dfLong, dfMaxLong) > 0)
 		{
 			dfLongBorder = dfMaxLong;
 		}
@@ -172,7 +178,7 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	{
 		double dfLatBorder = 0;
 
-		if (AngularDistance(dfLat, dfMaxLat) > 0)
+		if (_objectManager->AngularDistance(dfLat, dfMaxLat) > 0)
 		{
 			dfLatBorder = dfMaxLat;
 		}
@@ -222,8 +228,6 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 
 	std::sort(vecDists.begin(), vecDists.end(), std::less<double>());
 
-	//out_Diameter = bbox.radius() * 2;
-
 	return vecDists.front();
 }
 
@@ -243,27 +247,6 @@ unsigned int CTerrainVisibility::GetLodDepth(double dist) const
 		uiDepth--;
 
 	return uiDepth ;
-}
-
-double CTerrainVisibility::AngularDistance(double a1, double a2)
-{
-	double cos1 = cos(a1);
-	double cos2 = cos(a2);
-
-	double sin1 = sin(a1);
-	double sin2 = sin(a2);
-
-	vm::Vector3df v1(cos1, sin1, 0);
-	vm::Vector3df v2(cos2, sin2, 0);
-
-	double angle = acos(vm::dot_prod(v1, v2));
-
-	vm::Vector3df v = vm::cross(v1, v2);
-
-	if (v[2] > 0)
-		angle = -angle;
-
-	return angle;
 }
 
 void CTerrainVisibility::UpdateVisibleBlocks(const vm::Vector3df & in_vPos, unsigned int uiMaxDepth)
@@ -360,39 +343,61 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
 }
 
-
-void  CTerrainVisibility::UpdateFinalVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos, std::vector<TerrainObjectID>& out_vecReadyAndVisible,
-	const std::function<bool(TerrainObjectID)>& checkVisFunc, const std::function<bool(TerrainObjectID)>& checkReadyFunc)
+bool CTerrainObjectVisibleSubtree::getReadyAndVisibleChildrenRecursive(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecReadyAndVisible, const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects) const
 {
-	//if (!_objectManager->IsObjectValid(ID))
-	//	return;
+	std::vector<TerrainObjectID> vecChildObjects;
 
+	bool allChildrenReady = true;
 
+	_pObjectManager->GetTerrainObjectChildren(ID, vecChildObjects);
+	for (TerrainObjectID childID : vecChildObjects)
+	{
+		bool isVisible = setVisObjects.find(childID) != setVisObjects.end();
+		bool isReady = setDataReadyObjects.find(childID) != setDataReadyObjects.end();
+
+		if (isVisible && isReady)
+			out_vecReadyAndVisible.push_back(childID);
+		else
+		if (!isVisible && _pObjectManager->GetObjectDepth(childID) < _uiLastMaxDepth)
+			isReady = getReadyAndVisibleChildrenRecursive(childID, out_vecReadyAndVisible, setVisObjects, setDataReadyObjects);
+
+		if (!isReady)
+		{
+			allChildrenReady = false;
+			break;
+		}
+	}
+
+	return allChildrenReady;
 }
 
-bool CTerrainVisibility::UpdateReadyAndPreliminaryVisibleSet(std::set<TerrainObjectID>& out_setReadyAndVisible,
-	const std::function<bool(TerrainObjectID)>& checkReadyFunc)
+void CTerrainObjectVisibleSubtree::update(const std::set<TerrainObjectID>& setVisObjects, const std::set<TerrainObjectID>& setDataReadyObjects)
 {
-	/*out_setReadyAndVisible.clear();
+	std::vector<TerrainObjectID> vecObjsToDelete;
+	std::vector<TerrainObjectID> vecObjsToInsert;
 
-	auto fnAddVisibleBlock = [&](TerrainObjectID ID)
-	{
-		if (checkReadyFunc(ID))
-			out_setReadyAndVisible.insert(ID);
-	};
+	// При построении алгоритма учитывалось одно простое правило, которое должно соблюдаться: то что если виден парент, то чилды не могут быть видны
+	// и наоборот. Это касается как списка видимых объектов, так и списка предварительно видимых объектов
 
-	if (_uiLastMaxDepth == 0)
+	for (TerrainObjectID ID : _setObjects)
 	{
-		for (TerrainObjectID rootID : _vecRootObjects)
-			fnAddVisibleBlock(rootID);
-	}
-	else
-	{
-		for (TerrainObjectID rootID : _vecRootObjects)
+		//1. Если в блоке есть хоть один чилд, который и видим и готов, то разбиваем, если все чилды готовы:
+
+		std::vector<TerrainObjectID> vecReadyAndVisibleChilds;
+
+		bool allChildrenReady = getReadyAndVisibleChildrenRecursive(ID, vecReadyAndVisibleChilds, setVisObjects, setDataReadyObjects);
+		bool hasVisibleAndReadyChildren = !vecReadyAndVisibleChilds.empty();
+
+		if (hasVisibleAndReadyChildren && allChildrenReady)
 		{
-			UpdateFinalVisibilityRecursive(rootID, _vLastPos, out_vecReadyAndVisible, checkVisFunc, checkReadyFunc);
+			vecObjsToInsert.insert(vecObjsToInsert.end(), vecReadyAndVisibleChilds.begin(), vecReadyAndVisibleChilds.end());
+			vecObjsToDelete.push_back(ID);
 		}
-	}*/
+	}
 
-	return false;
+	for (TerrainObjectID ID : vecObjsToDelete)
+		_setObjects.erase(ID);
+
+	for (TerrainObjectID ID : vecObjsToInsert)
+		_setObjects.insert(ID);
 }

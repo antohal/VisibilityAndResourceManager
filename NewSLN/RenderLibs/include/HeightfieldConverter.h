@@ -46,8 +46,8 @@ struct SHeightfield
 struct SVertex
 {
 	D3DXVECTOR3					position;
-	D3DXVECTOR2					texture;
 	D3DXVECTOR3					normal;
+	D3DXVECTOR2					texture;
 	D3DXVECTOR3					tangent;
 };
 
@@ -74,6 +74,9 @@ struct STriangulation
 
 	unsigned int				nVertexCount = 0;			// количество вершин
 	unsigned int				nIndexCount = 0;			// количество индексов
+
+	unsigned int				nCountLat = 0;				// количество вершин по широте
+	unsigned int				nCountLong = 0;				// количество вершин по долготе
 
 	STriangulationCoordsInfo	Info;
 };

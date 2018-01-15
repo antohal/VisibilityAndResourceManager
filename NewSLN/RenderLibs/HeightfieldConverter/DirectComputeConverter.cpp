@@ -564,6 +564,9 @@ void DirectComputeHeightfieldConverter::STriangulationTask::createTriangulation(
 		1);
 
 	_owner->_owner->UnlockDeviceContext();
+
+	_triangulation.nCountLat = _heightfield.Config.nCountX;
+	_triangulation.nCountLong = _heightfield.Config.nCountY;
 }
 
 void DirectComputeHeightfieldConverter::STriangulationTask::computeBasis()

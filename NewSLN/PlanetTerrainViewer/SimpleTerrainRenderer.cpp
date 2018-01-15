@@ -38,7 +38,7 @@ CSimpleTerrainRenderObject::~CSimpleTerrainRenderObject()
 	LogMessage("Removing terrain object '%d'", _ID);
 }
 
-void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext)
+bool CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* in_pContext)
 {
 	// Set vertex buffer stride and offset.
 	unsigned int stride = sizeof(SVertex);
@@ -49,7 +49,7 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 	if (!pTriangulation)
 	{
-		return;
+		return false;
 	}
 
 	ID3D11Buffer* pVertexBuffer = pTriangulation->pVertexBuffer;
@@ -69,7 +69,10 @@ void CSimpleTerrainRenderObject::SetIndexAndVertexBuffers(CD3DGraphicsContext* i
 
 		_owner->GetHeightfieldConverter()->UnlockDeviceContext();
 
+		return true;
 	}
+
+	return false;
 }
 
 unsigned int CSimpleTerrainRenderObject::GetIndexCount() const
@@ -210,9 +213,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	//_pHeightfieldConverter->SetHeightScale(30.f);
-	//_pHeightfieldConverter->SetHeightScale(20.f);
-
+	_pHeightfieldConverter->SetHeightScale(20.f);
 	//_pHeightfieldConverter->SetHeightScale(0);
 
 	//_pHeightfieldConverter->SetNormalDivisionAngles(1, 2);
@@ -307,11 +308,12 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 {
 	_pTextBlock = block;
 
-	_uiTriangulationsCountParam = _pTextBlock->AddParameter(L"Количество триангуляций в памяти");
-	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Количество карт высот в памяти");
+	_uiTriangulationsCountParam = _pTextBlock->AddParameter(L"Триангуляций");
+	_uiPotentiallyVisibleCount = _pTextBlock->AddParameter(L"Потенциально видимых объектов");
+	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Карт высот");
 
-	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Количество текстур на загрузку:");
-	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Количество карт высот на загрузку:");
+	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Текстур в очереди:");
+	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Карт высот в очереди:");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -362,11 +364,12 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		if (!pObj || pObj->GetIndexCount() == 0)
 			continue;
 
-		pObj->SetIndexAndVertexBuffers(in_pContext);
+		if (pObj->SetIndexAndVertexBuffers(in_pContext))
+		{
+			DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), pObj->GetTextureResourceView(), pObj->GetIndexCount());
 
-		DrawIndexedByShader(in_pContext->GetSystem()->GetDeviceContext(), pObj->GetTextureResourceView(), pObj->GetIndexCount());
-
-		numPrimitives += pObj->GetIndexCount() / 3;
+			numPrimitives += pObj->GetIndexCount() / 3;
+		}
 	}
 
 	_visibleObjsCount = _lstRenderQueue.size();
@@ -380,6 +383,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		int heightmapsCountToLoad = _pHeightmapsQueue->CountInQueue();
 
 		_pTextBlock->SetParameterValue(_uiTriangulationsCountParam, _pTerrainManager->GetTriangulationsCount());
+		_pTextBlock->SetParameterValue(_uiPotentiallyVisibleCount, _pTerrainManager->GetPotentiallyVisibleObjectsCount());
 		_pTextBlock->SetParameterValue(_uiHeightfieldsCountParam, _pTerrainManager->GetHeightfieldsCount());
 
 		_pTextBlock->SetParameterValue(_uiTexturesQueueParam, texturesCountToLoad);
@@ -560,6 +564,9 @@ void CSimpleTerrainRenderer::RenderDebug()
 	D3DXMATRIX d3dView;
 	GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera()->GetViewMatrix(d3dView);
 
+	vm::Vector3df vCamPos = GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera()->GetPos();
+	D3DXVECTOR3 cameraPosition(vCamPos[0], vCamPos[1], vCamPos[2]);
+
 	DirectX::XMMATRIX matView;
 	memcpy(&matView, d3dView, sizeof(matView));
 
@@ -577,6 +584,38 @@ void CSimpleTerrainRenderer::RenderDebug()
 	{
 		D3DXVECTOR3 corners[8];
 		_pTerrainManager->GetTerrainObjectBoundBoxCorners(ID, corners);
+
+		D3DXVECTOR3 objectProjection;
+		D3DXVECTOR3 objectNormal;
+		//if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection))
+		_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal);
+		{
+			const float fCrossWidth = 0.05 * D3DXVec3Length(&(objectProjection - cameraPosition));
+			const float fNormalLength = 0.15 * D3DXVec3Length(&(objectProjection - cameraPosition));
+
+			//@{ cross in point
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x - fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x + fCrossWidth, objectProjection.y, objectProjection.z), XMFLOAT4(1, 0, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y - fCrossWidth, objectProjection.z), XMFLOAT4(0, 1, 0, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y + fCrossWidth, objectProjection.z), XMFLOAT4(0, 1, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z - fCrossWidth), XMFLOAT4(0, 0, 0.7, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z + fCrossWidth), XMFLOAT4(0, 0, 0.7, 1))
+			);
+			//@}
+
+			// normal
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z), XMFLOAT4(0, 0, 0.7, 1)),
+				VertexPositionColor(XMFLOAT3(objectProjection.x + fNormalLength*objectNormal.x, objectProjection.y + fNormalLength*objectNormal.y, objectProjection.z + fNormalLength*objectNormal.z), XMFLOAT4(1, 1, 0.7, 1))
+			);
+		}
 
 		XMFLOAT3 vCorners[8];
 		for (int i = 0; i < 8; i++)

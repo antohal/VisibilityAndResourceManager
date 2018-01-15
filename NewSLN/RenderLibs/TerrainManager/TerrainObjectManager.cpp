@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include "vecmath.h"
+#include "wgs84.h"
 
 #pragma comment (lib, "Shlwapi.lib")
 
@@ -16,8 +17,19 @@ struct LodInfoStruct_Ver10
 	short CountX;			// кол-во текстур по Y
 };
 
+namespace {
+	CTerrainObjectManager*	g_pTerrainObjectManager = nullptr;
+};
+
+CTerrainObjectManager*	GetObjectManager()
+{
+	return g_pTerrainObjectManager;
+}
+
 CTerrainObjectManager::CTerrainObjectManager()
 {
+	g_pTerrainObjectManager = this;
+
 	_vecLODResolution.resize(20);
 
 	for (size_t i = 0; i < 20; i++)
@@ -27,6 +39,33 @@ CTerrainObjectManager::CTerrainObjectManager()
 
 	_fLattitudeRange = M_PI;
 	_fLongitudeRange = 2 * M_PI;
+}
+
+CTerrainObjectManager::~CTerrainObjectManager()
+{
+	g_pTerrainObjectManager = nullptr;
+}
+
+
+double CTerrainObjectManager::AngularDistance(double a1, double a2)
+{
+	double cos1 = cos(a1);
+	double cos2 = cos(a2);
+
+	double sin1 = sin(a1);
+	double sin2 = sin(a2);
+
+	vm::Vector3df v1(cos1, sin1, 0);
+	vm::Vector3df v2(cos2, sin2, 0);
+
+	double angle = acos(vm::dot_prod(v1, v2));
+
+	vm::Vector3df v = vm::cross(v1, v2);
+
+	if (v[2] > 0)
+		angle = -angle;
+
+	return angle;
 }
 
 bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int in_uiMaxDepth, unsigned int & out_resultingDepth)
@@ -306,6 +345,8 @@ std::pair<unsigned int, unsigned int>	CTerrainObjectManager::GetObjectHfResoluti
 
 void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecChildren)
 {
+	out_vecChildren.resize(0);
+
 	if (!IsObjectHasSubhierarchy(ID))
 		return;
 
@@ -322,7 +363,6 @@ void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::ve
 	unsigned short startX = nextLodInfo.CountX * X;
 	unsigned short startY = nextLodInfo.CountY * Y;
 
-	out_vecChildren.clear();
 	out_vecChildren.reserve(nextLodInfo.CountX * nextLodInfo.CountY);
 
 	for (unsigned short iX = 0; iX < nextLodInfo.CountX; iX++)
@@ -592,4 +632,46 @@ std::vector<TerrainObjectID> CTerrainObjectManager::GetRootObjects() const
 	}
 
 	return resultVector;
+}
+
+bool CTerrainObjectManager::GetClippedProjection(TerrainObjectID ID, const vm::Vector3df& in_vPos, double& out_dfLat, double& out_dfLong)
+{
+	double dfLong, dfLat, dfHeight, dfLen;
+	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
+
+	STerrainBlockParams params;
+	GetObjectManager()->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	bool isPositionAboveBlock = false;
+
+	if (dfLat >= dfMinLat && dfLat <= dfMaxLat && dfLong >= dfMinLong && dfLong <= dfMaxLong)
+	{
+		isPositionAboveBlock = true;
+	}
+	else
+	{
+		vm::CLIP_NUMBER(dfLat, dfMinLat, dfMaxLat);
+
+		if (dfLong < dfMinLong || dfLong > dfMaxLong)
+		{
+			if (GetObjectManager()->AngularDistance(dfLong, dfMaxLong) > 0)
+			{
+				dfLong = dfMaxLong;
+			}
+			else
+			{
+				dfLong = dfMinLong;
+			}
+		}
+	}
+
+	out_dfLat = dfLat;
+	out_dfLong = dfLong;
+
+	return isPositionAboveBlock;
 }

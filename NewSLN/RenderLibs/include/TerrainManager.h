@@ -97,6 +97,9 @@ public:
 	// Получить количество готовых карт высот
 	size_t GetHeightfieldsCount() const;
 
+	// Получить количество потенциально видимых объектов
+	size_t GetPotentiallyVisibleObjectsCount() const;
+
 	//@{ Список объектов для которых нужно загрузить карту высот
 	size_t GetNewHeightmapsCount() const;
 	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
@@ -127,6 +130,9 @@ public:
 
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
+
+	// Получить проекцию на объект Земли. Возвращает true, если in_pvPosFrom лежит над блоком Земли
+	bool GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvProjection, D3DXVECTOR3* out_pvNormal) const;
 
 	// Получить узловые точки баунд бокса
 	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;

@@ -208,7 +208,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 	LockDeviceContext();
 
 	// Read back the result from GPU, verify its correctness against result computed by CPU 
-	if (triangulation->pVertexBuffer)
+	if (triangulation->pVertexBuffer && out_pVertexes)
 	{
 		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(_ptrD3DDevice, _ptrDeviceContext, triangulation->pVertexBuffer);
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -229,7 +229,7 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 	}
 
 	// Read back the result from GPU, verify its correctness against result computed by CPU 
-	if (triangulation->pIndexBuffer)
+	if (triangulation->pIndexBuffer && out_pIndices)
 	{
 		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(_ptrD3DDevice, _ptrDeviceContext, triangulation->pIndexBuffer);
 		D3D11_MAPPED_SUBRESOURCE MappedResource;

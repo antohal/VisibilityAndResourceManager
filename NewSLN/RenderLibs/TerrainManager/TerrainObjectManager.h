@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vecmath.h"
 #include "TerrainManager.h"
 
 #include <vector>
@@ -19,6 +20,7 @@ public:
 	};
 
 	CTerrainObjectManager();
+	~CTerrainObjectManager();
 
 	bool LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile, unsigned int in_uiMaxDepth, unsigned int & out_resultingDepth);
 
@@ -53,6 +55,10 @@ public:
 		return _rootDirectory.c_str();
 	}
 
+	double	AngularDistance(double a1, double a2);
+	
+	bool	GetClippedProjection(TerrainObjectID ID, const vm::Vector3df& in_vPos, double& out_dfLat, double& out_dfLong);
+
 private:
 
 	TerrainObjectID					GenerateTerrainObjectID(unsigned char in_nLOD, unsigned short X, unsigned short Y) const;
@@ -78,3 +84,5 @@ private:
 
 	std::wstring					_rootDirectory;
 };
+
+CTerrainObjectManager*	GetObjectManager();

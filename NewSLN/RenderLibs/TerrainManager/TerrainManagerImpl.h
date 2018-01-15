@@ -9,110 +9,16 @@
 #include "TerrainObjectManager.h"
 #include "TerrainVisibility.h"
 
+#include "TerrainObject.h"
+
 #include <set>
 #include <map>
 #include <mutex>
 #include <thread>
 #include <chrono>
 
-class CInternalTerrainObject  //: public C3DBaseObject
-{
-public:
 
-	CInternalTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
-		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName);
-
-	const TerrainObjectID&	GetID() const {
-		return _ID;
-	}
-
-	const STerrainBlockParams*	GetParams() const {
-		return &_params;
-	}
-
-	void InvalidateData() {
-		_bTriangulationsReady = false;
-		_bTextureReady = false;
-	}
-
-	/*void SetDataReady() {
-		_bOtherDataReady = true;
-	}*/
-
-	void SetTextureReady() {
-		_bTextureReady = true;
-	}
-	
-	bool IsTriangulationReady() const {
-		return _bTriangulationsReady;
-	}
-
-	void SetTriangulationReady(STriangulation* pTri) {
-		_bTriangulationsReady = true;
-		_pTriangulation = pTri;
-	}
-
-	STriangulation* GetTriangulation() {
-		return _pTriangulation;
-	}
-
-	virtual bool							IsDataReady() const {
-		return _bTriangulationsReady && _bTextureReady;
-	}
-
-	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const;
-	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;
-
-	const wchar_t* GetTextureFileName() const {
-		return _textureFileName.c_str();
-	}
-
-	const wchar_t* GetHeightmapFileName() const {
-		return _heightmapFileName.c_str();
-	}
-
-	const vm::Vector3df&					GetPos() const { return _vPos; }
-	const vm::Vector3df&					GetX() const { return _vXAxis; }
-	const vm::Vector3df&					GetY() const { return _vYAxis; }
-	const vm::Vector3df&					GetZ() const { return _vZAxis; }
-	const vm::Vector3df&					GetHalfSizes() const { return _vHalfsizes; }
-
-	/*const vm::Vector3df&					GetAABBMin() const { return _vAABBMin; }
-	const vm::Vector3df&					GetAABBMax() const { return _vAABBMax; }*/
-
-	float						timeSinceUnused = 0;
-
-private:
-
-	TerrainObjectID				_ID = -1;
-	STerrainBlockParams			_params;
-	
-	STriangulation*				_pTriangulation = nullptr;
-
-	vm::Vector3df				_vPos = vm::Vector3df(0, 0, 0);
-	
-	vm::Vector3df				_vXAxis = vm::Vector3df(1, 0, 0);
-	vm::Vector3df				_vYAxis = vm::Vector3df(0, 1, 0);
-	vm::Vector3df				_vZAxis = vm::Vector3df(0, 0, 1);
-	vm::Vector3df				_vHalfsizes = vm::Vector3df(0, 0, 0);
-
-	vm::Vector3df				_vAABBMin = vm::Vector3df(0, 0, 0);
-	vm::Vector3df				_vAABBMax = vm::Vector3df(0, 0, 0);
-
-	bool						_bTriangulationsReady = false;
-	//bool						_bOtherDataReady = false;
-	bool						_bTextureReady = false;
-
-	std::wstring				_textureFileName;
-	std::wstring				_heightmapFileName;
-
-	mutable std::vector<vm::Vector3df>	_vecRefPoints;
-	mutable std::vector<vm::Vector3df>	_vecRefNormals;
-	mutable bool				_bReferencePointsCalulated = false;
-};
-
-
-class CTerrainManager::CTerrainManagerImpl // : public C3DBaseTerrainObjectManager
+class CTerrainManager::CTerrainManagerImpl : public CTerrainGeometryCalculator
 {
 public:
 
@@ -158,6 +64,10 @@ public:
 
 	size_t GetHeightfieldsCount() const;
 
+	size_t GetPotentiallyVisibleObjectsCount() const {
+		return _pPreliminaryVisibleSubtree->objects().size();
+	}
+
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
 	TerrainObjectID	GetNewObjectID(size_t index) const;
@@ -186,6 +96,8 @@ public:
 
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
+
+	bool GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvProjection, D3DXVECTOR3* out_pvNormal) const;
 
 	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
 
@@ -235,7 +147,7 @@ private:
 	float GetWorldRadius() const;
 	float GetMinCellSize() const;
 
-	CInternalTerrainObject* CreateObject(TerrainObjectID ID);
+	CTerrainObject* CreateObject(TerrainObjectID ID);
 	void DestroyObject(TerrainObjectID ID);
 	void DestroyObjects();
 
@@ -256,6 +168,12 @@ private:
 	bool IsObjectDataReady(TerrainObjectID ID) const;
 
 	void ManageDeadObjects();
+	
+	void UpdatePreliminaryObjects();
+
+
+	CTerrainObject*	GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner = std::string()) const;
+	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const override;
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -278,8 +196,8 @@ private:
 	SGlobalTerrainShaderParams							_globalTerrainShaderParams;
 
 	//@{ Containers
-	//std::set<CInternalTerrainObject*>					_setObjects;
-	std::map<TerrainObjectID, CInternalTerrainObject*>	_mapId2Object;
+	//std::set<CTerrainObject*>					_setObjects;
+	std::map<TerrainObjectID, CTerrainObject*>	_mapId2Object;
 	mutable std::mutex									_objectsMutex;
 
 	std::wstring										_wsPlanetRootDirectory;
@@ -292,8 +210,12 @@ private:
 	std::vector<TerrainObjectID>						_vecObjectsToDelete;
 	std::set<TerrainObjectID>							_setObjectsToDelete;
 
+	mutable std::mutex									_dataReadyMutex;
+	std::set<TerrainObjectID>							_setDataReadyObjects;
+
 	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
-	std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
+	//std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
+	CTerrainObjectVisibleSubtree*						_pPreliminaryVisibleSubtree = nullptr;
 
 
 	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
