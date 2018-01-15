@@ -213,7 +213,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	_pHeightfieldConverter->SetHeightScale(20.f);
+	//_pHeightfieldConverter->SetHeightScale(20.f);
 	//_pHeightfieldConverter->SetHeightScale(0);
 
 	//_pHeightfieldConverter->SetNormalDivisionAngles(1, 2);
