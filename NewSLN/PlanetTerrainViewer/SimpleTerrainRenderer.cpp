@@ -266,6 +266,12 @@ void CSimpleTerrainRenderer::ProcessLoadedTextures()
 	_pTexturesQueue->Process();
 }
 
+void CSimpleTerrainRenderer::SortLoadQueue()
+{
+	_pHeightmapsQueue->Sort();
+	_pTexturesQueue->Sort();
+}
+
 void CSimpleTerrainRenderer::HeightmapLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex)
 {
 	GetTerrainManager()->SetHeightmapReady(ID, tex);
@@ -312,10 +318,12 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 	_uiPotentiallyVisibleCount = _pTextBlock->AddParameter(L"Потенциально видимых объектов");
 	_uiHeightfieldsCountParam = _pTextBlock->AddParameter(L"Карт высот");
 
-	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Текстур в очереди:");
-	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Карт высот в очереди:");
+	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Текстур в очереди");
+	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Карт высот в очереди");
 
-	_uiBoundBoxCalculatingParam = _pTextBlock->AddParameter(L"Баундбоксов считается:");
+	_uiBoundBoxCalculatingParam = _pTextBlock->AddParameter(L"Баундбоксов считается");
+
+	_uiMomentalVisibleCountParam = _pTextBlock->AddParameter(L"Моментально видимых");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -392,6 +400,8 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		_pTextBlock->SetParameterValue(_uiHeightmapsQueueParam, heightmapsCountToLoad);
 
 		_pTextBlock->SetParameterValue(_uiBoundBoxCalculatingParam, _pTerrainManager->GetBoundBoxToBeCalculatedCount());
+
+		_pTextBlock->SetParameterValue(_uiMomentalVisibleCountParam, _pTerrainManager->GetMomentalVisibleObjectsCount());
 	}
 
 	if (_bDebugRenderEnabled)
@@ -619,6 +629,29 @@ void CSimpleTerrainRenderer::RenderDebug()
 				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z), XMFLOAT4(0, 0, 0.7, 1)),
 				VertexPositionColor(XMFLOAT3(objectProjection.x + fNormalLength*objectNormal.x, objectProjection.y + fNormalLength*objectNormal.y, objectProjection.z + fNormalLength*objectNormal.z), XMFLOAT4(1, 1, 0.7, 1))
 			);
+		}
+
+		D3DXVECTOR3 vObjPos;
+		_pTerrainManager->GetTerrainObjectCenter(ID, &vObjPos);
+		{
+			const float fCrossWidth = 0.05 * D3DXVec3Length(&(vObjPos - cameraPosition));
+
+			//@{ cross in point
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(vObjPos.x - fCrossWidth, vObjPos.y, vObjPos.z), XMFLOAT4(1, 1, 0, 1)),
+				VertexPositionColor(XMFLOAT3(vObjPos.x + fCrossWidth, vObjPos.y, vObjPos.z), XMFLOAT4(1, 1, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(vObjPos.x, vObjPos.y - fCrossWidth, vObjPos.z), XMFLOAT4(1, 1, 0, 1)),
+				VertexPositionColor(XMFLOAT3(vObjPos.x, vObjPos.y + fCrossWidth, vObjPos.z), XMFLOAT4(1, 1, 0, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(vObjPos.x, vObjPos.y, vObjPos.z - fCrossWidth), XMFLOAT4(1, 1, 0, 1)),
+				VertexPositionColor(XMFLOAT3(vObjPos.x, vObjPos.y, vObjPos.z + fCrossWidth), XMFLOAT4(1, 1, 0, 1))
+			);
+			//@}
 		}
 
 		XMFLOAT3 vCorners[8];

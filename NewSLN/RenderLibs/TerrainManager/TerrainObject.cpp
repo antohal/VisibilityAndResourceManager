@@ -150,8 +150,6 @@ void CTerrainObject::initVertexBuffer()
 	{
 		CTerrainObject* _this = this;
 		_pTaskManager->appendTask(_ID, [=]() {_this->calculatePreciseBoundBox(); });
-
-		//calculatePreciseBoundBox();
 	}
 	else
 	{

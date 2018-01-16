@@ -86,14 +86,21 @@ public:
 	//@}
 
 	//@{ Список объектов для которых нужно загрузить карту высот
-	size_t GetNewHeightmapsCount() const;
-	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
+	//size_t GetNewHeightmapsCount() const;
+	//TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
 	//@}
 
 	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
-	size_t GetAwaitingHeightmapsCount() const;
-	TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
+	//size_t GetAwaitingHeightmapsCount() const;
+	//TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
 	//@}
+
+
+	//@{ мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
+	size_t GetMomentalVisibleObjectsCount() const;
+	TerrainObjectID GetMomentalVisibleObjectID(size_t index) const;
+	//@}
+
 
 	size_t GetBoundBoxToBeCalculatedCount() const;
 
@@ -180,53 +187,49 @@ private:
 
 	//@{ Main objects
 	//---------------------- New mechanism
-	CTerrainObjectManager*	_pTerrainObjectManager = nullptr;
-	CTerrainVisibility*		_pTerrainVisibility = nullptr;
-	CVisibilityManager*		_pVisibilityManager = nullptr;
+	CTerrainObjectManager*						_pTerrainObjectManager = nullptr;
+	CTerrainVisibility*							_pTerrainVisibility = nullptr;
+	CVisibilityManager*							_pVisibilityManager = nullptr;
 
-	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
-	AsyncTaskManager*		_pBoundBoxAsyncManger = nullptr;
+	HeightfieldConverter*						_pHeightfieldConverter = nullptr;
+	AsyncTaskManager*							_pBoundBoxAsyncManger = nullptr;
 	//@}
 
-	//@{ Vars
-	//TerrainObjectID			_idCurrentIDForNewObject = 0;
-	float					_fWorldScale = 1.f;
-	float					_fWorldSize = 10000000.f;
-	unsigned int			_heightfieldCompressionRatio = 1;
+	float										_fWorldScale = 1.f;
+	float										_fWorldSize = 10000000.f;
+	unsigned int								_heightfieldCompressionRatio = 1;
 
 	std::chrono::time_point<std::chrono::steady_clock>	_prevFrameTime;
 	//@}
 
-	SGlobalTerrainShaderParams							_globalTerrainShaderParams;
+	SGlobalTerrainShaderParams					_globalTerrainShaderParams;
 
 	//@{ Containers
-	//std::set<CTerrainObject*>					_setObjects;
 	std::map<TerrainObjectID, CTerrainObject*>	_mapId2Object;
-	mutable std::mutex									_objectsMutex;
+	mutable std::mutex							_objectsMutex;
 
-	std::wstring										_wsPlanetRootDirectory;
+	std::wstring								_wsPlanetRootDirectory;
 
-	mutable std::mutex									_containersMutex;
+	mutable std::mutex							_containersMutex;
 
-	//@{ following containers are guarded by mutex (_containersMutex)
-	std::vector<TerrainObjectID>						_vecNewObjectIDs;
-	std::set<TerrainObjectID>							_setNotReadyTriangulations;
-	std::vector<TerrainObjectID>						_vecObjectsToDelete;
-	std::set<TerrainObjectID>							_setObjectsToDelete;
+	std::vector<TerrainObjectID>				_vecNewObjectIDs;
+	std::set<TerrainObjectID>					_setNotReadyTriangulations;
+	std::vector<TerrainObjectID>				_vecObjectsToDelete;
+	std::set<TerrainObjectID>					_setObjectsToDelete;
 
-	mutable std::mutex									_dataReadyMutex;
-	std::set<TerrainObjectID>							_setDataReadyObjects;
+	mutable std::mutex							_dataReadyMutex;
+	std::set<TerrainObjectID>					_setDataReadyObjects;
 
-	std::vector<TerrainObjectID>						_vecReadyVisibleObjects;
-	//std::set<TerrainObjectID>							_setPreliminaryVisibleObjects;
-	CTerrainObjectVisibleSubtree*						_pPreliminaryVisibleSubtree = nullptr;
+	std::vector<TerrainObjectID>				_vecReadyVisibleObjects;
+	CTerrainObjectVisibleSubtree*				_pPreliminaryVisibleSubtree = nullptr;
 
+//	std::vector<TerrainObjectID>				_vecHeightmapsToCreate;
 
-	std::vector<TerrainObjectID>						_vecHeightmapsToCreate;
+//	std::set<TerrainObjectID>					_setCachedHFRequest;
+//	std::set<TerrainObjectID>					_setAwaitingHeightmaps;
+//	std::vector<TerrainObjectID>				_vecAwaitingHeightmaps;
 
-	std::set<TerrainObjectID>							_setCachedHFRequest;
-	std::set<TerrainObjectID>							_setAwaitingHeightmaps;
-	std::vector<TerrainObjectID>						_vecAwaitingHeightmaps;
+	std::vector<TerrainObjectID>				_vecCurrentVisibleObjsInFrustum;
 	//@}
 
 	//@}

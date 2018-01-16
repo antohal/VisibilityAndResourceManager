@@ -105,16 +105,7 @@ public:
 			}
 		}
 
-		// добавляем новые карты высот
-
-		/*for (size_t iObj = 0; iObj < _pTerrainManager->GetNewHeightmapsCount(); iObj++)
-		{
-			TerrainObjectID newObjID = _pTerrainManager->GetNewHeightmapObjectID(iObj);
-
-			_pTerrainRenderer->AppendHeightmapToLoad(newObjID);
-		}*/
-
-
+		
 		// удаляем старые
 		
 		for (size_t iObj = 0; iObj < _pTerrainManager->GetObjectsToDeleteCount(); iObj++)
@@ -148,6 +139,8 @@ public:
 
 			_pTerrainRenderer->AddObjectToRenderQueue(visObjID);
 		}
+
+		_pTerrainRenderer->SortLoadQueue();
 	}
 
 

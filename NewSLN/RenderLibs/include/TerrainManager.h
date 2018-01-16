@@ -101,13 +101,13 @@ public:
 	size_t GetPotentiallyVisibleObjectsCount() const;
 
 	//@{ Список объектов для которых нужно загрузить карту высот
-	size_t GetNewHeightmapsCount() const;
-	TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
+	//size_t GetNewHeightmapsCount() const;
+	//TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
 	//@}
 
 	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
-	size_t GetAwaitingHeightmapsCount() const;
-	TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
+	//size_t GetAwaitingHeightmapsCount() const;
+	//TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
 	//@}
 
 	// Установить загруженную карту высот
@@ -123,9 +123,14 @@ public:
 	TerrainObjectID GetObjectToDeleteID(size_t index) const;
 	//@}
 
-	//@{ Список текущих видимых объектов
+	//@{ Список текущих видимых объектов (обязательно загружены)
 	size_t GetVisibleObjectsCount() const;
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
+	//@}
+
+	//@{ мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
+	size_t GetMomentalVisibleObjectsCount() const;
+	TerrainObjectID GetMomentalVisibleObjectID(size_t index) const;
 	//@}
 
 	// количество баунд боксов находящихся в очереди на рассчет

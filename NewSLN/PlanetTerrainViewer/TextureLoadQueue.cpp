@@ -113,7 +113,10 @@ void CTextureLoadQueue::Process()
 
 		_lstJustLoaded.clear();
 	}
+}
 
+void CTextureLoadQueue::Sort()
+{
 	if (_sortHandler)
 	{
 		std::lock_guard<std::mutex> lg(_queueMutex);
@@ -148,7 +151,6 @@ void CTextureLoadQueue::StartTextureLoadThreadFunc()
 bool CTextureLoadQueue::UpdateTextureLoad()
 {
 	SLoadRequest currentLoadRequest;
-
 	{
 		std::lock_guard<std::mutex> lg(_queueMutex);
 
@@ -164,16 +166,8 @@ bool CTextureLoadQueue::UpdateTextureLoad()
 
 	LogMessage("Loading texture '%ls'", currentLoadRequest._textureName.c_str());
 
-
 	ID3D11ShaderResourceView* pResourceViewTex = nullptr;
 	D3DX11CreateShaderResourceViewFromFileW(_device, currentLoadRequest._textureName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
-	
-#ifdef _DEBUG
-	//@{ TODO: DEBUG
-	std::chrono::milliseconds dur(50);
-	std::this_thread::sleep_for(dur);
-	//@}
-#endif
 
 	{
 		std::lock_guard<std::mutex> lg(_justLoadedMutex);
@@ -185,6 +179,10 @@ bool CTextureLoadQueue::UpdateTextureLoad()
 		_lstJustLoaded.push_back(ptLoadedTex);
 	}
 
+#ifdef _DEBUG
+	std::chrono::milliseconds dur(50);
+	std::this_thread::sleep_for(dur);
+#endif
 
 	return true;
 }

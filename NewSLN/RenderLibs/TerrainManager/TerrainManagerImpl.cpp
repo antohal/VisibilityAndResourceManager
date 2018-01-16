@@ -208,10 +208,16 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 	return _implementation->GetVisibleObjectID(index);
 }
 
-//void CTerrainManager::SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap)
-//{
-//	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
-//}
+size_t CTerrainManager::GetMomentalVisibleObjectsCount() const
+{
+	return _implementation->GetMomentalVisibleObjectsCount();
+}
+
+TerrainObjectID CTerrainManager::GetMomentalVisibleObjectID(size_t index) const
+{
+	return _implementation->GetMomentalVisibleObjectID(index);
+}
+
 
 size_t CTerrainManager::GetBoundBoxToBeCalculatedCount() const
 {
@@ -275,25 +281,25 @@ void CTerrainManager::SetLastLodDistanceOnSurface(double distance)
 
 //@{ Список объектов для которых нужно загрузить карту высот
 
-size_t CTerrainManager::GetNewHeightmapsCount() const
-{
-	return _implementation->GetNewHeightmapsCount();
-}
+//size_t CTerrainManager::GetNewHeightmapsCount() const
+//{
+//	return _implementation->GetNewHeightmapsCount();
+//}
+//
+//TerrainObjectID CTerrainManager::GetNewHeightmapObjectID(size_t index) const
+//{
+//	return _implementation->GetNewHeightmapObjectID(index);
+//}
 
-TerrainObjectID CTerrainManager::GetNewHeightmapObjectID(size_t index) const
-{
-	return _implementation->GetNewHeightmapObjectID(index);
-}
-
-size_t CTerrainManager::GetAwaitingHeightmapsCount() const
-{
-	return _implementation->GetAwaitingHeightmapsCount();
-}
-
-TerrainObjectID CTerrainManager::GetAwaitingHeightmapObjectID(size_t index) const
-{
-	return _implementation->GetAwaitingHeightmapObjectID(index);
-}
+//size_t CTerrainManager::GetAwaitingHeightmapsCount() const
+//{
+//	return _implementation->GetAwaitingHeightmapsCount();
+//}
+//
+//TerrainObjectID CTerrainManager::GetAwaitingHeightmapObjectID(size_t index) const
+//{
+//	return _implementation->GetAwaitingHeightmapObjectID(index);
+//}
 
 //@}
 
@@ -474,8 +480,7 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 		else
 		{
 			_mapObjectHeightfields[ID] = SObjectHeightfield();
-
-			_setCachedHFRequest.insert(ID);
+			//_setCachedHFRequest.insert(ID);
 		}
 
 	} // unlock mutex
@@ -511,15 +516,15 @@ SHeightfield*	CTerrainManager::CTerrainManagerImpl::RequestObjectHeightfield(Ter
 }
 
 //@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
-size_t CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapsCount() const
-{
-	return _vecAwaitingHeightmaps.size();
-}
-
-TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapObjectID(size_t index) const
-{
-	return _vecAwaitingHeightmaps[index];
-}
+//size_t CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapsCount() const
+//{
+//	return _vecAwaitingHeightmaps.size();
+//}
+//
+//TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapObjectID(size_t index) const
+//{
+//	return _vecAwaitingHeightmaps[index];
+//}
 size_t CTerrainManager::CTerrainManagerImpl::GetBoundBoxToBeCalculatedCount() const
 {
 	return _pBoundBoxAsyncManger->tasksCount();
@@ -585,6 +590,11 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		}
 	}
 
+	// мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
+	_vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects());
+
+	size_t nCurrentVisibleInFrustumCount = _vecCurrentVisibleObjsInFrustum.size();
+
 	bool bUsePreliminarySet = true;
 
 	if (bAllReady)
@@ -595,11 +605,10 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	else
 	{
 		// Если не весь потенциально видимый набор готов, проверить только часть во фрустуме, и если она готова - выдать ее на выход
-		const std::vector<TerrainObjectID>& vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects());
-		if (IsAllObjectsReady(vecCurrentVisibleObjsInFrustum))
+		if (IsAllObjectsReady(_vecCurrentVisibleObjsInFrustum))
 		{
 			bUsePreliminarySet = false;
-			_vecReadyVisibleObjects = vecCurrentVisibleObjsInFrustum;
+			_vecReadyVisibleObjects = _vecCurrentVisibleObjsInFrustum;
 		}
 		else
 		{
@@ -614,9 +623,22 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		CalculateReadyAndVisibleSetAccordingToPreliminary();
 
 	// Сформировать список ожидающих карт высот
-	ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
-	_setAwaitingHeightmaps.clear();
+	//ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
+	//_setAwaitingHeightmaps.clear();
 }
+
+//@{ Список текущих видимых объектов (обязательно загружены)
+size_t CTerrainManager::CTerrainManagerImpl::GetMomentalVisibleObjectsCount() const
+{
+	return _vecCurrentVisibleObjsInFrustum.size();
+}
+
+TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetMomentalVisibleObjectID(size_t index) const
+{
+	return _vecCurrentVisibleObjsInFrustum[index];
+}
+//@}
+
 
 void CTerrainManager::CTerrainManagerImpl::UpdatePreliminaryObjects()
 {
@@ -739,7 +761,7 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 	if (!_pHeightfieldConverter)
 		return false;
 
-	_setAwaitingHeightmaps.clear();
+//	_setAwaitingHeightmaps.clear();
 
 	static std::vector<std::pair<TerrainObjectID, SObjectTriangulation*>> s_vecTriangulationsToCreate;
 	s_vecTriangulationsToCreate.resize(0);
@@ -826,7 +848,7 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		if (!pHeightfield)
 		{
 			someNotReadyHF = true;
-			_setAwaitingHeightmaps.insert(ID);
+			//_setAwaitingHeightmaps.insert(ID);
 		}
 
 		TerrainObjectID neighbours[8];
@@ -843,7 +865,7 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 				if (!neighbourHeightfields[i])
 				{
 					someNotReadyHF = true;
-					_setAwaitingHeightmaps.insert(neighbours[i]);
+					//_setAwaitingHeightmaps.insert(neighbours[i]);
 					//break;
 				}
 			}
@@ -877,12 +899,12 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 	UpdateTriangulationsAndHeightfieldLifetime();
 
-	_vecHeightmapsToCreate.resize(0);
-	for (TerrainObjectID ID : _setCachedHFRequest)
-		_vecHeightmapsToCreate.push_back(ID);
+	//_vecHeightmapsToCreate.resize(0);
+	//for (TerrainObjectID ID : _setCachedHFRequest)
+	//	_vecHeightmapsToCreate.push_back(ID);
 
-	// TODO: remove not needed any more HF from here
-	_setCachedHFRequest.clear();
+	//// TODO: remove not needed any more HF from here
+	//_setCachedHFRequest.clear();
 
 	return true;
 }
@@ -1274,13 +1296,8 @@ void UpdateBBoxSurfacePoint(vm::BoundBox<double>& out_BB, float longi, float lat
 	vm::Vector3df p1 = (vPoint + vNormal*minH);
 	vm::Vector3df p2 = (vPoint + vNormal*maxH);
 
-	// For OBB:
 	out_BB.update(GetTransformedPoint(p1, vPos, vX, vY, vZ));
 	out_BB.update(GetTransformedPoint(p2, vPos, vX, vY, vZ));
-
-	// For AABB:
-	//out_BB.update(p1);
-	//out_BB.update(p2);
 }
 
 void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHeightfield::SCoordinates& in_Coords, STriangulationCoordsInfo& out_TriangulationCoords, unsigned int nLod)
@@ -1301,8 +1318,7 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	vm::Vector3df vEast = vm::normalize(vm::cross(vNormal, vm::Vector3df(0, 1, 0)));
 	vm::Vector3df vNorth = vm::normalize(vm::cross(vNormal, vEast));
 
-	vm::BoundBox<double> vBoundBox(vm::Vector3f(0, 0, 0)); // -> for OBB
-//	vm::BoundBox<double> vBoundBox(vMiddlePoint); // -> For AABB
+	vm::BoundBox<double> vBoundBox(vm::Vector3f(0, 0, 0));
 
 	double dfMinHeight =  -200.0;// -10000.0;
 	double dfMaxHeight = 9000.0;// 20000.0;
@@ -1329,7 +1345,6 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	{
 		double dfLong = dfMinLong;
 
-
 		for (int j = 0; j < N + 1; j++)
 		{
 			UpdateBBoxSurfacePoint(vBoundBox, dfLong, dfLat, dfMinHeight, dfMaxHeight, vMiddlePoint, vEast, vNormal, vNorth);
@@ -1338,16 +1353,13 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 			dfLong += dfDeltaLong;
 		}
 		
-
 		dfLat += dfDeltaLat;
 	}
-
 
 	memcpy(out_TriangulationCoords.vPosition, &vMiddlePoint[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vXAxis, &vEast[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vYAxis, &vNormal[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vZAxis, &vNorth[0], 3 * sizeof(double));
-
 
 	memcpy(out_TriangulationCoords.vBoundBoxMinimum, &vBoundBox._vMin[0], 3 * sizeof(double));
 	memcpy(out_TriangulationCoords.vBoundBoxMaximum, &vBoundBox._vMax[0], 3 * sizeof(double));
@@ -1360,19 +1372,19 @@ void CTerrainManager::CTerrainManagerImpl::ComputeTriangulationCoords(const SHei
 	}
 }
 
-//@{ Список объектов для которых нужно загрузить карту высот
-
-size_t CTerrainManager::CTerrainManagerImpl::GetNewHeightmapsCount() const
-{
-	return _vecHeightmapsToCreate.size();
-}
-
-TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetNewHeightmapObjectID(size_t index) const
-{
-	return _vecHeightmapsToCreate[index];
-}
-
-//@}
+////@{ Список объектов для которых нужно загрузить карту высот
+//
+//size_t CTerrainManager::CTerrainManagerImpl::GetNewHeightmapsCount() const
+//{
+//	return _vecHeightmapsToCreate.size();
+//}
+//
+//TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetNewHeightmapObjectID(size_t index) const
+//{
+//	return _vecHeightmapsToCreate[index];
+//}
+//
+////@}
 
 
 CTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObjectID ID)
@@ -1459,10 +1471,6 @@ void CTerrainManager::CTerrainManagerImpl::ReleaseTriangulationsAndHeightmaps()
 				vecObjT.push_back(&it->second._triangulation);
 		}
 		
-
-		//for (SHeightfield* pHF : vecObjHF)
-			//_pHeightfieldConverter->ReleaseHeightfield(pHF);
-
 		for (STriangulation* pT : vecObjT)
 			_pHeightfieldConverter->ReleaseTriangulation(pT);
 	}

@@ -23,6 +23,7 @@ public:
 	void AddToLoad(size_t ID, const std::wstring& wsTextureFileName);
 	void Remove(size_t ID);
 	void Process();
+	void Sort();
 	//@}
 
 	int	 CountInQueue() const;

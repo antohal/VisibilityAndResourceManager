@@ -107,6 +107,7 @@ public:
 	std::wstring					GetHeighmapFileName(TerrainObjectID ID) const;
 
 	void							ProcessLoadedTextures();
+	void							SortLoadQueue();
 
 private:
 
@@ -169,6 +170,8 @@ private:
 	UINT							_uiHeightmapsQueueParam = -1;
 
 	UINT							_uiBoundBoxCalculatingParam = -1;
+
+	UINT							_uiMomentalVisibleCountParam = -1;
 
 	CTextureLoadQueue*				_pTexturesQueue = nullptr;
 	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;

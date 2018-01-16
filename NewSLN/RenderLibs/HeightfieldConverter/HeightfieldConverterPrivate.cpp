@@ -182,20 +182,17 @@ ID3D11Buffer* CreateAndCopyToDebugBuf(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	D3D11_BUFFER_DESC desc;
 	ZeroMemory(&desc, sizeof(desc));
+
 	pBuffer->GetDesc(&desc);
+
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	desc.Usage = D3D11_USAGE_STAGING;
 	desc.BindFlags = 0;
 	desc.MiscFlags = 0;
+
 	if (SUCCEEDED(pDevice->CreateBuffer(&desc, nullptr, &debugbuf)))
-	{
-		//#if defined(_DEBUG) || defined(PROFILE) 
-		//debugbuf->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Debug") - 1, "Debug");
-		//#endif 
-
-	
+	{	
 		pd3dImmediateContext->CopyResource(debugbuf, pBuffer);
-
 	}
 
 	return debugbuf;
