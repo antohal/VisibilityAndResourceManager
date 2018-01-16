@@ -213,7 +213,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	//_pHeightfieldConverter->SetHeightScale(20.f);
+	_pHeightfieldConverter->SetHeightScale(10.f);
 	//_pHeightfieldConverter->SetHeightScale(0);
 
 	//_pHeightfieldConverter->SetNormalDivisionAngles(1, 2);
@@ -314,6 +314,8 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 
 	_uiTexturesQueueParam =		_pTextBlock->AddParameter(L"Текстур в очереди:");
 	_uiHeightmapsQueueParam =	_pTextBlock->AddParameter(L"Карт высот в очереди:");
+
+	_uiBoundBoxCalculatingParam = _pTextBlock->AddParameter(L"Баундбоксов считается:");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -388,6 +390,8 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 		_pTextBlock->SetParameterValue(_uiTexturesQueueParam, texturesCountToLoad);
 		_pTextBlock->SetParameterValue(_uiHeightmapsQueueParam, heightmapsCountToLoad);
+
+		_pTextBlock->SetParameterValue(_uiBoundBoxCalculatingParam, _pTerrainManager->GetBoundBoxToBeCalculatedCount());
 	}
 
 	if (_bDebugRenderEnabled)

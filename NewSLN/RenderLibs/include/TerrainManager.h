@@ -128,6 +128,9 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
+	// количество баунд боксов находящихся в очереди на рассчет
+	size_t GetBoundBoxToBeCalculatedCount() const;
+
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
 

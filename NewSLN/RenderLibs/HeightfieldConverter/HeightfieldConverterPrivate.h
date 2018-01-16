@@ -47,7 +47,7 @@ struct HeightfieldConverter::HeightfieldConverterPrivate
 	void	ReleaseTriangulation(STriangulation*);
 
 	// Получить буферы вершин и индексов в памяти
-	void	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
+	bool	UnmapTriangulation(STriangulation*, SVertex* out_pVertexes, unsigned int* out_pIndices);
 
 	float	GetHeightScale() const {
 		return _fHeightScale;

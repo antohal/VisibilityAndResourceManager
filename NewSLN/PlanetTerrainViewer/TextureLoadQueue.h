@@ -49,12 +49,12 @@ private:
 		ID3D11ShaderResourceView*	_pResView = nullptr;
 	};
 
-	ID3D11Device*			_device = nullptr;
-	FinishedLoadHandler		_finishHandler;
-	SortQueueHandler		_sortHandler;
+	ID3D11Device*				_device = nullptr;
+	FinishedLoadHandler			_finishHandler;
+	SortQueueHandler			_sortHandler;
 
-	std::thread*			_pTextureLoadThread = nullptr;
-	bool					_bTexturesThreadFinished = false;
+	std::thread*				_pTextureLoadThread = nullptr;
+	bool						_bTexturesThreadFinished = false;
 
 	mutable std::mutex			_queueMutex;
 	mutable std::mutex			_justLoadedMutex;

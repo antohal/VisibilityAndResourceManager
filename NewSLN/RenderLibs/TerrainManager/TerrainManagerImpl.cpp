@@ -213,6 +213,11 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 //	_implementation->SetDataReady(ID, in_pLoadedHeightmap);
 //}
 
+size_t CTerrainManager::GetBoundBoxToBeCalculatedCount() const
+{
+	return _implementation->GetBoundBoxToBeCalculatedCount();
+}
+
 void CTerrainManager::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * out_pvCenter) const
 {
 	_implementation->GetTerrainObjectCenter(ID, out_pvCenter);
@@ -322,6 +327,8 @@ CTerrainManager::CTerrainManagerImpl::CTerrainManagerImpl()
 
 	_pTerrainObjectManager = new CTerrainObjectManager;
 	_pPreliminaryVisibleSubtree = new CTerrainObjectVisibleSubtree(_pTerrainObjectManager);
+
+	_pBoundBoxAsyncManger = new AsyncTaskManager;
 }
 
 CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
@@ -340,6 +347,8 @@ CTerrainManager::CTerrainManagerImpl::~CTerrainManagerImpl()
 
 	if (_pVisibilityManager)
 		delete _pVisibilityManager;
+
+	delete _pBoundBoxAsyncManger;
 }
 
 void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * in_pD3DDevice11, ID3D11DeviceContext * in_pDeviceContext, const wchar_t * in_pcwszFileName, unsigned int in_uiMaxDepth, float in_fWorldScale, float in_fWorldSize, bool in_bCalculateAdjacency)
@@ -511,6 +520,10 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetAwaitingHeightmapObject
 {
 	return _vecAwaitingHeightmaps[index];
 }
+size_t CTerrainManager::CTerrainManagerImpl::GetBoundBoxToBeCalculatedCount() const
+{
+	return _pBoundBoxAsyncManger->tasksCount();
+}
 //@}
 
 
@@ -629,7 +642,8 @@ bool CTerrainManager::CTerrainManagerImpl::IsObjectInFrustumAndNotBacksided(Terr
 
 	pObj->CalculateReferencePoints(&vecRefPoints, &vecRefNormals);
 
-	if (!_pVisibilityManager->CheckOBBInCamera(ToVisManVec3(pObj->GetPos()), ToVisManVec3(pObj->GetX()), ToVisManVec3(pObj->GetY()), ToVisManVec3(pObj->GetZ()), ToVisManVec3(pObj->GetHalfSizes())))
+	OrientedBoundBox OBB = pObj->GetOrientedBoundBox();
+	if (!_pVisibilityManager->CheckOBBInCamera(ToVisManVec3(OBB._vPos), ToVisManVec3(OBB._vXAxis), ToVisManVec3(OBB._vYAxis), ToVisManVec3(OBB._vZAxis), ToVisManVec3(OBB._vHalfsizes)))
 		return false;
 
 	//@{ Проверка объектов на другой стороне Земли
@@ -1376,7 +1390,8 @@ CTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObject
 	STriangulationCoordsInfo coordsInfo;
 	ComputeTriangulationCoords(coords, coordsInfo, params.uiDepth);
 
-	CTerrainObject* pObject = new CTerrainObject(ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), _pTerrainObjectManager->GetHeighmapFileName(ID), _pHeightfieldConverter);
+	CTerrainObject* pObject = new CTerrainObject(ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), 
+		_pTerrainObjectManager->GetHeighmapFileName(ID), _pHeightfieldConverter, _pBoundBoxAsyncManger);
 
 	{
 		std::lock_guard<std::mutex> objLock(_objectsMutex);

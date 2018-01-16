@@ -108,7 +108,7 @@ void HeightfieldConverter::ReleaseHeightfield(SHeightfield* heightfield)
 }
 
 // Получить буферы вершин и индексов в памяти
-void HeightfieldConverter::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
+bool HeightfieldConverter::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
 {
-	_private->UnmapTriangulation(triangulation, out_pVertexes, out_pIndices);
+	return _private->UnmapTriangulation(triangulation, out_pVertexes, out_pIndices);
 }

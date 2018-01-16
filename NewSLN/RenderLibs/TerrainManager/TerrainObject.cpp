@@ -1,36 +1,69 @@
 #include "TerrainObject.h"
 #include "wgs84.h"
 
+#include "AsyncTask.h"
 #include "Log.h"
 
 #include <d3dx10math.h>
 
-
-CTerrainObject::CTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
-	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF)
-	: _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName), _pHeightfieldConverter(in_pHF)
+OrientedBoundBox::OrientedBoundBox(const STriangulationCoordsInfo& in_coordsInfo)
 {
 	_vPos = vm::Vector3df(in_coordsInfo.vPosition);
 	_vXAxis = vm::Vector3df(in_coordsInfo.vXAxis);
 	_vYAxis = vm::Vector3df(in_coordsInfo.vYAxis);
 	_vZAxis = vm::Vector3df(in_coordsInfo.vZAxis);
 
-	_vHalfsizes = (vm::Vector3df(in_coordsInfo.vBoundBoxMaximum) - vm::Vector3df(in_coordsInfo.vBoundBoxMinimum))*0.5;
+	vm::Vector3df vMin = vm::Vector3df(in_coordsInfo.vBoundBoxMinimum);
+	vm::Vector3df vMax = vm::Vector3df(in_coordsInfo.vBoundBoxMaximum);
 
-	if (in_coordsInfo.vBoundBoxMaximum[1] < _vHalfsizes[1])
-		_vPos -= _vYAxis * (_vHalfsizes[1] - in_coordsInfo.vBoundBoxMaximum[1]);
-	else
-		if (fabs(in_coordsInfo.vBoundBoxMinimum[1]) < _vHalfsizes[1])
-			_vPos += _vYAxis * (_vHalfsizes[1] - fabs(in_coordsInfo.vBoundBoxMinimum[1]));
+	_vHalfsizes = (vMax - vMin)*0.5;
+	vm::Vector3df vPosLocalOffset = (vMax + vMin)*0.5;
 
-	//	_vAABBMin = vm::Vector3df(in_coordsInfo.vBoundBoxMinimum);
-	//	_vAABBMax = vm::Vector3df(in_coordsInfo.vBoundBoxMaximum);
+	_vPos +=
+		vPosLocalOffset[0] * _vXAxis +
+		vPosLocalOffset[1] * _vYAxis +
+		vPosLocalOffset[2] * _vZAxis
+		;
+	
+}
+
+void OrientedBoundBox::getCornerPoints(vm::Vector3df out_pvCorners[8])
+{
+	out_pvCorners[0] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	out_pvCorners[1] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	out_pvCorners[2] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	out_pvCorners[3] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+
+	out_pvCorners[4] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	out_pvCorners[5] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	out_pvCorners[6] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
+	out_pvCorners[7] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+}
+
+vm::Vector3df OrientedBoundBox::projectPoint(const vm::Vector3df& v) const
+{
+	vm::Vector3df vDelta = v - _vPos;
+	return vm::Vector3df(
+		vm::dot_prod(vDelta, _vXAxis),
+		vm::dot_prod(vDelta, _vYAxis),
+		vm::dot_prod(vDelta, _vZAxis)
+	);
+}
+
+CTerrainObject::CTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF, AsyncTaskManager* in_pTaskManager)
+	: _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName), _pHeightfieldConverter(in_pHF),
+	_OBB(in_coordsInfo), _pTaskManager(in_pTaskManager)
+{
+	
 }
 
 CTerrainObject::~CTerrainObject()
 {
-	if (_apQuadVertices)
-		delete[] _apQuadVertices;
+	_pTaskManager->removeTask(_ID, true);
+
+	if (_apObjectVertices)
+		delete[] _apObjectVertices;
 }
 
 
@@ -38,15 +71,9 @@ void CTerrainObject::GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const
 {
 	vm::Vector3df vPoints[8];
 
-	vPoints[0] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
-	vPoints[1] = _vPos + _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
-	vPoints[2] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
-	vPoints[3] = _vPos + _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	OrientedBoundBox OBB = GetOrientedBoundBox();
 
-	vPoints[4] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
-	vPoints[5] = _vPos - _vXAxis * _vHalfsizes[0] - _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
-	vPoints[6] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] + _vZAxis * _vHalfsizes[2];
-	vPoints[7] = _vPos - _vXAxis * _vHalfsizes[0] + _vYAxis * _vHalfsizes[1] - _vZAxis * _vHalfsizes[2];
+	OBB.getCornerPoints(vPoints);
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -117,13 +144,76 @@ void CTerrainObject::initVertexBuffer()
 		return;
 	}
 
-	_apQuadVertices = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1) * 6];
+	_apObjectVertices = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1) * 6];
 		
-	_pHeightfieldConverter->UnmapTriangulation(_pTriangulation, _apQuadVertices, nullptr);
+	if (_pHeightfieldConverter->UnmapTriangulation(_pTriangulation, _apObjectVertices, nullptr))
+	{
+		CTerrainObject* _this = this;
+		_pTaskManager->appendTask(_ID, [=]() {_this->calculatePreciseBoundBox(); });
+
+		//calculatePreciseBoundBox();
+	}
+	else
+	{
+		LogMessage("Failed to unmap triangulation. ObjectID: %d", _ID);
+		delete[] _apObjectVertices;
+
+		_apObjectVertices = nullptr;
+	}
 }
 
 void CTerrainObject::calculatePreciseBoundBox()
 {
+	vm::Vector3df vMinPoint(0, 0, 0);
+	vm::Vector3df vMaxPoint(0, 0, 0);
+
+	OrientedBoundBox originalBB = _OBB;
+	float fWorldScale = _pHeightfieldConverter->GetWorldScale();
+
+	for (unsigned int i = 0; i < _pTriangulation->nVertexCount; i ++)
+	{
+		const SVertex& vtx = _apObjectVertices[i];
+		vm::Vector3df vVertexPos = vm::Vector3df(vtx.position.x, vtx.position.y, vtx.position.z);
+		
+		vm::Vector3df vProjectedPos = originalBB.projectPoint(vVertexPos);
+
+		bool ignorePoint = false;
+		for (int j = 0; j < 3; j++)
+		{
+			if (fabs(vProjectedPos[j]) > 12000000.0 * fWorldScale)
+				ignorePoint = true;
+		}
+
+		if (ignorePoint)
+			continue;
+
+		for (int j = 0; j < 3; j++)
+		{
+			if (vProjectedPos[j] < vMinPoint[j]) vMinPoint[j] = vProjectedPos[j];
+			if (vProjectedPos[j] > vMaxPoint[j]) vMaxPoint[j] = vProjectedPos[j];
+		}
+	}
+
+	STriangulationCoordsInfo coordsInfo;
+	originalBB._vPos.ToArray(coordsInfo.vPosition);
+	originalBB._vXAxis.ToArray(coordsInfo.vXAxis);
+	originalBB._vYAxis.ToArray(coordsInfo.vYAxis);
+	originalBB._vZAxis.ToArray(coordsInfo.vZAxis);
+	vMinPoint.ToArray(coordsInfo.vBoundBoxMinimum);
+	vMaxPoint.ToArray(coordsInfo.vBoundBoxMaximum);
+
+	std::lock_guard<std::mutex> obbLock(_obbMutex);
+	_OBB = OrientedBoundBox(coordsInfo);
+}
+
+
+vm::Vector3df ComputeTripleNormal(const vm::Vector3df& v0, const vm::Vector3df& v1, const vm::Vector3df& v2)
+{
+	vm::Vector3df n = vm::normalize(vm::cross(v1 - v0, v2 - v0));
+	if (vm::dot_prod(n, v0) < 0)
+		n = -n;
+
+	return n;
 }
 
 // returns true if in_vPos is above
@@ -132,7 +222,7 @@ bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, 
 	double dfLong, dfLat;
 	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(_ID, in_vPos, dfLat, dfLong);
 
-	if (!_apQuadVertices)
+	if (!_apObjectVertices)
 	{
 		out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
 		out_vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
@@ -183,12 +273,15 @@ bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, 
 
 	QuadVertex quadVertices[4];
 
-	SVertex* pQuadStartVertex = &_apQuadVertices[(iQuadLong * (_pTriangulation->nCountLat - 1) + iQuadLat) * 6];
+	SVertex* pQuadStartVertex = &_apObjectVertices[(iQuadLong * (_pTriangulation->nCountLat - 1) + iQuadLat) * 6];
 
 	quadVertices[0] = pQuadStartVertex[0];
 	quadVertices[1] = pQuadStartVertex[1];
 	quadVertices[2] = pQuadStartVertex[2];
 	quadVertices[3] = pQuadStartVertex[5];
+
+	vm::Vector3df n1 = ComputeTripleNormal(quadVertices[0].pos, quadVertices[1].pos, quadVertices[2].pos);
+	vm::Vector3df n2 = ComputeTripleNormal(quadVertices[0].pos, quadVertices[2].pos, quadVertices[3].pos);
 
 	QuadVertex p0 = QuadVertex::lerp(dfQuadLatCoeff, quadVertices[1], quadVertices[0]);
 	QuadVertex p1 = QuadVertex::lerp(dfQuadLatCoeff, quadVertices[2], quadVertices[3]);
@@ -196,7 +289,14 @@ bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, 
 	QuadVertex result = QuadVertex::lerp(dfQuadLongCoeff, p0, p1);
 
 	out_vProjection = result.pos;
-	out_vNormal = result.normal;
+	out_vNormal = vm::normalize(n1 + n2);
 
 	return isPositionAboveBlock;
+}
+
+OrientedBoundBox CTerrainObject::GetOrientedBoundBox() const
+{
+	std::lock_guard<std::mutex> obbLock(_obbMutex);
+
+	return _OBB;
 }

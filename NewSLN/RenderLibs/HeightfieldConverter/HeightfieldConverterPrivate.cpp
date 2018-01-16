@@ -203,7 +203,7 @@ ID3D11Buffer* CreateAndCopyToDebugBuf(ID3D11Device* pDevice, ID3D11DeviceContext
 
 
 // Получить буферы вершин и индексов в памяти
-void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
+bool HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STriangulation* triangulation, SVertex* out_pVertexes, unsigned int* out_pIndices)
 {
 	LockDeviceContext();
 
@@ -211,18 +211,31 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 	if (triangulation->pVertexBuffer && out_pVertexes)
 	{
 		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(_ptrD3DDevice, _ptrDeviceContext, triangulation->pVertexBuffer);
+
+		if (!debugbuf)
+		{
+			UnlockDeviceContext();
+			return false;
+		}
+
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
 
 		SVertex *p;
-		_ptrDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource);
+		if (_ptrDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource) == S_OK)
+		{
+			// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
+			// This is also a common trick to debug CS programs. 
+			p = (SVertex*)MappedResource.pData;
 
-		// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
-		// This is also a common trick to debug CS programs. 
-		p = (SVertex*)MappedResource.pData;
+			memcpy(out_pVertexes, p, triangulation->nVertexCount * sizeof(SVertex));
 
-		memcpy(out_pVertexes, p, triangulation->nVertexCount * sizeof(SVertex));
-
-		_ptrDeviceContext->Unmap(debugbuf, 0);
+			_ptrDeviceContext->Unmap(debugbuf, 0);
+		}
+		else
+		{
+			UnlockDeviceContext();
+			return false;
+		}
 
 		if (debugbuf)
 			debugbuf->Release();
@@ -234,22 +247,36 @@ void HeightfieldConverter::HeightfieldConverterPrivate::UnmapTriangulation(STria
 		ID3D11Buffer* debugbuf = CreateAndCopyToDebugBuf(_ptrD3DDevice, _ptrDeviceContext, triangulation->pIndexBuffer);
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
 
+		if (!debugbuf)
+		{
+			UnlockDeviceContext();
+			return false;
+		}
+
 		unsigned int *p;
-		_ptrDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource);
+		if (_ptrDeviceContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource) == S_OK)
+		{
+			// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
+			// This is also a common trick to debug CS programs. 
+			p = (unsigned int*)MappedResource.pData;
 
-		// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS 
-		// This is also a common trick to debug CS programs. 
-		p = (unsigned int*)MappedResource.pData;
+			memcpy(out_pIndices, p, triangulation->nIndexCount * 4);
 
-		memcpy(out_pIndices, p, triangulation->nIndexCount * 4);
-
-		_ptrDeviceContext->Unmap(debugbuf, 0);
+			_ptrDeviceContext->Unmap(debugbuf, 0);
+		}
+		else
+		{
+			UnlockDeviceContext();
+			return false;
+		}
 
 		if (debugbuf)
 			debugbuf->Release();
 	}
 
 	UnlockDeviceContext();
+
+	return true;
 }
 
 void HeightfieldConverter::HeightfieldConverterPrivate::LockDeviceContext()

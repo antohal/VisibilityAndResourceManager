@@ -7,13 +7,32 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
+#include <thread>
+
+class AsyncTaskManager;
+
+struct OrientedBoundBox
+{
+	OrientedBoundBox() {}
+	OrientedBoundBox(const STriangulationCoordsInfo& in_coordsInfo);
+
+	void			getCornerPoints(vm::Vector3df out_pvCorners[8]);
+	vm::Vector3df	projectPoint(const vm::Vector3df& v) const;
+
+	vm::Vector3df	_vPos		= vm::Vector3df(0, 0, 0);
+	vm::Vector3df	_vXAxis		= vm::Vector3df(1, 0, 0);
+	vm::Vector3df	_vYAxis		= vm::Vector3df(0, 1, 0);
+	vm::Vector3df	_vZAxis		= vm::Vector3df(0, 0, 1);
+	vm::Vector3df	_vHalfsizes = vm::Vector3df(0, 0, 0);
+};
 
 class CTerrainObject
 {
 public:
 
 	CTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
-		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF);
+		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF, AsyncTaskManager* in_pTaskManager);
 
 	~CTerrainObject();
 
@@ -34,7 +53,6 @@ public:
 		_pTriangulation = pTri;
 
 		initVertexBuffer();
-		calculatePreciseBoundBox();
 	}
 
 	STriangulation* GetTriangulation() {
@@ -54,11 +72,7 @@ public:
 	const wchar_t*				GetTextureFileName() const { return _textureFileName.c_str(); }
 	const wchar_t*				GetHeightmapFileName() const { return _heightmapFileName.c_str(); }
 
-	const vm::Vector3df&		GetPos() const { return _vPos; }
-	const vm::Vector3df&		GetX() const { return _vXAxis; }
-	const vm::Vector3df&		GetY() const { return _vYAxis; }
-	const vm::Vector3df&		GetZ() const { return _vZAxis; }
-	const vm::Vector3df&		GetHalfSizes() const { return _vHalfsizes; }
+	OrientedBoundBox			GetOrientedBoundBox() const;
 
 	float						timeSinceUnused = 0;
 
@@ -72,21 +86,15 @@ private:
 
 	HeightfieldConverter*		_pHeightfieldConverter = nullptr;
 	STriangulation*				_pTriangulation = nullptr;
+	AsyncTaskManager*			_pTaskManager = nullptr;
 
-	SVertex*					_apQuadVertices = nullptr;
+	SVertex*					_apObjectVertices = nullptr;
 
-	vm::Vector3df				_vPos = vm::Vector3df(0, 0, 0);
-
-	vm::Vector3df				_vXAxis = vm::Vector3df(1, 0, 0);
-	vm::Vector3df				_vYAxis = vm::Vector3df(0, 1, 0);
-	vm::Vector3df				_vZAxis = vm::Vector3df(0, 0, 1);
-	vm::Vector3df				_vHalfsizes = vm::Vector3df(0, 0, 0);
-
-	vm::Vector3df				_vAABBMin = vm::Vector3df(0, 0, 0);
-	vm::Vector3df				_vAABBMax = vm::Vector3df(0, 0, 0);
+	OrientedBoundBox			_OBB;
+	mutable std::mutex			_obbMutex;
+	//std::thread*				_updateBoundBoxThread = nullptr;
 
 	bool						_bTriangulationsReady = false;
-	//bool						_bOtherDataReady = false;
 	bool						_bTextureReady = false;
 
 	std::wstring				_textureFileName;

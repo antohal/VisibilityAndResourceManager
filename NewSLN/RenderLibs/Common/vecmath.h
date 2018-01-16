@@ -113,16 +113,16 @@ template <typename Type, int N>
 class Vector
 {
 public:
-    Type	v[N];
+	Type	v[N];
 
-    //@{ Constructors
-    Vector () {}
+	//@{ Constructors
+	Vector() {}
 
-    explicit Vector (const Type in_tInit)
-    {
-        for(size_t i = 0; i < N; ++i)
-            v[i] = in_tInit;
-    }
+	explicit Vector(const Type in_tInit)
+	{
+		for (size_t i = 0; i < N; ++i)
+			v[i] = in_tInit;
+	}
 
 	explicit Vector(const Type in_aV[N])
 	{
@@ -130,207 +130,214 @@ public:
 			v[i] = in_aV[i];
 	}
 
-    //usability constructors
-    Vector (const std::vector<Type>& in_vecValues)
-    {
+	//usability constructors
+	Vector(const std::vector<Type>& in_vecValues)
+	{
 		assert_debug(N == in_vecValues.size(), L"Wrong vector dimension!");
-        for(size_t i = 0; i < N; ++i)
-            v[i] = in_vecValues[i];
-    }
+		for (size_t i = 0; i < N; ++i)
+			v[i] = in_vecValues[i];
+	}
 
 	Vector(const std::initializer_list<Type>& in_list) : Vector(std::vector<Type>(in_list))
 	{
 	}
 
-    Vector (const Type& x, const Type& y)
-    {
+	Vector(const Type& x, const Type& y)
+	{
 		static_assert(N == 2, "Wrong vector dimension!");
-        v[0] = x;
-        v[1] = y;
-    }
+		v[0] = x;
+		v[1] = y;
+	}
 
-    Vector (const Type& x, const Type& y, const Type& z)
-    {
+	Vector(const Type& x, const Type& y, const Type& z)
+	{
 		static_assert(N == 3, "Wrong vector dimension!");
-        v[0] = x;
-        v[1] = y;
-        v[2] = z;
-    }
+		v[0] = x;
+		v[1] = y;
+		v[2] = z;
+	}
 
-    Vector (const Type& x, const Type& y, const Type& z, const Type& w)
-    {
+	Vector(const Type& x, const Type& y, const Type& z, const Type& w)
+	{
 		static_assert(N == 4, "Wrong vector dimension!");
-        v[0] = x;
-        v[1] = y;
-        v[2] = z;
-        v[3] = w;
-    }
+		v[0] = x;
+		v[1] = y;
+		v[2] = z;
+		v[3] = w;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5)
+	{
 		static_assert(N == 5, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6)
+	{
 		static_assert(N == 6, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7)
+	{
 		static_assert(N == 7, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8)
+	{
 		static_assert(N == 8, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8, const Type& x9)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8, const Type& x9)
+	{
 		static_assert(N == 9, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-        v[8] = x9;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+		v[8] = x9;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
-            const Type& x9, const Type& x10)
-    {
-        static_assert(N == 10, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-        v[8] = x9;
-        v[9] = x10;
-    }
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
+		const Type& x9, const Type& x10)
+	{
+		static_assert(N == 10, "Wrong vector dimension!");
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+		v[8] = x9;
+		v[9] = x10;
+	}
 
-    Vector (const Type x1, const Type x2, const Type x3, const Type x4, const Type x5, const Type x6, const Type x7, const Type x8,
-            const Type x9, const Type x10, const Type x11)
-    {
+	Vector(const Type x1, const Type x2, const Type x3, const Type x4, const Type x5, const Type x6, const Type x7, const Type x8,
+		const Type x9, const Type x10, const Type x11)
+	{
 		static_assert(N == 11, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-        v[8] = x9;
-        v[9] = x10;
-        v[10] = x11;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+		v[8] = x9;
+		v[9] = x10;
+		v[10] = x11;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
-            const Type& x9, const Type& x10, const Type& x11, const Type& x12)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
+		const Type& x9, const Type& x10, const Type& x11, const Type& x12)
+	{
 		static_assert(N == 12, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-        v[8] = x9;
-        v[9] = x10;
-        v[10] = x11;
-        v[11] = x12;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+		v[8] = x9;
+		v[9] = x10;
+		v[10] = x11;
+		v[11] = x12;
+	}
 
-    Vector (const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
-            const Type& x9, const Type& x10, const Type& x11, const Type& x12, const Type& x13)
-    {
+	Vector(const Type& x1, const Type& x2, const Type& x3, const Type& x4, const Type& x5, const Type& x6, const Type& x7, const Type& x8,
+		const Type& x9, const Type& x10, const Type& x11, const Type& x12, const Type& x13)
+	{
 		static_assert(N == 13, "Wrong vector dimension!");
-        v[0] = x1;
-        v[1] = x2;
-        v[2] = x3;
-        v[3] = x4;
-        v[4] = x5;
-        v[5] = x6;
-        v[6] = x7;
-        v[7] = x8;
-        v[8] = x9;
-        v[9] = x10;
-        v[10] = x11;
-        v[11] = x12;
-        v[12] = x13;
-    }
+		v[0] = x1;
+		v[1] = x2;
+		v[2] = x3;
+		v[3] = x4;
+		v[4] = x5;
+		v[5] = x6;
+		v[6] = x7;
+		v[7] = x8;
+		v[8] = x9;
+		v[9] = x10;
+		v[10] = x11;
+		v[11] = x12;
+		v[12] = x13;
+	}
 
-    //This allows to convert from vector of other type (if static conversion exist)
-    template <typename Type2>
-    Vector (const Vector<Type2, N>& in_vVec)
-    {
-        for(size_t i = 0; i < N; ++i)
-            v[i] = static_cast<Type>(in_vVec.v[i]);
-    }
-    //@}
+	//This allows to convert from vector of other type (if static conversion exist)
+	template <typename Type2>
+	Vector(const Vector<Type2, N>& in_vVec)
+	{
+		for (size_t i = 0; i < N; ++i)
+			v[i] = static_cast<Type>(in_vVec.v[i]);
+	}
+	//@}
 
-    //@{ Misc functions
-    void	Zero ()
-    {
-        memset(&v[0], 0, N*sizeof(Type));
-    }
+	//@{ Misc functions
+	void	Zero()
+	{
+		memset(&v[0], 0, N * sizeof(Type));
+	}
 
-	inline int Dim () const {return N;}
+	inline int Dim() const { return N; }
 
-    inline Type& operator [] (size_t in_nIndex)
-    {
+	inline Type& operator [] (size_t in_nIndex)
+	{
 		assert_debug(in_nIndex < N, L"Access out of collection bounds");
-        return v[in_nIndex];
-    }
+		return v[in_nIndex];
+	}
 
-    inline const Type& operator [] (size_t in_nIndex) const
-    {
+	inline const Type& operator [] (size_t in_nIndex) const
+	{
 		assert_debug(in_nIndex < N, L"Access out of collection bounds");
-        return v[in_nIndex];
-    }
+		return v[in_nIndex];
+	}
 
-    inline void ToSTLVector (vector<Type>& out_vec) const
-    {
-        out_vec.resize(N);
-        for(size_t i = 0; i < N; ++i)
-            out_vec[i] = v[i];
-    }
+	inline void ToSTLVector(vector<Type>& out_vec) const
+	{
+		out_vec.resize(N);
+		for (size_t i = 0; i < N; ++i)
+			out_vec[i] = v[i];
+	}
+
+	inline void ToArray(Type out_Array[N]) const
+	{
+		for (size_t i = 0; i < N; ++i)
+			out_Array[i] = v[i];
+	}
+
     //@}
 
     //@{ Self operators

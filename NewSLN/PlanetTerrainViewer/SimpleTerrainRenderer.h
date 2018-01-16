@@ -168,6 +168,8 @@ private:
 	UINT							_uiTexturesQueueParam = -1;
 	UINT							_uiHeightmapsQueueParam = -1;
 
+	UINT							_uiBoundBoxCalculatingParam = -1;
+
 	CTextureLoadQueue*				_pTexturesQueue = nullptr;
 	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;
 

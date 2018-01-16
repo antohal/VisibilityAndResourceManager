@@ -10,6 +10,7 @@
 #include "TerrainVisibility.h"
 
 #include "TerrainObject.h"
+#include "AsyncTask.h"
 
 #include <set>
 #include <map>
@@ -93,6 +94,8 @@ public:
 	size_t GetAwaitingHeightmapsCount() const;
 	TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
 	//@}
+
+	size_t GetBoundBoxToBeCalculatedCount() const;
 
 	// Получить координаты центра объекта террейна (с учетом коэффициента масштаба)
 	void GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3* out_pvCenter) const;
@@ -182,6 +185,7 @@ private:
 	CVisibilityManager*		_pVisibilityManager = nullptr;
 
 	HeightfieldConverter*	_pHeightfieldConverter = nullptr;
+	AsyncTaskManager*		_pBoundBoxAsyncManger = nullptr;
 	//@}
 
 	//@{ Vars
