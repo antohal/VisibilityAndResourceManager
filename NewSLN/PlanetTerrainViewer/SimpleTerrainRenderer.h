@@ -173,6 +173,10 @@ private:
 
 	UINT							_uiMomentalVisibleCountParam = -1;
 
+	D3DXVECTOR3						_vClosestPoint;
+	float							_fClosestDist = 0;
+	UINT							_uiClosestDistParam = -1;
+
 	CTextureLoadQueue*				_pTexturesQueue = nullptr;
 	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;
 

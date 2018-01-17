@@ -109,6 +109,8 @@ public:
 
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvProjection, D3DXVECTOR3* out_pvNormal) const;
 
+	bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvClosestPoint, D3DXVECTOR3* out_pvNormal) const;
+
 	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
 
 	//void SetDataReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap = nullptr);
@@ -184,6 +186,7 @@ private:
 
 	CTerrainObject*	GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner = std::string()) const;
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const override;
+	bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const override;
 
 	//@{ Main objects
 	//---------------------- New mechanism

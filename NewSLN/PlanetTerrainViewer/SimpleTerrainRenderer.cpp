@@ -324,6 +324,7 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 	_uiBoundBoxCalculatingParam = _pTextBlock->AddParameter(L"Баундбоксов считается");
 
 	_uiMomentalVisibleCountParam = _pTextBlock->AddParameter(L"Моментально видимых");
+	_uiClosestDistParam = _pTextBlock->AddParameter(L"Минимальное расстояние до поверхности");
 }
 
 int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
@@ -355,6 +356,11 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 	int numPrimitives = 0;
 
+
+	vm::Vector3df vCamPos = GetApplicationHandle()->GetGraphicsContext()->GetScene()->GetMainCamera()->GetPos();
+	D3DXVECTOR3 cameraPosition(vCamPos[0], vCamPos[1], vCamPos[2]);
+	D3DXVECTOR3 objectProjection, objectNormal;
+
 	// render queued objects
 
 	for (const TerrainObjectID& ID : _lstRenderQueue)
@@ -380,6 +386,16 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 			numPrimitives += pObj->GetIndexCount() / 3;
 		}
+
+
+
+		// calculate closest point
+		if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal))
+		{
+			_pTerrainManager->GetTerrainObjectClosestPoint(ID, &cameraPosition, &_vClosestPoint, &objectNormal);
+			_fClosestDist = D3DXVec3Length(&(_vClosestPoint - cameraPosition));
+		}
+
 	}
 
 	_visibleObjsCount = _lstRenderQueue.size();
@@ -402,6 +418,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 		_pTextBlock->SetParameterValue(_uiBoundBoxCalculatingParam, _pTerrainManager->GetBoundBoxToBeCalculatedCount());
 
 		_pTextBlock->SetParameterValue(_uiMomentalVisibleCountParam, _pTerrainManager->GetMomentalVisibleObjectsCount());
+		_pTextBlock->SetParameterValue(_uiClosestDistParam, _fClosestDist);
 	}
 
 	if (_bDebugRenderEnabled)
@@ -594,6 +611,25 @@ void CSimpleTerrainRenderer::RenderDebug()
 	_primitiveBatch->Begin();
 //	_primitiveBatch->DrawLine(VertexPositionColor(XMFLOAT3(0, 0, 0), XMFLOAT4(1, 0,0,1)), VertexPositionColor(XMFLOAT3(_fWorldScale * 7000000, 0, 0), XMFLOAT4(1, 0, 0, 1)));
 
+	// Draw closest point
+	{
+		const float fCrossWidth = 0.05 * D3DXVec3Length(&(_vClosestPoint - cameraPosition));
+		_primitiveBatch->DrawLine(
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x - fCrossWidth, _vClosestPoint.y, _vClosestPoint.z), XMFLOAT4(1, 1, 1, 1)),
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x + fCrossWidth, _vClosestPoint.y, _vClosestPoint.z), XMFLOAT4(1, 1, 1, 1))
+		);
+
+		_primitiveBatch->DrawLine(
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y - fCrossWidth, _vClosestPoint.z), XMFLOAT4(1, 1, 1, 1)),
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y + fCrossWidth, _vClosestPoint.z), XMFLOAT4(1, 1, 1, 1))
+		);
+
+		_primitiveBatch->DrawLine(
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y, _vClosestPoint.z - fCrossWidth), XMFLOAT4(1, 1, 1, 1)),
+			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y, _vClosestPoint.z + fCrossWidth), XMFLOAT4(1, 1, 1, 1))
+		);
+	}
+
 	for (const TerrainObjectID& ID : _lstRenderQueue)
 	{
 		D3DXVECTOR3 corners[8];
@@ -653,6 +689,7 @@ void CSimpleTerrainRenderer::RenderDebug()
 			);
 			//@}
 		}
+
 
 		XMFLOAT3 vCorners[8];
 		for (int i = 0; i < 8; i++)

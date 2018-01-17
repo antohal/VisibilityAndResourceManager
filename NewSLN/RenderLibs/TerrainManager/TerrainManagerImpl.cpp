@@ -234,6 +234,11 @@ bool CTerrainManager::GetTerrainObjectProjection(TerrainObjectID ID, const D3DXV
 	return _implementation->GetTerrainObjectProjection(ID, in_pvPosFrom, out_pvProjection, out_pvNormal);
 }
 
+bool CTerrainManager::GetTerrainObjectClosestPoint(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvClosestPoint, D3DXVECTOR3* out_pvNormal) const
+{
+	return _implementation->GetTerrainObjectClosestPoint(ID, in_pvPosFrom, out_pvClosestPoint, out_pvNormal);
+}
+
 void CTerrainManager::GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const
 {
 	_implementation->GetTerrainObjectBoundBoxCorners(ID, out_pvCorners);
@@ -879,6 +884,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 		objTri._ready = true;
 
+		_setNotReadyTriangulations.erase(ID);
+
 		std::lock_guard<std::mutex> objLock(_objectsMutex);
 		auto it = _mapId2Object.find(ID);
 
@@ -1212,6 +1219,42 @@ bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObj
 		out_pvProjection->x = vProjection[0];
 		out_pvProjection->y = vProjection[1];
 		out_pvProjection->z = vProjection[2];
+	}
+
+	if (out_pvNormal)
+	{
+		out_pvNormal->x = vNormal[0];
+		out_pvNormal->y = vNormal[1];
+		out_pvNormal->z = vNormal[2];
+	}
+
+	return result;
+}
+
+bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const
+{
+	if (CTerrainObject* pObj = GetTerrainObject(ID))
+		return pObj->CalculateClosestPoint(in_pvPosFrom, out_pvClosestPoint, out_pvNormal);
+
+	double dfLong, dfLat;
+	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(ID, in_pvPosFrom, dfLat, dfLong);
+
+	out_pvClosestPoint = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
+	out_pvNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
+
+	return isPositionAboveBlock;
+}
+
+bool  CTerrainManager::CTerrainManagerImpl::GetTerrainObjectClosestPoint(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvClosestPoint, D3DXVECTOR3* out_pvNormal) const
+{
+	vm::Vector3df vClosest(0, 0, 0), vNormal(1, 0, 0);
+	bool result = GetTerrainObjectClosestPoint(ID, vm::Vector3df(in_pvPosFrom->x, in_pvPosFrom->y, in_pvPosFrom->z), vClosest, vNormal);
+
+	if (out_pvClosestPoint)
+	{
+		out_pvClosestPoint->x = vClosest[0];
+		out_pvClosestPoint->y = vClosest[1];
+		out_pvClosestPoint->z = vClosest[2];
 	}
 
 	if (out_pvNormal)

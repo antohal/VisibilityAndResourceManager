@@ -142,6 +142,9 @@ public:
 	// Получить проекцию на объект Земли. Возвращает true, если in_pvPosFrom лежит над блоком Земли
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvProjection, D3DXVECTOR3* out_pvNormal) const;
 
+	// Получить ближайшую точку объекта Земли. Возвращает true, если in_pvPosFrom лежит над блоком Земли
+	bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const D3DXVECTOR3* in_pvPosFrom, D3DXVECTOR3* out_pvClosestPoint, D3DXVECTOR3* out_pvNormal) const;
+
 	// Получить узловые точки баунд бокса
 	void GetTerrainObjectBoundBoxCorners(TerrainObjectID ID, D3DXVECTOR3 out_pvCorners[8]) const;
 

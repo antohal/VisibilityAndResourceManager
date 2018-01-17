@@ -62,8 +62,8 @@ CTerrainObject::~CTerrainObject()
 {
 	_pTaskManager->removeTask(_ID, true);
 
-	if (_apObjectVertices)
-		delete[] _apObjectVertices;
+	if (_apTriangleList)
+		delete[] _apTriangleList;
 }
 
 
@@ -144,34 +144,122 @@ void CTerrainObject::initVertexBuffer()
 		return;
 	}
 
-	_apObjectVertices = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1) * 6];
+	_apTriangleList = new SVertex [(_pTriangulation->nCountLat - 1)*(_pTriangulation->nCountLong - 1) * 6];
 		
-	if (_pHeightfieldConverter->UnmapTriangulation(_pTriangulation, _apObjectVertices, nullptr))
+	if (_pHeightfieldConverter->UnmapTriangulation(_pTriangulation, _apTriangleList, nullptr))
 	{
 		CTerrainObject* _this = this;
-		_pTaskManager->appendTask(_ID, [=]() {_this->calculatePreciseBoundBox(); });
+		_pTaskManager->appendTask(_ID, [=]() {_this->calculateVerticesAndPreciseBoundBox(); });
 	}
 	else
 	{
 		LogMessage("Failed to unmap triangulation. ObjectID: %d", _ID);
-		delete[] _apObjectVertices;
+		delete[] _apTriangleList;
 
-		_apObjectVertices = nullptr;
+		_apTriangleList = nullptr;
 	}
 }
 
-void CTerrainObject::calculatePreciseBoundBox()
+void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 {
+	if (!_apTriangleList || _verticesCalculated)
+		return;
+
+	// --- calc vertices ---
+
+	_apVertices = new TerrainVertex[_pTriangulation->nCountLat * _pTriangulation->nCountLong];
+
+	auto setVertex = [this](unsigned int iLat, unsigned int iLong, const TerrainVertex& v)
+	{
+		_apVertices[iLong * (_pTriangulation->nCountLat) + iLat] = v;
+	};
+
+	struct SQuad
+	{
+		vm::Vector3f vertices[4];
+		vm::Vector3f normals[4];
+	};
+
+	auto dxToVec = [](const D3DXVECTOR3& v) -> vm::Vector3f
+	{
+		return vm::Vector3f(v.x, v.y, v.z);
+	};
+
+	auto getQuad = [&](unsigned int iQuadLat, unsigned int iQuadLong) ->SQuad
+	{
+		unsigned int iQuadStartVertex = (iQuadLong * (_pTriangulation->nCountLat - 1) + iQuadLat) * 6;
+
+		SQuad quad;
+		quad.vertices[0] = dxToVec(_apTriangleList[iQuadStartVertex].position);
+		quad.vertices[1] = dxToVec(_apTriangleList[iQuadStartVertex + 1].position);
+		quad.vertices[2] = dxToVec(_apTriangleList[iQuadStartVertex + 2].position);
+		quad.vertices[3] = dxToVec(_apTriangleList[iQuadStartVertex + 5].position);
+
+		quad.normals[0] = dxToVec(_apTriangleList[iQuadStartVertex].normal);
+		quad.normals[1] = dxToVec(_apTriangleList[iQuadStartVertex + 1].normal);
+		quad.normals[2] = dxToVec(_apTriangleList[iQuadStartVertex + 2].normal);
+		quad.normals[3] = dxToVec(_apTriangleList[iQuadStartVertex + 5].normal);
+
+		return quad;
+	};
+
+	auto computeMeanNormal = [&](const vm::Vector3f& pos, const vm::Vector3f neighbours[4]) -> vm::Vector3f
+	{
+		return - vm::normalize(
+			vm::cross(neighbours[0] - pos, neighbours[3] - pos) +
+			vm::cross(neighbours[3] - pos, neighbours[2] - pos) +
+			vm::cross(neighbours[2] - pos, neighbours[1] - pos) +
+			vm::cross(neighbours[1] - pos, neighbours[0] - pos)
+		);
+	};
+
+	for (unsigned int iQuadLat = 0; iQuadLat < _pTriangulation->nCountLat - 1; iQuadLat++)
+	{
+		for (unsigned int iQuadLong = 0; iQuadLong < _pTriangulation->nCountLong - 1; iQuadLong++)
+		{
+			SQuad quad = getQuad(iQuadLat, iQuadLong);
+
+			if (iQuadLat > 0 && iQuadLong > 0)
+			{
+				SQuad leftNeighbour = getQuad(iQuadLat - 1, iQuadLong),
+					bottomNeighbour = getQuad(iQuadLat, iQuadLong - 1);
+
+				vm::Vector3f neighbourVertices[4] = { quad.vertices[0], quad.vertices[2], leftNeighbour.vertices[1], bottomNeighbour.vertices[1] };
+
+				setVertex(iQuadLat, iQuadLong, TerrainVertex(quad.vertices[1], 
+					computeMeanNormal(quad.vertices[1], neighbourVertices )));
+			}
+			else
+			{
+				setVertex(iQuadLat, iQuadLong, TerrainVertex(quad.vertices[1], quad.normals[1]));
+			}
+
+			if (iQuadLat == _pTriangulation->nCountLat - 2)
+				setVertex(iQuadLat + 1, iQuadLong, TerrainVertex(quad.vertices[0], quad.normals[0]));
+			else if (iQuadLong == _pTriangulation->nCountLong - 2)
+				setVertex(iQuadLat, iQuadLong + 1, TerrainVertex(quad.vertices[2], quad.normals[2]));
+			else if (iQuadLat == _pTriangulation->nCountLat - 2 && iQuadLong == _pTriangulation->nCountLong - 2)
+				setVertex(iQuadLat, iQuadLong + 1, TerrainVertex(quad.vertices[3], quad.normals[3]));
+		}
+	}
+
+	_verticesCalculated = true;
+
+	delete[] _apTriangleList;
+	_apTriangleList = nullptr;
+
+	// --- calc bound box ---
+
 	vm::Vector3df vMinPoint(0, 0, 0);
 	vm::Vector3df vMaxPoint(0, 0, 0);
 
 	OrientedBoundBox originalBB = _OBB;
 	float fWorldScale = _pHeightfieldConverter->GetWorldScale();
 
-	for (unsigned int i = 0; i < _pTriangulation->nVertexCount; i ++)
+	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i ++)
 	{
-		const SVertex& vtx = _apObjectVertices[i];
-		vm::Vector3df vVertexPos = vm::Vector3df(vtx.position.x, vtx.position.y, vtx.position.z);
+		const TerrainVertex& vtx = _apVertices[i];
+		vm::Vector3df vVertexPos = vtx.pos;
 		
 		vm::Vector3df vProjectedPos = originalBB.projectPoint(vVertexPos);
 
@@ -204,23 +292,13 @@ void CTerrainObject::calculatePreciseBoundBox()
 	_OBB = OrientedBoundBox(coordsInfo);
 }
 
-
-vm::Vector3df ComputeTripleNormal(const vm::Vector3df& v0, const vm::Vector3df& v1, const vm::Vector3df& v2)
-{
-	vm::Vector3df n = vm::normalize(vm::cross(v1 - v0, v2 - v0));
-	if (vm::dot_prod(n, v0) < 0)
-		n = -n;
-
-	return n;
-}
-
 // returns true if in_vPos is above
-bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal)
+bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal) const
 {
 	double dfLong, dfLat;
 	bool isPositionAboveBlock = GetObjectManager()->GetClippedProjection(_ID, in_vPos, dfLat, dfLong);
 
-	if (!_apObjectVertices)
+	if (!_verticesCalculated)
 	{
 		out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
 		out_vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
@@ -252,42 +330,25 @@ bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, 
 	double dfQuadLatCoeff = (dfLat - dfQuadMinLat) / (dfQuadMaxLat - dfQuadMinLat);
 	double dfQuadLongCoeff = (dfLong - dfQuadMinLong) / (dfQuadMaxLong - dfQuadMinLong);
 
-	struct QuadVertex
+	TerrainVertex quadVertices[4];
+
+	auto getVertex = [this](unsigned int iLat, unsigned int iLong) -> const TerrainVertex&
 	{
-		vm::Vector3df pos, normal;
-
-		QuadVertex() {}
-		QuadVertex(const SVertex& v) : pos(v.position.x, v.position.y, v.position.z), normal(v.normal.x, v.normal.y, v.normal.z) {}
-		QuadVertex(const vm::Vector3df& p, const vm::Vector3df& n) : pos(p), normal(n) {}
-
-		static QuadVertex lerp(double k, const QuadVertex& v0, const QuadVertex& v1)
-		{
-			return QuadVertex(
-				v0.pos + k * (v1.pos - v0.pos),
-				vm::normalize(v0.normal + k * (v1.normal - v0.normal))
-			);
-		}
+		return _apVertices[iLong * (_pTriangulation->nCountLat) + iLat];
 	};
 
-	QuadVertex quadVertices[4];
+	quadVertices[0] = getVertex(iQuadLat + 1, iQuadLong);
+	quadVertices[1] = getVertex(iQuadLat, iQuadLong);
+	quadVertices[2] = getVertex(iQuadLat, iQuadLong + 1);
+	quadVertices[3] = getVertex(iQuadLat + 1, iQuadLong + 1);
 
-	SVertex* pQuadStartVertex = &_apObjectVertices[(iQuadLong * (_pTriangulation->nCountLat - 1) + iQuadLat) * 6];
+	TerrainVertex p0 = TerrainVertex::lerp(dfQuadLatCoeff, quadVertices[1], quadVertices[0]);
+	TerrainVertex p1 = TerrainVertex::lerp(dfQuadLatCoeff, quadVertices[2], quadVertices[3]);
 
-	quadVertices[0] = pQuadStartVertex[0];
-	quadVertices[1] = pQuadStartVertex[1];
-	quadVertices[2] = pQuadStartVertex[2];
-	quadVertices[3] = pQuadStartVertex[5];
-
-	vm::Vector3df n1 = ComputeTripleNormal(quadVertices[0].pos, quadVertices[1].pos, quadVertices[2].pos);
-	vm::Vector3df n2 = ComputeTripleNormal(quadVertices[0].pos, quadVertices[2].pos, quadVertices[3].pos);
-
-	QuadVertex p0 = QuadVertex::lerp(dfQuadLatCoeff, quadVertices[1], quadVertices[0]);
-	QuadVertex p1 = QuadVertex::lerp(dfQuadLatCoeff, quadVertices[2], quadVertices[3]);
-
-	QuadVertex result = QuadVertex::lerp(dfQuadLongCoeff, p0, p1);
+	TerrainVertex result = TerrainVertex::lerp(dfQuadLongCoeff, p0, p1);
 
 	out_vProjection = result.pos;
-	out_vNormal = vm::normalize(n1 + n2);
+	out_vNormal = result.normal;
 
 	return isPositionAboveBlock;
 }
@@ -295,6 +356,68 @@ bool CTerrainObject::CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, 
 OrientedBoundBox CTerrainObject::GetOrientedBoundBox() const
 {
 	std::lock_guard<std::mutex> obbLock(_obbMutex);
-
 	return _OBB;
+}
+
+
+bool CTerrainObject::CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vector3df& out_vPoint, vm::Vector3df& out_vNormal) const
+{
+	const unsigned int N_ITERATIONS_MAX = 20;
+	const float fGradientCoeff = 5.f;
+
+	bool isPositionAboveBlock = CalculateProjectionOnSurface(in_vPos, out_vPoint, out_vNormal);
+
+	if (!_verticesCalculated)
+		return isPositionAboveBlock;
+
+	/*STerrainBlockParams params;
+	GetObjectManager()->ComputeTerrainObjectParams(_ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+	double dfDiameter = dfMidAngle * vm::length(out_vPoint);
+
+	double dfStepSize = fGradientCoeff * 2 * dfDiameter / (_pTriangulation->nCountLat + _pTriangulation->nCountLong);
+
+	double dfCurrentDist = vm::length(in_vPos - out_vPoint);
+
+	for (int i = 0; i < N_ITERATIONS_MAX; i++)
+	{
+		vm::Vector3df vLeft = vm::cross(vm::normalize(in_vPos - out_vPoint), out_vNormal);
+		vm::Vector3df vGradientVector = vm::cross(out_vNormal, vLeft);
+
+		isPositionAboveBlock = CalculateProjectionOnSurface(out_vPoint + vGradientVector*dfStepSize, out_vPoint, out_vNormal);
+
+		double dfIterationDist = vm::length(in_vPos - out_vPoint);
+
+		if (!isPositionAboveBlock || dfIterationDist > dfCurrentDist)
+			return isPositionAboveBlock;
+
+		dfCurrentDist = dfIterationDist;
+	}*/
+
+	float fCurrentDist = vm::length(vm::Vector3f(in_vPos) - vm::Vector3f(out_vPoint));
+	vm::Vector3f vStartPos = in_vPos;
+	vm::Vector3f vResultPos, vResultNormal;
+
+	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i++)
+	{
+		float fIterDist = vm::length(_apVertices[i].pos - vStartPos);
+		
+		if (fIterDist < fCurrentDist)
+		{
+			fCurrentDist = fIterDist;
+			vResultPos = _apVertices[i].pos;
+			vResultNormal = _apVertices[i].normal;
+		}
+	}
+
+	out_vPoint = vResultPos;
+	out_vNormal = vResultNormal;
+
+	return true;
 }

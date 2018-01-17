@@ -64,7 +64,9 @@ public:
 	}
 
 	// returns true if in_vPos is above. Position returned in vertex space!
-	bool CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal);
+	bool CalculateProjectionOnSurface(const vm::Vector3df& in_vPos, vm::Vector3df& out_vProjection, vm::Vector3df& out_vNormal) const;
+
+	bool CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vector3df& out_vPoint, vm::Vector3df& out_vNormal) const;
 
 	void CalculateReferencePoints(std::vector<vm::Vector3df>** out_pvecPoints, std::vector<vm::Vector3df>** out_pvecNormals) const;
 	void GetBoundBoxCorners(D3DXVECTOR3 out_pvCorners[8]) const;
@@ -79,7 +81,24 @@ public:
 private:
 
 	void						initVertexBuffer();
-	void						calculatePreciseBoundBox();
+	void						calculateVerticesAndPreciseBoundBox();
+
+	struct TerrainVertex
+	{
+		vm::Vector3f pos, normal;
+
+		TerrainVertex() {}
+		TerrainVertex(const SVertex& v) : pos(v.position.x, v.position.y, v.position.z), normal(v.normal.x, v.normal.y, v.normal.z) {}
+		TerrainVertex(const vm::Vector3df& p, const vm::Vector3df& n) : pos(p), normal(n) {}
+
+		static TerrainVertex lerp(double k, const TerrainVertex& v0, const TerrainVertex& v1)
+		{
+			return TerrainVertex(
+				v0.pos + k * (v1.pos - v0.pos),
+				vm::normalize(v0.normal + k * (v1.normal - v0.normal))
+			);
+		}
+	};
 
 	TerrainObjectID				_ID = -1;
 	STerrainBlockParams			_params;
@@ -88,7 +107,9 @@ private:
 	STriangulation*				_pTriangulation = nullptr;
 	AsyncTaskManager*			_pTaskManager = nullptr;
 
-	SVertex*					_apObjectVertices = nullptr;
+	SVertex*					_apTriangleList = nullptr;
+	TerrainVertex*				_apVertices = nullptr;
+	bool						_verticesCalculated = false;
 
 	OrientedBoundBox			_OBB;
 	mutable std::mutex			_obbMutex;
