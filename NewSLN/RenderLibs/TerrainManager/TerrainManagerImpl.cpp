@@ -140,6 +140,11 @@ const wchar_t*	CTerrainManager::GetHeightmapFileName(TerrainObjectID ID) const
 }
 
 
+void CTerrainManager::SetBorderNormals(bool enable)
+{
+	_implementation->SetBorderNormals(enable);
+}
+
 //Получить описание объекта Земли по идентификатору
 void	CTerrainManager::GetTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams* out_pParams) const
 {
@@ -879,9 +884,8 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 				if (!neighbourHeightfields[i])
 				{
-					someNotReadyHF = true;
-					//_setAwaitingHeightmaps.insert(neighbours[i]);
-					//break;
+					if (_bEnabledBorderNormals)
+						someNotReadyHF = true;
 				}
 			}
 		}
@@ -1602,6 +1606,12 @@ bool CTerrainManager::CTerrainManagerImpl::FillTerrainBlockParams(TerrainObjectI
 	return true;
 }
 
+bool CTerrainManager::CTerrainManagerImpl::IsObjectPotentiallyVisible(TerrainObjectID ID) const
+{
+	return _pPreliminaryVisibleSubtree->hasObject(ID) ||
+		std::find(_vecReadyVisibleObjects.begin(), _vecReadyVisibleObjects.end(), ID) != _vecReadyVisibleObjects.end();
+}
+
 // заполнить структуру с параметрами для указанного блока
 void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainObjectID ID, STerrainBlockShaderParams* out_pTerrainBlockShaderParams)
 {
@@ -1625,14 +1635,23 @@ void CTerrainManager::CTerrainManagerImpl::FillTerrainBlockShaderParams(TerrainO
 	{
 		if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
 		{
-			if (_pPreliminaryVisibleSubtree->hasObject(neighbours[i]) &&
+			/*if (_pPreliminaryVisibleSubtree->hasObject(neighbours[i]) &&
 				(_pTerrainObjectManager->GetObjectDepth(neighbours[i]) != 0))
 			{
 				neighbours[i] = _pTerrainObjectManager->GetTerrainObjectParent(neighbours[i]);
 
 				if (_pPreliminaryVisibleSubtree->hasObject(neighbours[i]))
 					neighbours[i] = INVALID_TERRAIN_OBJECT_ID;
+			}*/
+
+			while (!IsObjectPotentiallyVisible(neighbours[i]) &&
+				(_pTerrainObjectManager->GetObjectDepth(neighbours[i]) != 0))
+			{
+				neighbours[i] = _pTerrainObjectManager->GetTerrainObjectParent(neighbours[i]);
 			}
+
+			if (!IsObjectPotentiallyVisible(neighbours[i]))
+				neighbours[i] = INVALID_TERRAIN_OBJECT_ID;
 
 			if (neighbours[i] != INVALID_TERRAIN_OBJECT_ID)
 				neighbourHeightfields[i] = RequestObjectHeightfield(neighbours[i]);

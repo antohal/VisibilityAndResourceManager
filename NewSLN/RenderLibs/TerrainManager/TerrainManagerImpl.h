@@ -69,6 +69,10 @@ public:
 		return _pPreliminaryVisibleSubtree->objects().size();
 	}
 
+	void SetBorderNormals(bool enable) {
+		_bEnabledBorderNormals = enable;
+	}
+
 	//@{ Список новых объектов, которые нужно создать (могут стать видимыми)
 	size_t GetNewObjectsCount() const;
 	TerrainObjectID	GetNewObjectID(size_t index) const;
@@ -178,6 +182,7 @@ private:
 
 	bool IsObjectInFrustumAndNotBacksided(TerrainObjectID ID) const;
 	bool IsObjectDataReady(TerrainObjectID ID) const;
+	bool IsObjectPotentiallyVisible(TerrainObjectID ID) const;
 
 	void ManageDeadObjects();
 	
@@ -282,4 +287,6 @@ private:
 
 	float					_fMaxPixelsPerTexel = 10;
 	bool					_bRecalculateLodsDistances = false;
+
+	bool					_bEnabledBorderNormals = false;
 };

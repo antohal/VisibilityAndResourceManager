@@ -90,8 +90,13 @@ private:
 	{
 		STriangulationTask(DirectComputeHeightfieldConverter* owner, const SHeightfield& heightfield, float in_fLongitudeCutCoeff, 
 			float in_fLattitudeCutCoeff, void* param, TriangulationTaskCompleteCallback callback, const SHeightfield** ppNeighbours)
-				: _owner(owner), _heightfield(heightfield), _param(param), _callback(callback), _fLattitudeCoeff(in_fLattitudeCutCoeff), _fLongitudeCoeff(in_fLongitudeCutCoeff), _neighbours(ppNeighbours)
+				: _fLattitudeCoeff(in_fLattitudeCutCoeff), _fLongitudeCoeff(in_fLongitudeCutCoeff)
 		{
+			_owner = owner;
+			_heightfield = heightfield;
+			_param = param;
+			_callback = callback;
+			_neighbours = ppNeighbours;
 		}
 
 		SHeightfield	_heightfield;

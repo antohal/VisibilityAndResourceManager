@@ -213,8 +213,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 		_pHeightfieldConverter->Init(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDeviceContext(), L"ComputeShaders\\HeightfieldConverter.hlsl");
 
 	_pHeightfieldConverter->SetWorldScale(in_fWorldScale);
-	_pHeightfieldConverter->SetHeightScale(10.f);
-	//_pHeightfieldConverter->SetHeightScale(0);
+	//_pHeightfieldConverter->SetHeightScale(10.f);
 
 	//_pHeightfieldConverter->SetNormalDivisionAngles(1, 2);
 
@@ -651,7 +650,7 @@ void CSimpleTerrainRenderer::RenderDebug()
 //	_primitiveBatch->DrawLine(VertexPositionColor(XMFLOAT3(0, 0, 0), XMFLOAT4(1, 0,0,1)), VertexPositionColor(XMFLOAT3(_fWorldScale * 7000000, 0, 0), XMFLOAT4(1, 0, 0, 1)));
 
 	// Draw closest point
-	{
+	/*{
 		const float fCrossWidth = 0.05 * D3DXVec3Length(&(_vClosestPoint - cameraPosition));
 		_primitiveBatch->DrawLine(
 			VertexPositionColor(XMFLOAT3(_vClosestPoint.x - fCrossWidth, _vClosestPoint.y, _vClosestPoint.z), XMFLOAT4(1, 1, 1, 1)),
@@ -667,7 +666,7 @@ void CSimpleTerrainRenderer::RenderDebug()
 			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y, _vClosestPoint.z - fCrossWidth), XMFLOAT4(1, 1, 1, 1)),
 			VertexPositionColor(XMFLOAT3(_vClosestPoint.x, _vClosestPoint.y, _vClosestPoint.z + fCrossWidth), XMFLOAT4(1, 1, 1, 1))
 		);
-	}
+	}*/
 
 	for (const TerrainObjectID& ID : _lstRenderQueue)
 	{
@@ -703,6 +702,26 @@ void CSimpleTerrainRenderer::RenderDebug()
 			_primitiveBatch->DrawLine(
 				VertexPositionColor(XMFLOAT3(objectProjection.x, objectProjection.y, objectProjection.z), XMFLOAT4(0, 0, 0.7, 1)),
 				VertexPositionColor(XMFLOAT3(objectProjection.x + fNormalLength*objectNormal.x, objectProjection.y + fNormalLength*objectNormal.y, objectProjection.z + fNormalLength*objectNormal.z), XMFLOAT4(1, 1, 0.7, 1))
+			);
+		}
+
+		D3DXVECTOR3 closestPoint;
+		_pTerrainManager->GetTerrainObjectClosestPoint(ID, &cameraPosition, &closestPoint, &objectNormal);
+		{
+			const float fCrossWidth = 0.05 * D3DXVec3Length(&(closestPoint - cameraPosition));
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(closestPoint.x - fCrossWidth, closestPoint.y, closestPoint.z), XMFLOAT4(1, 1, 1, 1)),
+				VertexPositionColor(XMFLOAT3(closestPoint.x + fCrossWidth, closestPoint.y, closestPoint.z), XMFLOAT4(1, 1, 1, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(closestPoint.x, closestPoint.y - fCrossWidth, closestPoint.z), XMFLOAT4(1, 1, 1, 1)),
+				VertexPositionColor(XMFLOAT3(closestPoint.x, closestPoint.y + fCrossWidth, closestPoint.z), XMFLOAT4(1, 1, 1, 1))
+			);
+
+			_primitiveBatch->DrawLine(
+				VertexPositionColor(XMFLOAT3(closestPoint.x,closestPoint.y, closestPoint.z - fCrossWidth), XMFLOAT4(1, 1, 1, 1)),
+				VertexPositionColor(XMFLOAT3(closestPoint.x,closestPoint.y, closestPoint.z + fCrossWidth), XMFLOAT4(1, 1, 1, 1))
 			);
 		}
 

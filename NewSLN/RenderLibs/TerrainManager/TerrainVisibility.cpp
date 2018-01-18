@@ -122,15 +122,16 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
 
 
-	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
-	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
-	out_Diameter = dfMidAngle * vm::length(vRefPoint);
+//	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
 
 	vm::Vector3df vProjection, vNormal;
 	//_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 	_geometryCalculator->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 
 	vProjection *= 1.0 / _fWorldScale;
+
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+	out_Diameter = dfMidAngle * vm::length(vProjection);
 
 	return vm::length(in_vPos - vProjection);
 

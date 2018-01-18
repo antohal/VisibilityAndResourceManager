@@ -82,6 +82,12 @@ public:
 	// получить имя карты высот для данного объекта
 	const wchar_t*	GetHeightmapFileName(TerrainObjectID ID) const;
 
+	// Включить/выключить рассчет нормалей по границам.
+	// Если включен - то для триангуляции объекта требуются карты нормалей граничных блоков
+	// Если выключен - то не требуются 
+	// (по умолчанию - включен)
+	void SetBorderNormals(bool);
+
 	//Получить описание объекта Земли по идентификатору
 	void GetTerrainObjectParams(TerrainObjectID ID, STerrainBlockParams* out_pParams) const;
 
