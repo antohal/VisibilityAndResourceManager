@@ -1272,7 +1272,7 @@ double CTerrainManager::CTerrainManagerImpl::GetTerrainObjectDiameter(TerrainObj
 {
 	if (CTerrainObject* pObj = GetTerrainObject(ID))
 	{
-		return pObj->GetOrientedBoundBox().diameter();
+		return pObj->GetOrientedBoundBox().diameter() / _pHeightfieldConverter->GetWorldScale();
 	}
 
 	STerrainBlockParams params;
