@@ -17,6 +17,8 @@ public:
 
 	virtual bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const = 0;
 	virtual bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const = 0;
+	virtual vm::Vector3df GetTerrainObjectCenter(TerrainObjectID ID) const = 0;
+	virtual double GetTerrainObjectDiameter(TerrainObjectID ID) const = 0;
 };
 
 class CTerrainObjectVisibleSubtree

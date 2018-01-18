@@ -20,6 +20,10 @@ struct OrientedBoundBox
 	void			getCornerPoints(vm::Vector3df out_pvCorners[8]);
 	vm::Vector3df	projectPoint(const vm::Vector3df& v) const;
 
+	double			diameter() const {
+		return vm::length(_vHalfsizes) * 2;
+	}
+
 	vm::Vector3df	_vPos		= vm::Vector3df(0, 0, 0);
 	vm::Vector3df	_vXAxis		= vm::Vector3df(1, 0, 0);
 	vm::Vector3df	_vYAxis		= vm::Vector3df(0, 1, 0);

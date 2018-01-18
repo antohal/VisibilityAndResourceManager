@@ -1250,6 +1250,50 @@ bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObj
 	return result;
 }
 
+vm::Vector3df CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectID ID) const
+{
+	STerrainBlockParams params;
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+	vm::Vector3df vPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
+
+	return vPoint;
+}
+
+double CTerrainManager::CTerrainManagerImpl::GetTerrainObjectDiameter(TerrainObjectID ID) const
+{
+	if (CTerrainObject* pObj = GetTerrainObject(ID))
+	{
+		return pObj->GetOrientedBoundBox().diameter();
+	}
+
+	STerrainBlockParams params;
+
+	_pTerrainObjectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+
+	double dfMinLat = params.fMinLattitude;
+	double dfMaxLat = params.fMaxLattitude;
+	double dfMinLong = params.fMinLongitude;
+	double dfMaxLong = params.fMaxLongitude;
+
+	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
+
+	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
+	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+
+	return dfMidAngle * vm::length(vRefPoint);
+}
+
+
 bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const
 {
 	if (CTerrainObject* pObj = GetTerrainObject(ID))

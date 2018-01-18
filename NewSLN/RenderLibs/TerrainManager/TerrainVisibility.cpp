@@ -109,31 +109,25 @@ void CTerrainVisibility::GetLodDistancesKM(double* in_aLodDistances, size_t in_n
 
 double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df & in_vPos, double & out_Diameter)
 {
-	STerrainBlockParams params;
-
-	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
-
-	double dfMinLat = params.fMinLattitude;
-	double dfMaxLat = params.fMaxLattitude;
-	double dfMinLong = params.fMinLongitude;
-	double dfMaxLong = params.fMaxLongitude;
-
-	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
-	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
-
-
-//	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
-
 	vm::Vector3df vProjection, vNormal;
-	//_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
-	_geometryCalculator->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
-
+	_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 	vProjection *= 1.0 / _fWorldScale;
 
-	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
-	out_Diameter = dfMidAngle * vm::length(vProjection);
+	double distance = vm::length(in_vPos - vProjection);
 
-	return vm::length(in_vPos - vProjection);
+	out_Diameter = _geometryCalculator->GetTerrainObjectDiameter(ID);
+	
+	// Ёмперическое утверждение, но если мы находимс€ к объекту ближе чем на 3 диаметра, то рассчитываем 
+	// кратчайшее рассто€ние более точно
+	if (distance < 3 * out_Diameter)
+	{
+		_geometryCalculator->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+		vProjection *= 1.0 / _fWorldScale;
+
+		distance = vm::length(in_vPos - vProjection);
+	}
+
+	return distance;
 
 	//double dfLong, dfLat, dfHeight, dfLen;
 	//GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);

@@ -193,6 +193,10 @@ private:
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const override;
 	bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const override;
 
+	vm::Vector3df GetTerrainObjectCenter(TerrainObjectID ID) const override;
+	double GetTerrainObjectDiameter(TerrainObjectID ID) const override;
+
+
 	//@{ Main objects
 	//---------------------- New mechanism
 	CTerrainObjectManager*						_pTerrainObjectManager = nullptr;
