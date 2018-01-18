@@ -122,6 +122,8 @@ private:
 	void DrawIndexedByShader(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, unsigned int indexCount);
 
 	float GetTerrainObjectCosToCameraDir(TerrainObjectID ID);
+	float TextureSortValue(TerrainObjectID ID);
+	float HeightmapSortValue(TerrainObjectID ID);
 
 	//bool UpdateTextureLoad();
 
@@ -171,7 +173,7 @@ private:
 
 	UINT							_uiBoundBoxCalculatingParam = -1;
 
-	UINT							_uiMomentalVisibleCountParam = -1;
+	UINT							_uiNotReadyInFrustumCountParam = -1;
 
 	D3DXVECTOR3						_vClosestPoint;
 	float							_fClosestDist = 0;
@@ -180,10 +182,13 @@ private:
 	CTextureLoadQueue*				_pTexturesQueue = nullptr;
 	CTextureLoadQueue*				_pHeightmapsQueue = nullptr;
 
-	CTextureLoadQueue::SortQueueHandler	_sortLoadQueueFunc;
+	CTextureLoadQueue::SortQueueHandler	_sortTexturesLoadQueueFunc;
+	CTextureLoadQueue::SortQueueHandler _sortHeightmapsLoadQueueFunc;
 
 	std::mutex						_objMutex;
 	std::map<TerrainObjectID, CSimpleTerrainRenderObject*>	_mapTerrainRenderObjects;
+
+	std::set<TerrainObjectID>		_setNotReadyObjectsInFrustum;
 
 	int								_visibleObjsCount = 0;
 	std::list<TerrainObjectID>		_lstRenderQueue;

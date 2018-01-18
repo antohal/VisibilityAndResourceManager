@@ -96,9 +96,9 @@ public:
 	//@}
 
 
-	//@{ мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
-	size_t GetMomentalVisibleObjectsCount() const;
-	TerrainObjectID GetMomentalVisibleObjectID(size_t index) const;
+	//@{ набор неготовых объектов во фрустуме
+	size_t GetNotReadyObjectsInFrustumCount() const;
+	TerrainObjectID GetNotReadyObjectInFrustumID(size_t index) const;
 	//@}
 
 
@@ -233,6 +233,7 @@ private:
 //	std::vector<TerrainObjectID>				_vecAwaitingHeightmaps;
 
 	std::vector<TerrainObjectID>				_vecCurrentVisibleObjsInFrustum;
+	std::vector<TerrainObjectID>				_vecNotReadyObjsInFrustum;
 	//@}
 
 	//@}

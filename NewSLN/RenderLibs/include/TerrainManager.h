@@ -128,9 +128,9 @@ public:
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
 	//@}
 
-	//@{ мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
-	size_t GetMomentalVisibleObjectsCount() const;
-	TerrainObjectID GetMomentalVisibleObjectID(size_t index) const;
+	//@{ набор неготовых объектов во фрустуме
+	size_t GetNotReadyObjectsInFrustumCount() const;
+	TerrainObjectID GetNotReadyObjectInFrustumID(size_t index) const;
 	//@}
 
 	// количество баунд боксов находящихся в очереди на рассчет

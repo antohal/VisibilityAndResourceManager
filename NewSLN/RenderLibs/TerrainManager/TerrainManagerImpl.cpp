@@ -208,14 +208,14 @@ TerrainObjectID CTerrainManager::GetVisibleObjectID(size_t index) const
 	return _implementation->GetVisibleObjectID(index);
 }
 
-size_t CTerrainManager::GetMomentalVisibleObjectsCount() const
+size_t CTerrainManager::GetNotReadyObjectsInFrustumCount() const
 {
-	return _implementation->GetMomentalVisibleObjectsCount();
+	return _implementation->GetNotReadyObjectsInFrustumCount();
 }
 
-TerrainObjectID CTerrainManager::GetMomentalVisibleObjectID(size_t index) const
+TerrainObjectID CTerrainManager::GetNotReadyObjectInFrustumID(size_t index) const
 {
-	return _implementation->GetMomentalVisibleObjectID(index);
+	return _implementation->GetNotReadyObjectInFrustumID(index);
 }
 
 
@@ -598,6 +598,16 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	// мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
 	_vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects());
 
+	//@{ подготовить набор неготовых объектов во фрустуме
+	_vecNotReadyObjsInFrustum.resize(0);
+	for (TerrainObjectID ID : _vecCurrentVisibleObjsInFrustum)
+	{
+		if (!IsObjectDataReady(ID))
+			_vecNotReadyObjsInFrustum.push_back(ID);
+	}
+	//@}
+
+
 	size_t nCurrentVisibleInFrustumCount = _vecCurrentVisibleObjsInFrustum.size();
 
 	bool bUsePreliminarySet = true;
@@ -633,14 +643,14 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 }
 
 //@{ Список текущих видимых объектов (обязательно загружены)
-size_t CTerrainManager::CTerrainManagerImpl::GetMomentalVisibleObjectsCount() const
+size_t CTerrainManager::CTerrainManagerImpl::GetNotReadyObjectsInFrustumCount() const
 {
-	return _vecCurrentVisibleObjsInFrustum.size();
+	return _vecNotReadyObjsInFrustum.size();
 }
 
-TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetMomentalVisibleObjectID(size_t index) const
+TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetNotReadyObjectInFrustumID(size_t index) const
 {
-	return _vecCurrentVisibleObjsInFrustum[index];
+	return _vecNotReadyObjsInFrustum[index];
 }
 //@}
 
@@ -940,8 +950,13 @@ void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDelta
 
 		if (!bAlive)
 		{
-			DestroyObject(ID);
+			if (pObj->timeSinceUnused > 1.f)
+				DestroyObject(ID);
+
+			pObj->timeSinceUnused += in_fDeltatime;
 		}
+		else
+			pObj->timeSinceUnused = 0;
 
 		it++;
 	}

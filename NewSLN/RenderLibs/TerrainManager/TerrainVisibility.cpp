@@ -109,7 +109,7 @@ void CTerrainVisibility::GetLodDistancesKM(double* in_aLodDistances, size_t in_n
 
 double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df & in_vPos, double & out_Diameter)
 {
-	/*STerrainBlockParams params;
+	STerrainBlockParams params;
 
 	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
 
@@ -127,108 +127,109 @@ double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df &
 	out_Diameter = dfMidAngle * vm::length(vRefPoint);
 
 	vm::Vector3df vProjection, vNormal;
-	_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+	//_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+	_geometryCalculator->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 
 	vProjection *= 1.0 / _fWorldScale;
 
-	return vm::length(in_vPos - vProjection);*/
+	return vm::length(in_vPos - vProjection);
 
-	double dfLong, dfLat, dfHeight, dfLen;
-	GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
+	//double dfLong, dfLat, dfHeight, dfLen;
+	//GetWGS84LongLatHeight(in_vPos, dfLong, dfLat, dfHeight, dfLen);
 
-	STerrainBlockParams params;
-	_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
+	//STerrainBlockParams params;
+	//_objectManager->ComputeTerrainObjectParams(ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
 
-	double dfMinLat = params.fMinLattitude;
-	double dfMaxLat = params.fMaxLattitude;
-	double dfMinLong = params.fMinLongitude;
-	double dfMaxLong = params.fMaxLongitude;
+	//double dfMinLat = params.fMinLattitude;
+	//double dfMaxLat = params.fMaxLattitude;
+	//double dfMinLong = params.fMinLongitude;
+	//double dfMaxLong = params.fMaxLongitude;
 
-	double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
-	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
-
-
-	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
-	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
-	out_Diameter = dfMidAngle * vm::length(vRefPoint);
-
-	if (dfLat >= dfMinLat && dfLat <= dfMaxLat && dfLong >= dfMinLong && dfLong <= dfMaxLong)
-	{
-		return dfHeight;
-	}
-
-	if (dfLat >= dfMinLat && dfLat <= dfMaxLat)
-	{
-		double dfLongBorder = 0;
-
-		if (_objectManager->AngularDistance(dfLong, dfMaxLong) > 0)
-		{
-			dfLongBorder = dfMaxLong;
-		}
-		else
-		{
-			dfLongBorder = dfMinLong;
-		}
-
-		vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLongBorder, dfLat);
-		return vm::length(vRefPoint - in_vPos);
-	}
-
-	if (dfLong >= dfMinLong && dfLong <= dfMaxLong)
-	{
-		double dfLatBorder = 0;
-
-		if (_objectManager->AngularDistance(dfLat, dfMaxLat) > 0)
-		{
-			dfLatBorder = dfMaxLat;
-		}
-		else
-		{
-			dfLatBorder = dfMinLat;
-		}
-
-		vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLatBorder);
-		return vm::length(vRefPoint - in_vPos);
-	}
-
-	static std::vector<double> vecDists;
-	vecDists.resize(9);
-
-	// corners
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
-	vecDists[0] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
-	vecDists[1] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
-	vecDists[2] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
-	vecDists[3] = (vm::length(in_vPos - vRefPoint));
-
-	// mid points
-
-	vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
-	vecDists[4] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
-	vecDists[5] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
-	vecDists[6] = (vm::length(in_vPos - vRefPoint));
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
-	vecDists[7] = (vm::length(in_vPos - vRefPoint));
-	// center
-
-	vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
-	vecDists[8] = (vm::length(in_vPos - vRefPoint));
+	//double dfMidLat = 0.5 * (dfMinLat + dfMaxLat);
+	//double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
 
 
-	std::sort(vecDists.begin(), vecDists.end(), std::less<double>());
+	//vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLong);
+	//double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
+	//out_Diameter = dfMidAngle * vm::length(vRefPoint);
 
-	return vecDists.front();
+	//if (dfLat >= dfMinLat && dfLat <= dfMaxLat && dfLong >= dfMinLong && dfLong <= dfMaxLong)
+	//{
+	//	return dfHeight;
+	//}
+
+	//if (dfLat >= dfMinLat && dfLat <= dfMaxLat)
+	//{
+	//	double dfLongBorder = 0;
+
+	//	if (_objectManager->AngularDistance(dfLong, dfMaxLong) > 0)
+	//	{
+	//		dfLongBorder = dfMaxLong;
+	//	}
+	//	else
+	//	{
+	//		dfLongBorder = dfMinLong;
+	//	}
+
+	//	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLongBorder, dfLat);
+	//	return vm::length(vRefPoint - in_vPos);
+	//}
+
+	//if (dfLong >= dfMinLong && dfLong <= dfMaxLong)
+	//{
+	//	double dfLatBorder = 0;
+
+	//	if (_objectManager->AngularDistance(dfLat, dfMaxLat) > 0)
+	//	{
+	//		dfLatBorder = dfMaxLat;
+	//	}
+	//	else
+	//	{
+	//		dfLatBorder = dfMinLat;
+	//	}
+
+	//	vm::Vector3df vRefPoint = GetWGS84SurfacePoint(dfLong, dfLatBorder);
+	//	return vm::length(vRefPoint - in_vPos);
+	//}
+
+	//static std::vector<double> vecDists;
+	//vecDists.resize(9);
+
+	//// corners
+	//vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMinLat);
+	//vecDists[0] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMaxLat);
+	//vecDists[1] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMinLat);
+	//vecDists[2] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMaxLat);
+	//vecDists[3] = (vm::length(in_vPos - vRefPoint));
+
+	//// mid points
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMaxLong, dfMidLat);
+	//vecDists[4] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMinLong, dfMidLat);
+	//vecDists[5] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMinLat);
+	//vecDists[6] = (vm::length(in_vPos - vRefPoint));
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMaxLat);
+	//vecDists[7] = (vm::length(in_vPos - vRefPoint));
+	//// center
+
+	//vRefPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat);
+	//vecDists[8] = (vm::length(in_vPos - vRefPoint));
+
+
+	//std::sort(vecDists.begin(), vecDists.end(), std::less<double>());
+
+	//return vecDists.front();
 }
 
 unsigned int CTerrainVisibility::GetLodDepth(double dist) const

@@ -220,17 +220,21 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 
 	_pTerrainManager->SetHeightfieldConverter(_pHeightfieldConverter);
 
-	_sortLoadQueueFunc = [this](size_t ID) -> float {
-		return GetTerrainObjectCosToCameraDir(ID);
+	_sortTexturesLoadQueueFunc = [this](size_t ID) -> float {
+		return TextureSortValue(ID);
+	};
+
+	_sortHeightmapsLoadQueueFunc = [this](size_t ID) -> float {
+		return HeightmapSortValue(ID);
 	};
 
 	_pTexturesQueue = new CTextureLoadQueue(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), [this](size_t ID, ID3D11ShaderResourceView* tex) {
 		TextureLoadFinished(ID, tex);
-	}, _sortLoadQueueFunc);
+	}, _sortTexturesLoadQueueFunc);
 
 	_pHeightmapsQueue = new CTextureLoadQueue(GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice(), [this](size_t ID, ID3D11ShaderResourceView* tex) {
 		HeightmapLoadFinished(ID, tex);
-	}, _sortLoadQueueFunc);
+	}, _sortHeightmapsLoadQueueFunc);
 
 	InitDebugRenderer();
 }
@@ -243,6 +247,33 @@ float CSimpleTerrainRenderer::GetTerrainObjectCosToCameraDir(TerrainObjectID ID)
 	_pTerrainManager->GetTerrainObjectCenter(ID, &vObjPos);
 
 	return vm::dot_prod(vm::normalize(vm::Vector3df(vObjPos.x, vObjPos.y, vObjPos.z) - pCamera->GetPos()), pCamera->GetDir());
+}
+
+float CSimpleTerrainRenderer::TextureSortValue(TerrainObjectID ID)
+{
+	if (_setNotReadyObjectsInFrustum.find(ID) != _setNotReadyObjectsInFrustum.end())
+		return 1.f;
+
+	return GetTerrainObjectCosToCameraDir(ID);
+}
+
+float CSimpleTerrainRenderer::HeightmapSortValue(TerrainObjectID ID)
+{
+	if (_setNotReadyObjectsInFrustum.find(ID) != _setNotReadyObjectsInFrustum.end())
+		return 1.f;
+
+	TerrainObjectID neighbours[8];
+	_pTerrainManager->GetTerrainObjectNeighbours(ID, neighbours);
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (_setNotReadyObjectsInFrustum.find(neighbours[i]) != _setNotReadyObjectsInFrustum.end())
+		{
+			return 1.f;
+		}
+	}
+
+	return GetTerrainObjectCosToCameraDir(ID);
 }
 
 void CSimpleTerrainRenderer::TextureLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex)
@@ -268,6 +299,14 @@ void CSimpleTerrainRenderer::ProcessLoadedTextures()
 
 void CSimpleTerrainRenderer::SortLoadQueue()
 {
+	_setNotReadyObjectsInFrustum.clear();
+
+	for (size_t i = 0; i < _pTerrainManager->GetNotReadyObjectsInFrustumCount(); i++)
+	{
+		_setNotReadyObjectsInFrustum.insert(_pTerrainManager->GetNotReadyObjectInFrustumID(i));
+	}
+
+
 	_pHeightmapsQueue->Sort();
 	_pTexturesQueue->Sort();
 }
@@ -323,7 +362,7 @@ void CSimpleTerrainRenderer::SetDebugTextBlock(CDirect2DTextBlock* block)
 
 	_uiBoundBoxCalculatingParam = _pTextBlock->AddParameter(L"Баундбоксов считается");
 
-	_uiMomentalVisibleCountParam = _pTextBlock->AddParameter(L"Моментально видимых");
+	_uiNotReadyInFrustumCountParam = _pTextBlock->AddParameter(L"Неготово видимых");
 	_uiClosestDistParam = _pTextBlock->AddParameter(L"Минимальное расстояние до поверхности");
 }
 
@@ -417,7 +456,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 		_pTextBlock->SetParameterValue(_uiBoundBoxCalculatingParam, _pTerrainManager->GetBoundBoxToBeCalculatedCount());
 
-		_pTextBlock->SetParameterValue(_uiMomentalVisibleCountParam, _pTerrainManager->GetMomentalVisibleObjectsCount());
+		_pTextBlock->SetParameterValue(_uiNotReadyInFrustumCountParam, _pTerrainManager->GetNotReadyObjectsInFrustumCount());
 		_pTextBlock->SetParameterValue(_uiClosestDistParam, _fClosestDist);
 	}
 

@@ -168,6 +168,7 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 	// --- calc vertices ---
 
 	_apVertices = new TerrainVertex[_pTriangulation->nCountLat * _pTriangulation->nCountLong];
+	ZeroMemory(_apVertices, sizeof(TerrainVertex)*(_pTriangulation->nCountLat * _pTriangulation->nCountLong));
 
 	auto setVertex = [this](unsigned int iLat, unsigned int iLong, const TerrainVertex& v)
 	{
@@ -234,12 +235,16 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 				setVertex(iQuadLat, iQuadLong, TerrainVertex(quad.vertices[1], quad.normals[1]));
 			}
 
-			if (iQuadLat == _pTriangulation->nCountLat - 2)
+			if (iQuadLat == _pTriangulation->nCountLat - 2 && iQuadLong == _pTriangulation->nCountLong - 2)
+			{
+				setVertex(iQuadLat, iQuadLong + 1, TerrainVertex(quad.vertices[2], quad.normals[2]));
+				setVertex(iQuadLat + 1, iQuadLong + 1, TerrainVertex(quad.vertices[3], quad.normals[3]));
+				setVertex(iQuadLat + 1, iQuadLong, TerrainVertex(quad.vertices[0], quad.normals[0]));
+			}
+			else if (iQuadLat == _pTriangulation->nCountLat - 2)
 				setVertex(iQuadLat + 1, iQuadLong, TerrainVertex(quad.vertices[0], quad.normals[0]));
 			else if (iQuadLong == _pTriangulation->nCountLong - 2)
 				setVertex(iQuadLat, iQuadLong + 1, TerrainVertex(quad.vertices[2], quad.normals[2]));
-			else if (iQuadLat == _pTriangulation->nCountLat - 2 && iQuadLong == _pTriangulation->nCountLong - 2)
-				setVertex(iQuadLat, iQuadLong + 1, TerrainVertex(quad.vertices[3], quad.normals[3]));
 		}
 	}
 
@@ -263,7 +268,7 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 		
 		vm::Vector3df vProjectedPos = originalBB.projectPoint(vVertexPos);
 
-		bool ignorePoint = false;
+		/*bool ignorePoint = false;
 		for (int j = 0; j < 3; j++)
 		{
 			if (fabs(vProjectedPos[j]) > 12000000.0 * fWorldScale)
@@ -271,7 +276,7 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 		}
 
 		if (ignorePoint)
-			continue;
+			continue;*/
 
 		for (int j = 0; j < 3; j++)
 		{
@@ -402,7 +407,7 @@ bool CTerrainObject::CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vec
 
 	float fCurrentDist = vm::length(vm::Vector3f(in_vPos) - vm::Vector3f(out_vPoint));
 	vm::Vector3f vStartPos = in_vPos;
-	vm::Vector3f vResultPos, vResultNormal;
+	vm::Vector3f vResultPos = out_vPoint, vResultNormal = out_vNormal;
 
 	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i++)
 	{
@@ -419,5 +424,5 @@ bool CTerrainObject::CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vec
 	out_vPoint = vResultPos;
 	out_vNormal = vResultNormal;
 
-	return true;
+	return isPositionAboveBlock;
 }
