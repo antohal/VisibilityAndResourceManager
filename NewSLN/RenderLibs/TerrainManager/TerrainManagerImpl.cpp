@@ -161,6 +161,11 @@ void CTerrainManager::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObje
 	_implementation->GetTerrainObjectNeighbours(ID, outNeighbours);
 }
 
+TerrainObjectID CTerrainManager::GetTerrainObjectParent(TerrainObjectID ID) const
+{
+	return _implementation->GetTerrainObjectParent(ID);
+}
+
 size_t CTerrainManager::GetTriangulationsCount() const
 {
 	return _implementation->GetTriangulationsCount();
@@ -1089,6 +1094,11 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectTriangulation(Terrain
 void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8])
 {
 	_pTerrainObjectManager->GetTerrainObjectNeighbours(ID, outNeighbours);
+}
+
+TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetTerrainObjectParent(TerrainObjectID ID) const
+{
+	return _pTerrainObjectManager->GetTerrainObjectParent(ID);
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetNewObjectsCount() const

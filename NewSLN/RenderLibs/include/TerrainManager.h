@@ -97,6 +97,9 @@ public:
 	// Получить соседей данного блока [возвращаются 8 соседних блоков, начиная с северного по часовой стрелке. Если сосед отсутствует - возвращает -1]
 	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
 
+	// Получить родительский объект
+	TerrainObjectID GetTerrainObjectParent(TerrainObjectID ID) const;
+
 	// Получить количество готовых триангуляций
 	size_t GetTriangulationsCount() const;
 

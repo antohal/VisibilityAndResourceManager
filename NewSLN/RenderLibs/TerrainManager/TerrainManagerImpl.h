@@ -61,6 +61,8 @@ public:
 
 	void GetTerrainObjectNeighbours(TerrainObjectID ID, TerrainObjectID outNeighbours[8]);
 
+	TerrainObjectID GetTerrainObjectParent(TerrainObjectID ID) const;
+
 	size_t GetTriangulationsCount() const;
 
 	size_t GetHeightfieldsCount() const;
