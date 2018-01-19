@@ -18,8 +18,9 @@
 #include <thread>
 #include <chrono>
 
+class CTerrainObject;
 
-class CTerrainManager::CTerrainManagerImpl : public CTerrainGeometryCalculator
+class CTerrainManager::CTerrainManagerImpl : public CTerrainGeometryCalculator, public CTerrainObjectOwner
 {
 public:
 
@@ -198,6 +199,7 @@ private:
 	vm::Vector3df GetTerrainObjectCenter(TerrainObjectID ID) const override;
 	double GetTerrainObjectDiameter(TerrainObjectID ID) const override;
 
+	void CacheTerrainObjectMidHeight(TerrainObjectID ID, double) override;
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -248,6 +250,9 @@ private:
 	//@}
 
 	//@}
+
+	std::map<TerrainObjectID, double>			_mapCachedMidHeght;
+	mutable std::mutex							_mapCachedMidHeightMutex;
 
 	struct SObjectTriangulation
 	{

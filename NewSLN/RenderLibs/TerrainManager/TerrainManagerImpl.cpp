@@ -1303,6 +1303,13 @@ double CTerrainManager::CTerrainManagerImpl::GetTerrainObjectDiameter(TerrainObj
 	return dfMidAngle * vm::length(vRefPoint);
 }
 
+void CTerrainManager::CTerrainManagerImpl::CacheTerrainObjectMidHeight(TerrainObjectID ID, double height)
+{
+	std::lock_guard<std::mutex> lock(_mapCachedMidHeightMutex);
+
+	_mapCachedMidHeght[ID] = height;
+}
+
 
 bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const
 {
@@ -1518,7 +1525,7 @@ CTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObject
 	STriangulationCoordsInfo coordsInfo;
 	ComputeTriangulationCoords(coords, coordsInfo, params.uiDepth);
 
-	CTerrainObject* pObject = new CTerrainObject(ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), 
+	CTerrainObject* pObject = new CTerrainObject(this, ID, params, coordsInfo, _pTerrainObjectManager->GetTextureFileName(ID), 
 		_pTerrainObjectManager->GetHeighmapFileName(ID), _pHeightfieldConverter, _pBoundBoxAsyncManger);
 
 	{

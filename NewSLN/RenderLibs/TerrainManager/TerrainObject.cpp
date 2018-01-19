@@ -50,9 +50,9 @@ vm::Vector3df OrientedBoundBox::projectPoint(const vm::Vector3df& v) const
 	);
 }
 
-CTerrainObject::CTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+CTerrainObject::CTerrainObject(CTerrainObjectOwner* in_pOwner, TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
 	const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF, AsyncTaskManager* in_pTaskManager)
-	: _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName), _pHeightfieldConverter(in_pHF),
+	: _pOwner(in_pOwner), _ID(ID), _params(in_pBlockDesc), _textureFileName(in_wsTextureFileName), _heightmapFileName(in_wsHeightmapFileName), _pHeightfieldConverter(in_pHF),
 	_OBB(in_coordsInfo), _pTaskManager(in_pTaskManager)
 {
 	
@@ -268,15 +268,7 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 		
 		vm::Vector3df vProjectedPos = originalBB.projectPoint(vVertexPos);
 
-		/*bool ignorePoint = false;
-		for (int j = 0; j < 3; j++)
-		{
-			if (fabs(vProjectedPos[j]) > 12000000.0 * fWorldScale)
-				ignorePoint = true;
-		}
-
-		if (ignorePoint)
-			continue;*/
+		// TODO: cache mid-height
 
 		for (int j = 0; j < 3; j++)
 		{

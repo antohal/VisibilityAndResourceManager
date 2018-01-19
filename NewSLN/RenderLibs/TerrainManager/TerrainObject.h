@@ -11,6 +11,7 @@
 #include <thread>
 
 class AsyncTaskManager;
+class CTerrainManager::CTerrainManagerImpl;
 
 struct OrientedBoundBox
 {
@@ -31,11 +32,18 @@ struct OrientedBoundBox
 	vm::Vector3df	_vHalfsizes = vm::Vector3df(0, 0, 0);
 };
 
+class CTerrainObjectOwner
+{
+public:
+
+	virtual void CacheTerrainObjectMidHeight(TerrainObjectID ID, double) = 0;
+};
+
 class CTerrainObject
 {
 public:
 
-	CTerrainObject(TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
+	CTerrainObject(CTerrainObjectOwner* in_pOwner, TerrainObjectID ID, const STerrainBlockParams& in_pBlockDesc, const STriangulationCoordsInfo& in_coordsInfo,
 		const std::wstring& in_wsTextureFileName, const std::wstring& in_wsHeightmapFileName, HeightfieldConverter* in_pHF, AsyncTaskManager* in_pTaskManager);
 
 	~CTerrainObject();
@@ -110,6 +118,8 @@ private:
 	HeightfieldConverter*		_pHeightfieldConverter = nullptr;
 	STriangulation*				_pTriangulation = nullptr;
 	AsyncTaskManager*			_pTaskManager = nullptr;
+
+	CTerrainObjectOwner*		_pOwner = nullptr;
 
 	SVertex*					_apTriangleList = nullptr;
 	TerrainVertex*				_apVertices = nullptr;
