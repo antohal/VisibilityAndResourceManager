@@ -675,8 +675,8 @@ void CSimpleTerrainRenderer::RenderDebug()
 
 		D3DXVECTOR3 objectProjection;
 		D3DXVECTOR3 objectNormal;
-		//if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection))
-		_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal);
+		if (_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal))
+	//	_pTerrainManager->GetTerrainObjectProjection(ID, &cameraPosition, &objectProjection, &objectNormal);
 		{
 			const float fCrossWidth = 0.05 * D3DXVec3Length(&(objectProjection - cameraPosition));
 			const float fNormalLength = 0.15 * D3DXVec3Length(&(objectProjection - cameraPosition));

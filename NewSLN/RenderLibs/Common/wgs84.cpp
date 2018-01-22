@@ -45,6 +45,34 @@ vm::Vector3df GetWGS84SurfaceNormal(double longitude, double lattitude)
 	return GetWGS84SurfaceNormal(GetWGS84SurfacePoint(longitude, lattitude));
 }
 
+double GetWGS84Height(const vm::Vector3df& vPoint)
+{
+	vm::Vector3df vDir = vm::normalize(vPoint);
+
+	double lat = asin(vDir[1]);
+	double longi = atan2(vDir[0], -vDir[2]);
+
+	if (longi < 0)
+		longi = 2 * M_PI + longi;
+
+	vm::Vector3df vSurfacePoint = GetWGS84SurfacePoint(longi, lat);
+	return vm::length(vPoint - vSurfacePoint);
+}
+
+double GetWGS84Radius(const vm::Vector3df& vPoint)
+{
+	vm::Vector3df vDir = vm::normalize(vPoint);
+
+	double lat = asin(vDir[1]);
+	double longi = atan2(vDir[0], -vDir[2]);
+
+	if (longi < 0)
+		longi = 2 * M_PI + longi;
+
+	vm::Vector3df vSurfacePoint = GetWGS84SurfacePoint(longi, lat);
+	return vm::length(vSurfacePoint);
+}
+
 void GetWGS84LongLatHeight(const vm::Vector3df& vPoint, double& out_long, double& out_lat, double& out_height, double& out_len)
 {
 	vm::Vector3df vDir = vm::normalize(vPoint);

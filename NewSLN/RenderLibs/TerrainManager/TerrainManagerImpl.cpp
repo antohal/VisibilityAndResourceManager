@@ -274,6 +274,11 @@ void CTerrainManager::SetAwaitVisibleForDataReady(bool in_bAwait)
 	_implementation->SetAwaitVisibleForDataReady(in_bAwait);
 }
 
+void CTerrainManager::SetMinDistAlgorithmAccuracy(unsigned int in_uiAccuracy)
+{
+	_implementation->SetMinDistAlgorithmAccuracy(in_uiAccuracy);
+}
+
 void CTerrainManager::SetLodDistancesKM(double * aLodDistances, size_t NLods)
 {
 	_implementation->SetLodDistancesKM(aLodDistances, NLods);
@@ -1179,6 +1184,29 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetVisibleObjectID(size_t 
 	return _vecReadyVisibleObjects[index];
 }
 
+void  CTerrainManager::CTerrainManagerImpl::CorrectObjectPointAccordingToCachedMidHeight(TerrainObjectID ID, vm::Vector3df& io_vPoint) const
+{
+	double dfCorrectionCoeff = 1;
+
+	{
+		std::lock_guard<std::mutex> lock(_mapCachedMidHeightMutex);
+
+		auto it = _mapCachedMidHeght.find(ID);
+		if (it != _mapCachedMidHeght.end())
+		{
+			vm::Vector3df vNonScaledPoint = io_vPoint / _fWorldScale;
+			double dfCurHeight = GetWGS84Height(vNonScaledPoint);
+			double dfCurRadius = GetWGS84Radius(vNonScaledPoint);
+
+			dfCorrectionCoeff = (dfCurRadius + it->second) / (dfCurHeight + dfCurRadius);
+		}
+		else
+			return;
+	}
+
+	io_vPoint = io_vPoint * dfCorrectionCoeff;
+}
+
 void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectID ID, D3DXVECTOR3 * out_pvCenter) const
 {
 	if (!out_pvCenter)
@@ -1196,6 +1224,8 @@ void CTerrainManager::CTerrainManagerImpl::GetTerrainObjectCenter(TerrainObjectI
 	double dfMidLong = 0.5 * (dfMinLong + dfMaxLong);
 
 	vm::Vector3df vPoint = GetWGS84SurfacePoint(dfMidLong, dfMidLat) * _fWorldScale;
+
+	CorrectObjectPointAccordingToCachedMidHeight(ID, vPoint);
 
 	out_pvCenter->x = vPoint[0];
 	out_pvCenter->y = vPoint[1];
@@ -1234,6 +1264,8 @@ bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectProjection(TerrainObj
 
 	out_vProjection = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
 	out_vNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
+
+	CorrectObjectPointAccordingToCachedMidHeight(ID, out_vProjection);
 
 	return isPositionAboveBlock;
 }
@@ -1306,7 +1338,6 @@ double CTerrainManager::CTerrainManagerImpl::GetTerrainObjectDiameter(TerrainObj
 void CTerrainManager::CTerrainManagerImpl::CacheTerrainObjectMidHeight(TerrainObjectID ID, double height)
 {
 	std::lock_guard<std::mutex> lock(_mapCachedMidHeightMutex);
-
 	_mapCachedMidHeght[ID] = height;
 }
 
@@ -1321,6 +1352,8 @@ bool CTerrainManager::CTerrainManagerImpl::GetTerrainObjectClosestPoint(TerrainO
 
 	out_pvClosestPoint = GetWGS84SurfacePoint(dfLong, dfLat) * _pHeightfieldConverter->GetWorldScale();
 	out_pvNormal = GetWGS84SurfaceNormal(dfLong, dfLat);
+
+	CorrectObjectPointAccordingToCachedMidHeight(ID, out_pvClosestPoint);
 
 	return isPositionAboveBlock;
 }
@@ -1386,6 +1419,17 @@ void CTerrainManager::CTerrainManagerImpl::SetHeightmapReady(TerrainObjectID ID,
 void CTerrainManager::CTerrainManagerImpl::SetAwaitVisibleForDataReady(bool in_bAwait)
 {
 	_bAwaitingVisibleForDataReady = in_bAwait;
+}
+
+void CTerrainManager::CTerrainManagerImpl::SetMinDistAlgorithmAccuracy(unsigned int in_uiAccuracy)
+{
+	_uiMinDistAlgorithmAccuracy = in_uiAccuracy;
+
+	if (_uiMinDistAlgorithmAccuracy == 0)
+	{
+		LogMessage("CTerrainManagerImpl::SetMinDistAlgorithmAccuracy: in_uiAccuracy cannot be == 0, setting to 1.");
+		_uiMinDistAlgorithmAccuracy = 1;
+	}
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsTriangulationReady(TerrainObjectID ID) const

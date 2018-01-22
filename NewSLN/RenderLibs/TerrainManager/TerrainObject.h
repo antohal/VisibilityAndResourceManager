@@ -37,6 +37,7 @@ class CTerrainObjectOwner
 public:
 
 	virtual void CacheTerrainObjectMidHeight(TerrainObjectID ID, double) = 0;
+	virtual unsigned int GetMinDistAlgorithmAccuracy() const = 0;
 };
 
 class CTerrainObject

@@ -261,6 +261,8 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 	OrientedBoundBox originalBB = _OBB;
 	float fWorldScale = _pHeightfieldConverter->GetWorldScale();
 
+	double sumHeight = 0;
+
 	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i ++)
 	{
 		const TerrainVertex& vtx = _apVertices[i];
@@ -268,7 +270,7 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 		
 		vm::Vector3df vProjectedPos = originalBB.projectPoint(vVertexPos);
 
-		// TODO: cache mid-height
+		sumHeight += GetWGS84Height(vVertexPos / fWorldScale);
 
 		for (int j = 0; j < 3; j++)
 		{
@@ -276,6 +278,10 @@ void CTerrainObject::calculateVerticesAndPreciseBoundBox()
 			if (vProjectedPos[j] > vMaxPoint[j]) vMaxPoint[j] = vProjectedPos[j];
 		}
 	}
+
+	double midHeight = sumHeight / (_pTriangulation->nCountLat * _pTriangulation->nCountLong);
+
+	_pOwner->CacheTerrainObjectMidHeight(_ID, midHeight);
 
 	STriangulationCoordsInfo coordsInfo;
 	originalBB._vPos.ToArray(coordsInfo.vPosition);
@@ -362,46 +368,26 @@ bool CTerrainObject::CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vec
 	const unsigned int N_ITERATIONS_MAX = 20;
 	const float fGradientCoeff = 5.f;
 
-	bool isPositionAboveBlock = CalculateProjectionOnSurface(in_vPos, out_vPoint, out_vNormal);
+	vm::Vector3df vProjection, vProjectionNormal;
+
+	bool isPositionAboveBlock = CalculateProjectionOnSurface(in_vPos, vProjection, vProjectionNormal);
+
+	float fProjectionDist = vm::length(vm::Vector3f(in_vPos) - vm::Vector3f(vProjection));
+
+	out_vPoint = vProjection;
+	out_vNormal = vProjectionNormal;
 
 	if (!_verticesCalculated)
 		return isPositionAboveBlock;
-
-	/*STerrainBlockParams params;
-	GetObjectManager()->ComputeTerrainObjectParams(_ID, params, CTerrainObjectManager::COMPUTE_GEODETIC_PARAMS | CTerrainObjectManager::COMPUTE_CUT_PARAMS);
-
-	double dfMinLat = params.fMinLattitude;
-	double dfMaxLat = params.fMaxLattitude;
-	double dfMinLong = params.fMinLongitude;
-	double dfMaxLong = params.fMaxLongitude;
-
-	double dfMidAngle = 0.5*(fabs(dfMaxLat - dfMinLat) + fabs(dfMaxLong - dfMinLong));
-	double dfDiameter = dfMidAngle * vm::length(out_vPoint);
-
-	double dfStepSize = fGradientCoeff * 2 * dfDiameter / (_pTriangulation->nCountLat + _pTriangulation->nCountLong);
-
-	double dfCurrentDist = vm::length(in_vPos - out_vPoint);
-
-	for (int i = 0; i < N_ITERATIONS_MAX; i++)
-	{
-		vm::Vector3df vLeft = vm::cross(vm::normalize(in_vPos - out_vPoint), out_vNormal);
-		vm::Vector3df vGradientVector = vm::cross(out_vNormal, vLeft);
-
-		isPositionAboveBlock = CalculateProjectionOnSurface(out_vPoint + vGradientVector*dfStepSize, out_vPoint, out_vNormal);
-
-		double dfIterationDist = vm::length(in_vPos - out_vPoint);
-
-		if (!isPositionAboveBlock || dfIterationDist > dfCurrentDist)
-			return isPositionAboveBlock;
-
-		dfCurrentDist = dfIterationDist;
-	}*/
-
+	
 	float fCurrentDist = vm::length(vm::Vector3f(in_vPos) - vm::Vector3f(out_vPoint));
+
 	vm::Vector3f vStartPos = in_vPos;
 	vm::Vector3f vResultPos = out_vPoint, vResultNormal = out_vNormal;
 
-	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i++)
+	unsigned int uiAccuracy = _pOwner->GetMinDistAlgorithmAccuracy();
+
+	for (unsigned int i = 0; i < _pTriangulation->nCountLat * _pTriangulation->nCountLong; i+= uiAccuracy)
 	{
 		float fIterDist = vm::length(_apVertices[i].pos - vStartPos);
 		
@@ -413,8 +399,11 @@ bool CTerrainObject::CalculateClosestPoint(const vm::Vector3df& in_vPos, vm::Vec
 		}
 	}
 
-	out_vPoint = vResultPos;
-	out_vNormal = vResultNormal;
+	if (fCurrentDist < fProjectionDist)
+	{
+		out_vPoint = vResultPos;
+		out_vNormal = vResultNormal;
+	}
 
 	return isPositionAboveBlock;
 }

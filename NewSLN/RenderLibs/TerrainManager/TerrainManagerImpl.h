@@ -126,6 +126,8 @@ public:
 
 	void SetAwaitVisibleForDataReady(bool in_bAwait);
 
+	void SetMinDistAlgorithmAccuracy(unsigned int in_uiAccuracy);
+
 	// Проверить - готова ли триангуляция для объекта Земли
 	bool IsTriangulationReady(TerrainObjectID ID) const;
 
@@ -200,6 +202,11 @@ private:
 	double GetTerrainObjectDiameter(TerrainObjectID ID) const override;
 
 	void CacheTerrainObjectMidHeight(TerrainObjectID ID, double) override;
+	unsigned int GetMinDistAlgorithmAccuracy() const override {
+		return _uiMinDistAlgorithmAccuracy;
+	}
+
+	void CorrectObjectPointAccordingToCachedMidHeight(TerrainObjectID ID, vm::Vector3df& io_vPoint) const;
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -214,6 +221,8 @@ private:
 	float										_fWorldScale = 1.f;
 	float										_fWorldSize = 10000000.f;
 	unsigned int								_heightfieldCompressionRatio = 1;
+
+	unsigned int								_uiMinDistAlgorithmAccuracy = 1;
 
 	std::chrono::time_point<std::chrono::steady_clock>	_prevFrameTime;
 	//@}
