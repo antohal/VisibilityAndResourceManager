@@ -14,6 +14,8 @@
 #include <thread>
 #include <d3dx11effect.h>
 
+#include <atlbase.h>
+
 using namespace DirectX;
 
 class CSimpleTerrainRenderer;
@@ -146,6 +148,10 @@ private:
 		D3DXVECTOR3 lightDirection;
 		unsigned int mode;  // Added extra padding so structure is a multiple of 16 for CreateBuffer function requirements.
 	};
+
+	void	InitTerrainDepthStencilState();
+
+	CComPtr<ID3D11DepthStencilState>	_ptrTerrainDepthStencilState;
 
 	ID3D11VertexShader*				_pVertexShader = nullptr;
 	ID3D11PixelShader*				_pPixelShader = nullptr;

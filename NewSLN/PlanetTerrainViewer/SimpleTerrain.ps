@@ -35,12 +35,20 @@ struct PixelInputType
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
-float4 LightPixelShader(PixelInputType input) : SV_TARGET
+
+struct PSOut
 {
+	float4 color : SV_TARGET;
+};
+
+PSOut LightPixelShader(PixelInputType input)
+{
+	PSOut result;
+
 	float4 textureColor;
 	float3 lightDir;
 	float lightIntensity, moonLightIntensity;
-	float4 color, moonColor;
+	float4 moonColor;
 
 	float4 ambientColor;
 
@@ -62,24 +70,24 @@ float4 LightPixelShader(PixelInputType input) : SV_TARGET
 	moonColor = float4(0.2, 0.2, 0.5, 1) * moonLightIntensity;
 
     // Determine the final amount of diffuse color based on the diffuse color combined with the light intensity.
-    color = saturate(diffuseColor * lightIntensity + moonColor + ambientColor);
+    result.color = saturate(diffuseColor * lightIntensity + moonColor + ambientColor);
 
 	if (mode == 0)
 	{
-		color = color * textureColor;
+		result.color = result.color * textureColor;
 	}
 	else if (mode == 1)
 	{
-		color = float4(0.5*N + 0.5, 1);
+		result.color = float4(0.5*N + 0.5, 1);
 	}
 	else if (mode == 2)
 	{
-		color = saturate(float4(1, 1, 1, 1) * lightIntensity + moonColor + ambientColor);
+		result.color = saturate(float4(1, 1, 1, 1) * lightIntensity + moonColor + ambientColor);
 	}
 	else if (mode == 3)
 	{
-		color = textureColor * input.color;
+		result.color = textureColor * input.color;
 	}
 
-    return color;
+    return result;
 }

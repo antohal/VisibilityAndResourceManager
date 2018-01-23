@@ -236,6 +236,7 @@ void CSimpleTerrainRenderer::Init(CTerrainManager* in_pTerrainManager, float in_
 	}, _sortHeightmapsLoadQueueFunc);
 
 	InitDebugRenderer();
+	InitTerrainDepthStencilState();
 }
 
 float CSimpleTerrainRenderer::GetTerrainObjectCosToCameraDir(TerrainObjectID ID)
@@ -273,6 +274,42 @@ float CSimpleTerrainRenderer::HeightmapSortValue(TerrainObjectID ID)
 	}
 
 	return GetTerrainObjectCosToCameraDir(ID);
+}
+
+void CSimpleTerrainRenderer::InitTerrainDepthStencilState()
+{
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+
+	// Initialize the description of the stencil state.
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+	// Set up the description of the stencil state.
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;
+
+	// Stencil operations if pixel is back-facing.
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;
+
+	// Create the depth stencil state.
+	HRESULT result = GetApplicationHandle()->GetGraphicsContext()->GetSystem()->GetDevice()->CreateDepthStencilState(&depthStencilDesc, &_ptrTerrainDepthStencilState);
+	if (FAILED(result))
+	{
+		LogMessage("Failed to create depth stencil state");
+	}
 }
 
 void CSimpleTerrainRenderer::TextureLoadFinished(TerrainObjectID ID, ID3D11ShaderResourceView* tex)
@@ -372,8 +409,6 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 	D3DXMATRIX mViewMatrix;
 	in_pContext->GetScene()->GetMainCamera()->GetViewMatrix(mViewMatrix);
 
-	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
-
 
 	GetHeightfieldConverter()->LockDeviceContext();
 
@@ -399,11 +434,33 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 	D3DXVECTOR3 cameraPosition(vCamPos[0], vCamPos[1], vCamPos[2]);
 	D3DXVECTOR3 objectProjection, objectNormal;
 
+	ID3D11DepthStencilState* oldStencilState = nullptr;
+	UINT oldRef = 0;
+
+	UINT uiCurStencilRef = 0;
+
+	if (_ptrTerrainDepthStencilState)
+	{
+		in_pContext->GetSystem()->GetDeviceContext()->OMGetDepthStencilState(&oldStencilState, &oldRef);
+		in_pContext->GetSystem()->GetDeviceContext()->OMSetDepthStencilState(_ptrTerrainDepthStencilState, 0);
+	}
+
+	SetShaderParameters(in_pContext, mViewMatrix, *in_pContext->GetSystem()->GetProjectionMatrix());
+
 	// render queued objects
 
 	for (const TerrainObjectID& ID : _lstRenderQueue)
 	{
 		std::lock_guard<std::mutex> hfLock(_objMutex);
+
+		STerrainBlockParams params;
+		_pTerrainManager->GetTerrainObjectParams(ID, &params);
+
+		if (params.uiDepth != uiCurStencilRef)
+		{
+			uiCurStencilRef = params.uiDepth;
+			in_pContext->GetSystem()->GetDeviceContext()->OMSetDepthStencilState(_ptrTerrainDepthStencilState, uiCurStencilRef);
+		}
 
 		auto itObj = _mapTerrainRenderObjects.find(ID);
 
@@ -415,7 +472,7 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 
 		CSimpleTerrainRenderObject* pObj = itObj->second;
 
-		if (!pObj || pObj->GetIndexCount() == 0)
+		if (!pObj || pObj->GetIndexCount() == 0 || !_pTerrainManager->IsObjectDataReady(ID))
 			continue;
 
 		if (pObj->SetIndexAndVertexBuffers(in_pContext))
@@ -434,6 +491,11 @@ int CSimpleTerrainRenderer::Render(CD3DGraphicsContext * in_pContext)
 			_fClosestDist = D3DXVec3Length(&(_vClosestPoint - cameraPosition));
 		}
 
+	}
+
+	if (oldStencilState)
+	{
+		in_pContext->GetSystem()->GetDeviceContext()->OMSetDepthStencilState(oldStencilState, oldRef);
 	}
 
 	_visibleObjsCount = _lstRenderQueue.size();

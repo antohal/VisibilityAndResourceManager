@@ -20,7 +20,7 @@
 
 class CTerrainObject;
 
-class CTerrainManager::CTerrainManagerImpl : public CTerrainGeometryCalculator, public CTerrainObjectOwner
+class CTerrainManager::CTerrainManagerImpl : public CTerrainVisibilityOwner, public CTerrainObjectOwner
 {
 public:
 
@@ -108,6 +108,7 @@ public:
 	TerrainObjectID GetNotReadyObjectInFrustumID(size_t index) const;
 	//@}
 
+	bool IsObjectDataReady(TerrainObjectID ID) const;
 
 	size_t GetBoundBoxToBeCalculatedCount() const;
 
@@ -183,16 +184,15 @@ private:
 	void UpdateObjectsLifetime(float in_fDeltatime);
 
 	std::vector<TerrainObjectID> GetObjsInFrustum(const std::set<TerrainObjectID>& objsToCheck) const;
-	bool IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const;
 
 	bool IsObjectInFrustumAndNotBacksided(TerrainObjectID ID) const;
-	bool IsObjectDataReady(TerrainObjectID ID) const;
 	bool IsObjectPotentiallyVisible(TerrainObjectID ID) const;
 
 	void ManageDeadObjects();
 	
 	void UpdatePreliminaryObjects();
-
+	void SortVisibleSetAndPinParents();
+	void PinObject(TerrainObjectID ID);
 
 	CTerrainObject*	GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner = std::string()) const;
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const override;
@@ -207,6 +207,13 @@ private:
 	}
 
 	void CorrectObjectPointAccordingToCachedMidHeight(TerrainObjectID ID, vm::Vector3df& io_vPoint) const;
+
+	bool IsDrawingParentIfNotReadyChilds() const {
+		return !_bAwaitingVisibleForDataReady;
+	}
+
+	bool IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const override;
+	bool IsDataReady(TerrainObjectID ID) const override;
 
 	//@{ Main objects
 	//---------------------- New mechanism

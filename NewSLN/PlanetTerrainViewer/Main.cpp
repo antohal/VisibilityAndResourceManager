@@ -95,14 +95,14 @@ public:
 			_pTerrainRenderer->AppendTextureToLoad(newObjID);
 			_pTerrainRenderer->AppendHeightmapToLoad(newObjID);
 
-			/*TerrainObjectID neighbours[8];
+			TerrainObjectID neighbours[8];
 			_pTerrainManager->GetTerrainObjectNeighbours(newObjID, neighbours);
 
 			for (TerrainObjectID neighbour : neighbours)
 			{
 				if (neighbour != INVALID_TERRAIN_OBJECT_ID)
 					_pTerrainRenderer->AppendHeightmapToLoad(neighbour);
-			}*/
+			}
 		}
 
 		
@@ -115,14 +115,14 @@ public:
 			_pTerrainRenderer->RemoveTextureFromLoad(oldObjID);
 			_pTerrainRenderer->RemoveHeightmapFromLoad(oldObjID);
 
-			/*TerrainObjectID neighbours[8];
+			TerrainObjectID neighbours[8];
 			_pTerrainManager->GetTerrainObjectNeighbours(oldObjID, neighbours);
 
 			for (TerrainObjectID neighbour : neighbours)
 			{
 				if (neighbour != INVALID_TERRAIN_OBJECT_ID)
 					_pTerrainRenderer->RemoveHeightmapFromLoad(neighbour);
-			}*/
+			}
 
 			_pTerrainRenderer->DeleteObject(oldObjID);
 		}
@@ -252,10 +252,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 
 
-	//GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
-	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface6\\Data_bicubic\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface6\\Data_bicubic\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	SGlobalTerrainShaderParams globalShaderParams;
@@ -268,7 +268,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	pTerrainManager->SetMinDistAlgorithmAccuracy(4);
 	
-	pTerrainManager->SetBorderNormals(false);
+	pTerrainManager->SetAwaitVisibleForDataReady(false);
 
 	// создаем простой рендерер
 	pSimpleTerrainRenderer = new CSimpleTerrainRenderer();

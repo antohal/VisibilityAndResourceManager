@@ -5,8 +5,8 @@
 
 #include <algorithm>
 
-CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, CTerrainGeometryCalculator* geometryCalculator, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
-	: _objectManager(objectManager), _geometryCalculator(geometryCalculator)
+CTerrainVisibility::CTerrainVisibility(CTerrainObjectManager* objectManager, CTerrainVisibilityOwner* owner, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth)
+	: _objectManager(objectManager), _owner(owner)
 {
 	_fWorldScale = in_fWorldScale;
 	_uiMaxDepth = in_uiMaxDepth;
@@ -110,18 +110,18 @@ void CTerrainVisibility::GetLodDistancesKM(double* in_aLodDistances, size_t in_n
 double CTerrainVisibility::GetDistance(TerrainObjectID ID, const vm::Vector3df & in_vPos, double & out_Diameter)
 {
 	vm::Vector3df vProjection, vNormal;
-	_geometryCalculator->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+	_owner->GetTerrainObjectProjection(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 	vProjection *= 1.0 / _fWorldScale;
 
 	double distance = vm::length(in_vPos - vProjection);
 
-	out_Diameter = _geometryCalculator->GetTerrainObjectDiameter(ID);
+	out_Diameter = _owner->GetTerrainObjectDiameter(ID);
 	
 	// Ёмперическое утверждение, но если мы находимс€ к объекту ближе чем на 3 диаметра, то рассчитываем 
 	// кратчайшее рассто€ние более точно
 	if (distance < 3 * out_Diameter)
 	{
-		_geometryCalculator->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
+		_owner->GetTerrainObjectClosestPoint(ID, in_vPos * _fWorldScale, vProjection, vNormal);
 		vProjection *= 1.0 / _fWorldScale;
 
 		distance = vm::length(in_vPos - vProjection);
@@ -271,10 +271,15 @@ void CTerrainVisibility::AddVisibleBlock(TerrainObjectID ID)
 
 CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df & in_vPos,
 	const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
-	const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc)
+	const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc, bool* out_bSubtreeDataReady)
 {
 	if (!_objectManager->IsObjectValid(ID))
+	{
+		if (out_bSubtreeDataReady)
+			*out_bSubtreeDataReady = true;
+
 		return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
+	}
 
 	if (in_pAdditionalCheckFunc && !(*in_pAdditionalCheckFunc)(ID))
 		return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;
@@ -290,6 +295,12 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 	if (objectDepth == requiredLodDepth)
 	{
 		in_AddVisObjFunc(ID);
+
+		if (out_bSubtreeDataReady)
+		{
+			*out_bSubtreeDataReady = _owner->IsDataReady(ID);
+		}
+
 		return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
 	}
 
@@ -303,10 +314,16 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 		{
 			in_AddVisObjFunc(ID);
 
+			if (out_bSubtreeDataReady)
+			{
+				*out_bSubtreeDataReady = _owner->IsDataReady(ID);
+			}
+
 			return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
 		}
 
 		bool bSomeChildVisible = false;
+		bool bVisibleChildrenSubtreeReady = true;
 
 		vector<TerrainObjectID> vecInvisibleChilds;
 		vecInvisibleChilds.reserve(vecChildren.size());
@@ -315,7 +332,8 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 		{
 			TerrainObjectID childBlock = vecChildren[i];
 
-			if (UpdateVisibilityRecursive(childBlock, in_vPos, in_AddVisObjFunc, in_pAdditionalCheckFunc) == CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE)
+			bool bChildSubtreeReady = false;
+			if (UpdateVisibilityRecursive(childBlock, in_vPos, in_AddVisObjFunc, in_pAdditionalCheckFunc, &bChildSubtreeReady) == CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE)
 			{
 				bSomeChildVisible = true;
 			}
@@ -323,6 +341,19 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 			{
 				vecInvisibleChilds.push_back(childBlock);
 			}
+
+			if (!bChildSubtreeReady)
+				bVisibleChildrenSubtreeReady = false;
+		}
+
+		if (_owner->IsDrawingParentIfNotReadyChilds() && !bVisibleChildrenSubtreeReady)
+		{
+			in_AddVisObjFunc(ID);
+		}
+
+		if (out_bSubtreeDataReady)
+		{
+			*out_bSubtreeDataReady = bVisibleChildrenSubtreeReady;
 		}
 
 		if (bSomeChildVisible)
@@ -334,6 +365,11 @@ CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibility
 
 			return CTerrainVisibility::EUpdateVisibilityResult::READY_AND_VISIBLE;
 		}
+	}
+
+	if (out_bSubtreeDataReady)
+	{
+		*out_bSubtreeDataReady = _owner->IsDataReady(ID);
 	}
 
 	return CTerrainVisibility::EUpdateVisibilityResult::INVISIBLE;

@@ -11,14 +11,17 @@
 
 #define MAX_LODS 20
 
-class CTerrainGeometryCalculator
+class CTerrainVisibilityOwner
 {
 public:
 
-	virtual bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const = 0;
-	virtual bool GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const = 0;
-	virtual vm::Vector3df GetTerrainObjectCenter(TerrainObjectID ID) const = 0;
-	virtual double GetTerrainObjectDiameter(TerrainObjectID ID) const = 0;
+	virtual bool			GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const = 0;
+	virtual bool			GetTerrainObjectClosestPoint(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvClosestPoint, vm::Vector3df& out_pvNormal) const = 0;
+	virtual vm::Vector3df	GetTerrainObjectCenter(TerrainObjectID ID) const = 0;
+	virtual double			GetTerrainObjectDiameter(TerrainObjectID ID) const = 0;
+	virtual bool			IsDrawingParentIfNotReadyChilds() const = 0;
+	virtual bool			IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const = 0;
+	virtual bool			IsDataReady(TerrainObjectID ID) const = 0;
 };
 
 class CTerrainObjectVisibleSubtree
@@ -59,7 +62,7 @@ class CTerrainVisibility
 {
 public:
 
-	CTerrainVisibility(CTerrainObjectManager*, CTerrainGeometryCalculator*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
+	CTerrainVisibility(CTerrainObjectManager*, CTerrainVisibilityOwner*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
 	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
 	
@@ -98,10 +101,10 @@ private:
 
 	EUpdateVisibilityResult UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df& in_vPos,
 		const std::function<void(TerrainObjectID)>& in_AddVisObjFunc,
-		const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc);
+		const std::function<bool(TerrainObjectID)>* in_pAdditionalCheckFunc, bool* out_bSubtreeDataReady = nullptr);
 
 	
-	CTerrainGeometryCalculator*				_geometryCalculator = nullptr;
+	CTerrainVisibilityOwner*				_owner = nullptr;
 	CTerrainObjectManager*					_objectManager = nullptr;
 
 	double									_aLodDistances[MAX_LODS];

@@ -139,6 +139,11 @@ const wchar_t*	CTerrainManager::GetHeightmapFileName(TerrainObjectID ID) const
 	return _implementation->GetHeightmapFileName(ID);
 }
 
+bool CTerrainManager::IsObjectDataReady(TerrainObjectID ID) const
+{
+	return _implementation->IsObjectDataReady(ID);
+}
+
 
 void CTerrainManager::SetBorderNormals(bool enable)
 {
@@ -593,9 +598,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 			auto it = _mapId2Object.find(visID);
 
 			if (it != _mapId2Object.end())
-			{
 				pTerrainObject = it->second;
-			}
 		}
 
 		if (!pTerrainObject)
@@ -632,7 +635,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		// Swap visible sets
 		_pPreliminaryVisibleSubtree->setToObjects(_pTerrainVisibility->GetVisibleObjects());
 	}
-	else
+	else if (_bAwaitingVisibleForDataReady)
 	{
 		// Если не весь потенциально видимый набор готов, проверить только часть во фрустуме, и если она готова - выдать ее на выход
 		if (IsAllObjectsReady(_vecCurrentVisibleObjsInFrustum))
@@ -651,6 +654,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	// Расчет списка реально видимых объектов
 	if (bUsePreliminarySet)
 		CalculateReadyAndVisibleSetAccordingToPreliminary();
+
+	// отсортировать по убыванию номера лода и сказать парентам видимых объектов, чтобы не выгружались
+	SortVisibleSetAndPinParents();
 
 	// Сформировать список ожидающих карт высот
 	//ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
@@ -742,6 +748,11 @@ bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<T
 	}
 
 	return true;
+}
+
+bool CTerrainManager::CTerrainManagerImpl::IsDataReady(TerrainObjectID ID) const
+{
+	return IsObjectDataReady(ID);
 }
 
 // Удаление объектов из списка "на удаление"
@@ -979,6 +990,41 @@ void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDelta
 void CTerrainManager::CTerrainManagerImpl::CalculateReadyAndVisibleSetAccordingToPreliminary()
 {
 	_vecReadyVisibleObjects = GetObjsInFrustum(_pPreliminaryVisibleSubtree->objects());
+}
+
+void CTerrainManager::CTerrainManagerImpl::PinObject(TerrainObjectID ID)
+{
+	if (CTerrainObject* pObj = GetTerrainObject(ID))
+		pObj->timeSinceUnused = 0;
+}
+
+void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
+{
+	std::vector<TerrainObjectID> vecTerrainObjectParentsChildren;
+	// pin parents
+	for (TerrainObjectID ID : _vecReadyVisibleObjects)
+	{
+		TerrainObjectID parentID = GetTerrainObjectParent(ID);
+
+		if (parentID != INVALID_TERRAIN_OBJECT_ID)
+		{
+			PinObject(parentID);
+
+			vecTerrainObjectParentsChildren.resize(0);
+			_pTerrainObjectManager->GetTerrainObjectChildren(parentID, vecTerrainObjectParentsChildren);
+
+			for (TerrainObjectID childID : vecTerrainObjectParentsChildren)
+				PinObject(childID);
+		}
+	}
+
+	// sort by decreasing of lod level
+	auto sortFunc = [this](TerrainObjectID obj1, TerrainObjectID obj2) -> bool
+	{
+		return _pTerrainObjectManager->GetObjectDepth(obj1) > _pTerrainObjectManager->GetObjectDepth(obj2);
+	};
+
+	std::sort(_vecReadyVisibleObjects.begin(), _vecReadyVisibleObjects.end(), sortFunc);
 }
 
 size_t CTerrainManager::CTerrainManagerImpl::GetTriangulationsCount() const

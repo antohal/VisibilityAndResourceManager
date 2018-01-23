@@ -291,7 +291,7 @@ bool CDirect3DSystem::Initialize(unsigned int screenWidth, unsigned int screenHe
 	}
 
 	// Set the depth stencil state.
-	_ptrDeviceContext->OMSetDepthStencilState(_ptrDepthStencilState, 1);
+	_ptrDeviceContext->OMSetDepthStencilState(_ptrDepthStencilState, 0);
 
 	// Initialize the depth stencil view.
 	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
@@ -450,7 +450,7 @@ void CDirect3DSystem::BeginScene(float red, float green, float blue, float alpha
 	_ptrDeviceContext->ClearRenderTargetView(_ptrRenderTargetView, color);
     
 	// Clear the depth buffer.
-	_ptrDeviceContext->ClearDepthStencilView(_ptrDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	_ptrDeviceContext->ClearDepthStencilView(_ptrDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	if (_bWireframe)
 		_ptrDeviceContext->RSSetState(_ptrRasterStateWire);
