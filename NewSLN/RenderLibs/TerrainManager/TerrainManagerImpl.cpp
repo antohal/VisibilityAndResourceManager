@@ -415,14 +415,15 @@ void CTerrainManager::CTerrainManagerImpl::InitFromDatabaseInfo(ID3D11Device * i
 			_vecLODResolution[i] = std::max<short>(_pTerrainObjectManager->GetLodInfos()[i].Width, _pTerrainObjectManager->GetLodInfos()[i].Height) / 2;
 			_vecLODDiameter[i] = (float)(Rmax*sqrt(2*(1 - cos(dfCurrentLatDiam))));
 
-			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].AltHeight;
-			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].AltWidth;
+			_globalTerrainShaderParams.aVertexCounts[i][0] = _pTerrainObjectManager->GetLodInfos()[i].AltHeight / _heightfieldCompressionRatio;
+			_globalTerrainShaderParams.aVertexCounts[i][1] = _pTerrainObjectManager->GetLodInfos()[i].AltWidth / _heightfieldCompressionRatio;
 
 			if (_pTerrainObjectManager->GetLodInfos()[i].HasBorder)
 			{
 				_globalTerrainShaderParams.aVertexCounts[i][0] += 1;
 				_globalTerrainShaderParams.aVertexCounts[i][1] += 1;
 			}
+
 
 			_globalTerrainShaderParams.aPartitionCoefficients[i][0] = _pTerrainObjectManager->GetLodInfos()[i].CountY;
 			_globalTerrainShaderParams.aPartitionCoefficients[i][1] = _pTerrainObjectManager->GetLodInfos()[i].CountX;
@@ -735,8 +736,13 @@ std::vector<TerrainObjectID> CTerrainManager::CTerrainManagerImpl::GetObjsInFrus
 
 bool CTerrainManager::CTerrainManagerImpl::IsObjectDataReady(TerrainObjectID ID) const
 {
-	std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
-	return _setDataReadyObjects.find(ID) != _setDataReadyObjects.end();
+	/*std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+	return _setDataReadyObjects.find(ID) != _setDataReadyObjects.end();*/
+
+	if (CTerrainObject* pObj = GetTerrainObject(ID))
+		return pObj->IsDataReady();
+
+	return false;
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const
