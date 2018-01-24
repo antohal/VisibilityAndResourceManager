@@ -251,16 +251,26 @@ float CSimpleTerrainRenderer::GetTerrainObjectCosToCameraDir(TerrainObjectID ID)
 
 float CSimpleTerrainRenderer::TextureSortValue(TerrainObjectID ID)
 {
-	if (_setNotReadyObjectsInFrustum.find(ID) != _setNotReadyObjectsInFrustum.end())
-		return 1.f;
+	STerrainBlockParams params;
+	_pTerrainManager->GetTerrainObjectParams(ID, &params);
 
-	return GetTerrainObjectCosToCameraDir(ID);
+	float fLodWeight = 10 * params.uiDepth;
+
+	if (_setNotReadyObjectsInFrustum.find(ID) != _setNotReadyObjectsInFrustum.end())
+		return 1.f + fLodWeight;
+
+	return GetTerrainObjectCosToCameraDir(ID) + fLodWeight;
 }
 
 float CSimpleTerrainRenderer::HeightmapSortValue(TerrainObjectID ID)
 {
+	STerrainBlockParams params;
+	_pTerrainManager->GetTerrainObjectParams(ID, &params);
+
+	float fLodWeight = 10 * params.uiDepth;
+
 	if (_setNotReadyObjectsInFrustum.find(ID) != _setNotReadyObjectsInFrustum.end())
-		return 1.f;
+		return 1.f + fLodWeight;
 
 	TerrainObjectID neighbours[8];
 	_pTerrainManager->GetTerrainObjectNeighbours(ID, neighbours);
@@ -269,11 +279,11 @@ float CSimpleTerrainRenderer::HeightmapSortValue(TerrainObjectID ID)
 	{
 		if (_setNotReadyObjectsInFrustum.find(neighbours[i]) != _setNotReadyObjectsInFrustum.end())
 		{
-			return 1.f;
+			return 1.f + fLodWeight;
 		}
 	}
 
-	return GetTerrainObjectCosToCameraDir(ID);
+	return GetTerrainObjectCosToCameraDir(ID) + fLodWeight;
 }
 
 void CSimpleTerrainRenderer::InitTerrainDepthStencilState()

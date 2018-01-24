@@ -166,6 +166,12 @@ bool CTextureLoadQueue::UpdateTextureLoad()
 
 	LogMessage("Loading texture '%ls'", currentLoadRequest._textureName.c_str());
 
+
+#ifdef _DEBUG
+	std::chrono::milliseconds dur(50);
+	std::this_thread::sleep_for(dur);
+#endif
+
 	ID3D11ShaderResourceView* pResourceViewTex = nullptr;
 	D3DX11CreateShaderResourceViewFromFileW(_device, currentLoadRequest._textureName.c_str(), NULL, NULL, &pResourceViewTex, NULL);
 
@@ -178,11 +184,6 @@ bool CTextureLoadQueue::UpdateTextureLoad()
 
 		_lstJustLoaded.push_back(ptLoadedTex);
 	}
-
-#ifdef _DEBUG
-	std::chrono::milliseconds dur(50);
-	std::this_thread::sleep_for(dur);
-#endif
 
 	return true;
 }
