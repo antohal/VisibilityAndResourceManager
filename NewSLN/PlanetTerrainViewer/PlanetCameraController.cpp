@@ -54,6 +54,16 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 		_coordinates._lattitude -= dfDeltaLongitude;
 	}
 
+	if (pKeyboardInput->IsKeyDown(VK_PRIOR))
+	{
+		MoveHeight(deltaTime, 50);
+	}
+
+	if (pKeyboardInput->IsKeyDown(VK_NEXT))
+	{
+		MoveHeight(deltaTime, -50);
+	}
+
 	if (_coordinates._lattitude > M_PI*0.5)
 		_coordinates._lattitude = M_PI*0.5;
 

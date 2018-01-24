@@ -1004,6 +1004,16 @@ void CTerrainManager::CTerrainManagerImpl::PinObject(TerrainObjectID ID)
 		pObj->timeSinceUnused = 0;
 }
 
+void CTerrainManager::CTerrainManagerImpl::PinParents(TerrainObjectID ID)
+{
+	TerrainObjectID parentID = GetTerrainObjectParent(ID);
+	while (parentID != INVALID_TERRAIN_OBJECT_ID)
+	{
+		PinObject(parentID);
+		parentID = GetTerrainObjectParent(parentID);
+	}
+}
+
 void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 {
 	std::vector<TerrainObjectID> vecTerrainObjectParentsChildren;
@@ -1015,6 +1025,7 @@ void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 		if (parentID != INVALID_TERRAIN_OBJECT_ID)
 		{
 			PinObject(parentID);
+			PinParents(parentID);
 
 			vecTerrainObjectParentsChildren.resize(0);
 			_pTerrainObjectManager->GetTerrainObjectChildren(parentID, vecTerrainObjectParentsChildren);
@@ -1022,6 +1033,11 @@ void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 			for (TerrainObjectID childID : vecTerrainObjectParentsChildren)
 				PinObject(childID);
 		}
+	}
+
+	for (TerrainObjectID rootID : _pTerrainObjectManager->GetRootObjects())
+	{
+		PinObject(rootID);
 	}
 
 	// sort by decreasing of lod level
