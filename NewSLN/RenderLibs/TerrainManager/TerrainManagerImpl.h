@@ -193,6 +193,7 @@ private:
 	void UpdatePreliminaryObjects();
 	void SortVisibleSetAndPinParents();
 	void PinObject(TerrainObjectID ID);
+	void PinParents(TerrainObjectID ID);
 
 	CTerrainObject*	GetTerrainObject(TerrainObjectID ID, const std::string& assertOwner = std::string()) const;
 	bool GetTerrainObjectProjection(TerrainObjectID ID, const vm::Vector3df& in_pvPosFrom, vm::Vector3df& out_pvProjection, vm::Vector3df& out_vNormal) const override;
@@ -214,6 +215,8 @@ private:
 
 	bool IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const override;
 	bool IsDataReady(TerrainObjectID ID) const override;
+
+	void UpdateDataReadyStates();
 
 	//@{ Main objects
 	//---------------------- New mechanism

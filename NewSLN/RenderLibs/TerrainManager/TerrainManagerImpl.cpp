@@ -584,6 +584,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 
 	// Управление списком объектов на удаление
 	ManageDeadObjects();
+
+	// обновить кэш признаков готовности объектов
+	UpdateDataReadyStates();
 	
 	bool bAllReady = true;
 
@@ -736,13 +739,13 @@ std::vector<TerrainObjectID> CTerrainManager::CTerrainManagerImpl::GetObjsInFrus
 
 bool CTerrainManager::CTerrainManagerImpl::IsObjectDataReady(TerrainObjectID ID) const
 {
-	/*std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
-	return _setDataReadyObjects.find(ID) != _setDataReadyObjects.end();*/
+	std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+	return _setDataReadyObjects.find(ID) != _setDataReadyObjects.end();
 
-	if (CTerrainObject* pObj = GetTerrainObject(ID))
-		return pObj->IsDataReady();
+	//if (CTerrainObject* pObj = GetTerrainObject(ID))
+	//	return pObj->IsDataReady();
 
-	return false;
+	//return false;
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<TerrainObjectID>& vecObjs) const
@@ -759,6 +762,18 @@ bool CTerrainManager::CTerrainManagerImpl::IsAllObjectsReady(const std::vector<T
 bool CTerrainManager::CTerrainManagerImpl::IsDataReady(TerrainObjectID ID) const
 {
 	return IsObjectDataReady(ID);
+}
+
+void CTerrainManager::CTerrainManagerImpl::UpdateDataReadyStates()
+{
+	std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
+	_setDataReadyObjects.clear();
+
+	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end(); it++)
+	{
+		if (it->second->IsDataReady())
+			_setDataReadyObjects.insert(it->first);
+	}
 }
 
 // Удаление объектов из списка "на удаление"
@@ -796,10 +811,10 @@ void CTerrainManager::CTerrainManagerImpl::ManageDeadObjects()
 		}
 
 		// Удалить из списка готовых объектов
-		{
+		/*{
 			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
 			_setDataReadyObjects.erase(deadObj);
-		}
+		}*/
 	}
 }
 
@@ -856,11 +871,11 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 
 				pInternalObject->SetTriangulationReady(&itExisting->second._triangulation);
 
-				if (pInternalObject->IsDataReady())
+				/*if (pInternalObject->IsDataReady())
 				{
 					std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
 					_setDataReadyObjects.insert(ID);
-				}
+				}*/
 
 				it = _setNotReadyTriangulations.erase(it);
 
@@ -934,11 +949,11 @@ bool CTerrainManager::CTerrainManagerImpl::UpdateTriangulations()
 		{
 			it->second->SetTriangulationReady(&objTri._triangulation);
 
-			if (it->second->IsDataReady())
+			/*if (it->second->IsDataReady())
 			{
 				std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
 				_setDataReadyObjects.insert(ID);
-			}
+			}*/
 		}
 		else
 			objTri._alive = false;
@@ -1004,6 +1019,16 @@ void CTerrainManager::CTerrainManagerImpl::PinObject(TerrainObjectID ID)
 		pObj->timeSinceUnused = 0;
 }
 
+void CTerrainManager::CTerrainManagerImpl::PinParents(TerrainObjectID ID)
+{
+	TerrainObjectID parentID = GetTerrainObjectParent(ID);
+	while (parentID != INVALID_TERRAIN_OBJECT_ID)
+	{
+		PinObject(parentID);
+		parentID = GetTerrainObjectParent(parentID);
+	}
+}
+
 void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 {
 	std::vector<TerrainObjectID> vecTerrainObjectParentsChildren;
@@ -1015,6 +1040,7 @@ void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 		if (parentID != INVALID_TERRAIN_OBJECT_ID)
 		{
 			PinObject(parentID);
+			PinParents(parentID);
 
 			vecTerrainObjectParentsChildren.resize(0);
 			_pTerrainObjectManager->GetTerrainObjectChildren(parentID, vecTerrainObjectParentsChildren);
@@ -1022,6 +1048,11 @@ void CTerrainManager::CTerrainManagerImpl::SortVisibleSetAndPinParents()
 			for (TerrainObjectID childID : vecTerrainObjectParentsChildren)
 				PinObject(childID);
 		}
+	}
+
+	for (TerrainObjectID rootID : _pTerrainObjectManager->GetRootObjects())
+	{
+		PinObject(rootID);
 	}
 
 	// sort by decreasing of lod level
@@ -1447,11 +1478,11 @@ void CTerrainManager::CTerrainManagerImpl::SetTextureReady(TerrainObjectID ID)
 	{
 		it->second->SetTextureReady();
 
-		if (it->second->IsDataReady())
+		/*if (it->second->IsDataReady())
 		{
 			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
 			_setDataReadyObjects.insert(ID);
-		}
+		}*/
 	}
 }
 
@@ -1633,11 +1664,11 @@ CTerrainObject* CTerrainManager::CTerrainManagerImpl::CreateObject(TerrainObject
 	{
 		pObject->SetTriangulationReady(nullptr);
 
-		if (pObject->IsDataReady())
+		/*if (pObject->IsDataReady())
 		{
 			std::lock_guard<std::mutex> objectsLock(_dataReadyMutex);
 			_setDataReadyObjects.insert(ID);
-		}
+		}*/
 	}
 
 	_vecNewObjectIDs.push_back(pObject->GetID());
