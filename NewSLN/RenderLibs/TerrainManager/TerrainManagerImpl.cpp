@@ -500,7 +500,9 @@ void CTerrainManager::CTerrainManagerImpl::SetPropogatedCameraPos(const D3DXVECT
 		return;
 	}
 
-	_cameraParams.vPropogatedPos = vm::Vector3df(in_vPos->x, in_vPos->y, in_vPos->z);
+	_cameraParams.vPropogatedPos = vm::Vector3df(in_vPos->x / _fWorldScale, in_vPos->y / _fWorldScale, in_vPos->z / _fWorldScale);
+
+	_bCalculatePropogatedSet = true;
 }
 
 
@@ -574,42 +576,9 @@ size_t CTerrainManager::CTerrainManagerImpl::GetBoundBoxToBeCalculatedCount() co
 //@}
 
 
-void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
+void CTerrainManager::CTerrainManagerImpl::CheckAndCreateObjects(const std::set<TerrainObjectID>& setIDs, bool& out_allReady)
 {
-	if (_bRecalculateLodsDistances && _cameraParams.fVFovAngleRad >= 30 * D2R && _cameraParams.uiScreenResolutionY > 0)
-	{
-		_pTerrainVisibility->CalculateLodDistances(_cameraParams.fVFovAngleRad, _vecLODResolution, _vecLODDiameter,
-			_cameraParams.uiScreenResolutionY, _fMaxPixelsPerTexel);
-
-		_bRecalculateLodsDistances = false;
-	}
-
-	_vecNewObjectIDs.resize(0);
-	_vecObjectsToDelete.resize(0);
-
-	// ќбновление списка видимых объектов
-	if (_pTerrainVisibility)
-		_pTerrainVisibility->UpdateObjectsVisibility(in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
-
-	// ”правление временем жизни объектов
-	UpdateObjectsLifetime(in_fDeltaTime);
-
-	// поместить на удаление все объекты, которые должны быть удалены немедленно
-	ConvertSetToVector(_setObjectsToDelete, _vecObjectsToDelete);
-	_setObjectsToDelete.clear();
-
-	// ”правление списком объектов на удаление
-	ManageDeadObjects();
-
-	// обновить кэш признаков готовности объектов
-	UpdateDataReadyStates();
-	
-	bool bAllReady = true;
-
-	if (!_pTerrainVisibility)
-		return;
-
-	for (TerrainObjectID visID : _pTerrainVisibility->GetVisibleObjects())
+	for (TerrainObjectID visID : setIDs)
 	{
 		CTerrainObject* pTerrainObject = nullptr;
 		{
@@ -629,12 +598,63 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 		if (_bAwaitingVisibleForDataReady)
 		{
 			if (!pTerrainObject->IsDataReady())
-				bAllReady = false;
+				out_allReady = false;
+		}
+	}
+}
+
+void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
+{
+	if (_bRecalculateLodsDistances && _cameraParams.fVFovAngleRad >= 30 * D2R && _cameraParams.uiScreenResolutionY > 0)
+	{
+		_pTerrainVisibility->CalculateLodDistances(_cameraParams.fVFovAngleRad, _vecLODResolution, _vecLODDiameter,
+			_cameraParams.uiScreenResolutionY, _fMaxPixelsPerTexel);
+
+		_bRecalculateLodsDistances = false;
+	}
+
+	_vecNewObjectIDs.resize(0);
+	_vecObjectsToDelete.resize(0);
+
+	// ќбновление списка видимых объектов
+	if (_pTerrainVisibility)
+	{
+		_pTerrainVisibility->ClearAllVisibleSets();
+
+		_pTerrainVisibility->UpdateObjectsVisibility(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS, in_fDeltaTime, _cameraParams.vPos * _fWorldScale);
+
+		if (_bCalculatePropogatedSet && !vm::IsEqualVector(_cameraParams.vPropogatedPos, _cameraParams.vPos))
+		{
+			_pTerrainVisibility->UpdateObjectsVisibility(CTerrainVisibility::PROPOGATED_VISIBLE_OBJECTS, in_fDeltaTime, _cameraParams.vPropogatedPos * _fWorldScale);
 		}
 	}
 
+	// ”правление временем жизни объектов
+	UpdateObjectsLifetime(in_fDeltaTime);
+
+	// поместить на удаление все объекты, которые должны быть удалены немедленно
+	ConvertSetToVector(_setObjectsToDelete, _vecObjectsToDelete);
+	_setObjectsToDelete.clear();
+
+	// ”правление списком объектов на удаление
+	ManageDeadObjects();
+
+	// обновить кэш признаков готовности объектов
+	UpdateDataReadyStates();
+	
+	bool bAllReady = true;
+	bool bAllReadyPropogated = false;
+
+	if (!_pTerrainVisibility)
+		return;
+
+	CheckAndCreateObjects(_pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS), bAllReady);
+
+	if (_bCalculatePropogatedSet)
+		CheckAndCreateObjects(_pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::PROPOGATED_VISIBLE_OBJECTS), bAllReadyPropogated);
+
 	// мгновенный видимый во фрустуме набор объектов (могут быть не загружены)
-	_vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects());
+	_vecCurrentVisibleObjsInFrustum = GetObjsInFrustum(_pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS));
 
 	//@{ подготовить набор неготовых объектов во фрустуме
 	_vecNotReadyObjsInFrustum.resize(0);
@@ -653,7 +673,7 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	if (bAllReady)
 	{
 		// Swap visible sets
-		_pPreliminaryVisibleSubtree->setToObjects(_pTerrainVisibility->GetVisibleObjects());
+		_pPreliminaryVisibleSubtree->setToObjects(_pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS));
 	}
 	else if (_bAwaitingVisibleForDataReady)
 	{
@@ -678,9 +698,9 @@ void CTerrainManager::CTerrainManagerImpl::Update(float in_fDeltaTime)
 	// отсортировать по убыванию номера лода и сказать парентам видимых объектов, чтобы не выгружались
 	SortVisibleSetAndPinParents();
 
-	// —формировать список ожидающих карт высот
-	//ConvertSetToVector(_setAwaitingHeightmaps, _vecAwaitingHeightmaps);
-	//_setAwaitingHeightmaps.clear();
+
+	// сбросить флаг расчета прогнозируемо видимых объектов, именно вконце - поскольку он может пригодитьс€ в течение цикла.
+	_bCalculatePropogatedSet = false;
 }
 
 //@{ —писок текущих видимых объектов (об€зательно загружены)
@@ -699,7 +719,7 @@ TerrainObjectID CTerrainManager::CTerrainManagerImpl::GetNotReadyObjectInFrustum
 void CTerrainManager::CTerrainManagerImpl::UpdatePreliminaryObjects()
 {
 	_pPreliminaryVisibleSubtree->setLastMaxDepth(_pTerrainVisibility->GetLastMaxDepth());
-	_pPreliminaryVisibleSubtree->update(_pTerrainVisibility->GetVisibleObjects(), _setDataReadyObjects);
+	_pPreliminaryVisibleSubtree->update(_pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS), _setDataReadyObjects);
 }
 
 bool CTerrainManager::CTerrainManagerImpl::IsObjectInFrustumAndNotBacksided(TerrainObjectID ID) const
@@ -993,7 +1013,13 @@ void CTerrainManager::CTerrainManagerImpl::UpdateObjectsLifetime(float in_fDelta
 	if (!_pTerrainVisibility)
 		return;
 
-	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects();
+	std::set<TerrainObjectID> setVisibleObjs = _pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::CURRENT_VISIBLE_OBJECTS);
+
+	if (_bCalculatePropogatedSet)
+	{
+		std::set<TerrainObjectID> setPropogatedVisObjects = _pTerrainVisibility->GetVisibleObjects(CTerrainVisibility::PROPOGATED_VISIBLE_OBJECTS);
+		setVisibleObjs.insert(setPropogatedVisObjects.begin(), setPropogatedVisObjects.end());
+	}
 
 	for (auto it = _mapId2Object.begin(); it != _mapId2Object.end();)
 	{

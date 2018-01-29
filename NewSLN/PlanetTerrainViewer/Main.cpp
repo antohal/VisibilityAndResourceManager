@@ -17,8 +17,8 @@ class CMyAppHandler : public CD3DAppHandler
 {
 public:
 
-	CMyAppHandler(CTerrainManager* in_pTerrainObjectManager, CSimpleTerrainRenderer* in_pSimpleTerrainRenderer, CD3DCamera* in_pCamera, CD3DGraphicsContext* in_pContext)
-		:_pTerrainManager(in_pTerrainObjectManager),  _pTerrainRenderer(in_pSimpleTerrainRenderer), _pCamera(in_pCamera), _pContext(in_pContext)
+	CMyAppHandler(CTerrainManager* in_pTerrainObjectManager, CSimpleTerrainRenderer* in_pSimpleTerrainRenderer, CD3DCamera* in_pCamera, CD3DGraphicsContext* in_pContext, CPlanetCameraController* in_pCamController)
+		:_pTerrainManager(in_pTerrainObjectManager),  _pTerrainRenderer(in_pSimpleTerrainRenderer), _pCamera(in_pCamera), _pContext(in_pContext), _pCameraController(in_pCamController)
 	{}
 	
 
@@ -63,7 +63,9 @@ public:
 
 	virtual void OnFrame(float in_fFrameTime) override
 	{
-		D3DXVECTOR3 vPos, vDir, vUp;
+		float fPropogationCoeff = 0.1f;
+
+		D3DXVECTOR3 vPos, vDir, vUp, vPropogatedPos;
 
 		vPos.x = (float)_pCamera->GetPos()[0];
 		vPos.y = (float)_pCamera->GetPos()[1];
@@ -77,10 +79,17 @@ public:
 		vUp.y = (float)_pCamera->GetUp()[1];
 		vUp.z = (float)_pCamera->GetUp()[2];
 
-		
+		vm::Vector3df vPropPos = _pCamera->GetPos() + _pCameraController->GetVelocity() * fPropogationCoeff;
+
+		vPropogatedPos.x = (float)vPropPos[0];
+		vPropogatedPos.y = (float)vPropPos[1];
+		vPropogatedPos.z = (float)vPropPos[2];
+
 		_pTerrainRenderer->ProcessLoadedTextures();
 		
 		_pTerrainManager->SetViewProjection(&vPos, &vDir, &vUp, _pContext->GetSystem()->GetProjectionMatrix());
+
+		_pTerrainManager->SetPropogatedCameraPos(&vPropogatedPos);
 
 		_pTerrainManager->Update(in_fFrameTime);
 		_pTerrainManager->UpdateTriangulations();
@@ -150,6 +159,7 @@ private:
 	CSimpleTerrainRenderer*	_pTerrainRenderer = nullptr;
 	CD3DCamera*				_pCamera = nullptr;
 	CD3DGraphicsContext*	_pContext = nullptr;
+	CPlanetCameraController* _pCameraController = nullptr;
 };
 
 #define N_LODS_TO_GENERATE 7
@@ -278,7 +288,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	pApplication->GetGraphicsContext()->GetScene()->RegisterRenderer(pSimpleTerrainRenderer);
 
 
-	pAppHandler = new CMyAppHandler(pTerrainManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext());
+	pAppHandler = new CMyAppHandler(pTerrainManager, pSimpleTerrainRenderer, pApplication->GetGraphicsContext()->GetScene()->GetMainCamera(), pApplication->GetGraphicsContext(), pPlanetCameraController);
 	pApplication->InstallAppHandler(pAppHandler);
 
 

@@ -209,6 +209,7 @@ private:
 	bool IsDataReady(TerrainObjectID ID) const override;
 
 	void UpdateDataReadyStates();
+	void CheckAndCreateObjects(const std::set<TerrainObjectID>& setIDs, bool& out_allReady);
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -249,12 +250,6 @@ private:
 
 	std::vector<TerrainObjectID>				_vecReadyVisibleObjects;
 	CTerrainObjectVisibleSubtree*				_pPreliminaryVisibleSubtree = nullptr;
-
-//	std::vector<TerrainObjectID>				_vecHeightmapsToCreate;
-
-//	std::set<TerrainObjectID>					_setCachedHFRequest;
-//	std::set<TerrainObjectID>					_setAwaitingHeightmaps;
-//	std::vector<TerrainObjectID>				_vecAwaitingHeightmaps;
 
 	std::vector<TerrainObjectID>				_vecCurrentVisibleObjsInFrustum;
 	std::vector<TerrainObjectID>				_vecNotReadyObjsInFrustum;
@@ -313,4 +308,5 @@ private:
 	bool					_bRecalculateLodsDistances = false;
 
 	bool					_bEnabledBorderNormals = false;
+	bool					_bCalculatePropogatedSet = false;
 };

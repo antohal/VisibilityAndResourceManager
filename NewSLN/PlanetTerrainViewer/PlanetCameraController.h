@@ -39,6 +39,10 @@ public:
 	virtual void		Update(CD3DCamera* in_pCamera, float deltaTime) override;
 	//@}
 
+	const vm::Vector3df&	GetVelocity() const {
+		return _vCameraVelocity;
+	}
+
 private:
 
 	void				MoveHeight(float deltaTime, int wheelDelta);
