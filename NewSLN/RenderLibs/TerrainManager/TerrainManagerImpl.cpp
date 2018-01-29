@@ -91,6 +91,11 @@ void CTerrainManager::SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVE
 	_implementation->SetViewProjection(in_vPos, in_vDir, in_vUp, in_pmProjection);
 }
 
+void CTerrainManager::SetPropogatedCameraPos(const D3DXVECTOR3 * in_vPos)
+{
+	_implementation->SetPropogatedCameraPos(in_vPos);
+}
+
 //@{ Функции получения параметров для шейдеров
 
 // заполнить структуру с глобальными шейдерными параметрами
@@ -485,6 +490,17 @@ void CTerrainManager::CTerrainManagerImpl::SetViewProjection(const D3DXVECTOR3 *
 
 	_cameraParams.fHFovAngleRad *= D2R;
 	_cameraParams.fVFovAngleRad *= D2R;
+}
+
+void CTerrainManager::CTerrainManagerImpl::SetPropogatedCameraPos(const D3DXVECTOR3 * in_vPos)
+{
+	if (!in_vPos)
+	{
+		LogMessage("CTerrainManagerImpl::SetPropogatedCameraPos error - input vector is null");
+		return;
+	}
+
+	_cameraParams.vPropogatedPos = vm::Vector3df(in_vPos->x, in_vPos->y, in_vPos->z);
 }
 
 

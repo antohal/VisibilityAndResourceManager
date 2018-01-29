@@ -66,6 +66,9 @@ public:
 	// Установить положение камеры и матрицу проекции
 	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
 
+	// Установить прогнозируемое положение камеры (для того чтобы заранее создать объекты и поставить их на загрузку)
+	void SetPropogatedCameraPos(const D3DXVECTOR3* in_vPos);
+
 	// В момент вызова этой функции формируется 4 списка: 
 	// объекты, которые нужно создать
 	// объекты, которые нужно удалить
@@ -111,16 +114,6 @@ public:
 
 	// Получить количество потенциально видимых объектов
 	size_t GetPotentiallyVisibleObjectsCount() const;
-
-	//@{ Список объектов для которых нужно загрузить карту высот
-	//size_t GetNewHeightmapsCount() const;
-	//TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
-	//@}
-
-	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
-	//size_t GetAwaitingHeightmapsCount() const;
-	//TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
-	//@}
 
 	// Установить загруженную карту высот
 	void SetHeightmapReady(TerrainObjectID ID, ID3D11ShaderResourceView* in_pLoadedHeightmap);

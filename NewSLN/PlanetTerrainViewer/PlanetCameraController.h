@@ -54,4 +54,7 @@ private:
 	float				_fHeightCommand = 0;
 	float				_fWorldScale = 1;
 	double				_dfMaxHeight = 50000000.0;
+
+	vm::Vector3df		_vCameraPrevPos = vm::Vector3df(0, 0, 0);
+	vm::Vector3df		_vCameraVelocity = vm::Vector3df(0, 0, 0);
 };

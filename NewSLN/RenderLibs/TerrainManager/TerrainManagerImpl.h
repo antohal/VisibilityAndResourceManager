@@ -38,6 +38,8 @@ public:
 
 	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
 
+	void SetPropogatedCameraPos(const D3DXVECTOR3* in_vPos);
+
 	// В момент вызова этой функции формируется 4 списка: 
 	// объекты, которые нужно создать
 	// объекты, которые стали видимыми
@@ -90,16 +92,6 @@ public:
 	//@{ Список текущих видимых объектов
 	size_t GetVisibleObjectsCount() const;
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
-	//@}
-
-	//@{ Список объектов для которых нужно загрузить карту высот
-	//size_t GetNewHeightmapsCount() const;
-	//TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
-	//@}
-
-	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
-	//size_t GetAwaitingHeightmapsCount() const;
-	//TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
 	//@}
 
 
@@ -303,6 +295,8 @@ private:
 		vm::Vector3df		vPos = vm::Vector3df(0, 0, 0);
 		vm::Vector3df		vDir = vm::Vector3df(1, 0, 0);
 		vm::Vector3df		vUp = vm::Vector3df(0, 1, 0);
+
+		vm::Vector3df		vPropogatedPos = vm::Vector3df(0, 0, 0);
 
 		D3DMATRIX			mProjection;
 

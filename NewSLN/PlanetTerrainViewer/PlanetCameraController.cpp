@@ -174,6 +174,8 @@ void CPlanetCameraController::Update(CD3DCamera* in_pCamera, float deltaTime)
 	vm::Vector3df vCameraGlobalDir = vNorth * vCameraLocalDir[1] + vWest * vCameraLocalDir[0] + vVertical * vCameraLocalDir[2];
 	vm::Vector3df vCameraGlobalUp = vNorth * vCameraLocalUp[1] + vWest * vCameraLocalUp[0] + vVertical * vCameraLocalUp[2];
 
+	_vCameraPrevPos = in_pCamera->GetPos():
+
 	in_pCamera->Set(vCameraPos, vCameraGlobalUp, vCameraGlobalDir);
 
 	_coordinates._height += (_fHeightCommand - _coordinates._height)*std::max<float>(1.f, _fScrollCoeff*deltaTime);
