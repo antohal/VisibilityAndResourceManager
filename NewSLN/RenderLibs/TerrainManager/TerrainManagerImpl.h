@@ -38,8 +38,6 @@ public:
 
 	void SetViewProjection(const D3DXVECTOR3* in_vPos, const D3DXVECTOR3* in_vDir, const D3DXVECTOR3* in_vUp, const D3DMATRIX* in_pmProjection);
 
-	void SetPropogatedCameraPos(const D3DXVECTOR3* in_vPos);
-
 	// В момент вызова этой функции формируется 4 списка: 
 	// объекты, которые нужно создать
 	// объекты, которые стали видимыми
@@ -92,6 +90,16 @@ public:
 	//@{ Список текущих видимых объектов
 	size_t GetVisibleObjectsCount() const;
 	TerrainObjectID GetVisibleObjectID(size_t index) const;
+	//@}
+
+	//@{ Список объектов для которых нужно загрузить карту высот
+	//size_t GetNewHeightmapsCount() const;
+	//TerrainObjectID GetNewHeightmapObjectID(size_t index) const;
+	//@}
+
+	//@{ Список карт высот, которые ожидают вызова команды SetHeightmapReady
+	//size_t GetAwaitingHeightmapsCount() const;
+	//TerrainObjectID GetAwaitingHeightmapObjectID(size_t index) const;
 	//@}
 
 
@@ -209,7 +217,6 @@ private:
 	bool IsDataReady(TerrainObjectID ID) const override;
 
 	void UpdateDataReadyStates();
-	void CheckAndCreateObjects(const std::set<TerrainObjectID>& setIDs, bool& out_allReady);
 
 	//@{ Main objects
 	//---------------------- New mechanism
@@ -251,6 +258,12 @@ private:
 	std::vector<TerrainObjectID>				_vecReadyVisibleObjects;
 	CTerrainObjectVisibleSubtree*				_pPreliminaryVisibleSubtree = nullptr;
 
+//	std::vector<TerrainObjectID>				_vecHeightmapsToCreate;
+
+//	std::set<TerrainObjectID>					_setCachedHFRequest;
+//	std::set<TerrainObjectID>					_setAwaitingHeightmaps;
+//	std::vector<TerrainObjectID>				_vecAwaitingHeightmaps;
+
 	std::vector<TerrainObjectID>				_vecCurrentVisibleObjsInFrustum;
 	std::vector<TerrainObjectID>				_vecNotReadyObjsInFrustum;
 	//@}
@@ -291,8 +304,6 @@ private:
 		vm::Vector3df		vDir = vm::Vector3df(1, 0, 0);
 		vm::Vector3df		vUp = vm::Vector3df(0, 1, 0);
 
-		vm::Vector3df		vPropogatedPos = vm::Vector3df(0, 0, 0);
-
 		D3DMATRIX			mProjection;
 
 		float				fHFovAngleRad = 0, fVFovAngleRad = 0;
@@ -308,5 +319,4 @@ private:
 	bool					_bRecalculateLodsDistances = false;
 
 	bool					_bEnabledBorderNormals = false;
-	bool					_bCalculatePropogatedSet = false;
 };

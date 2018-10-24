@@ -1,6 +1,6 @@
 #include "wgs84.h"
 
-vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude)
+vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude, double H)
 {
 	const double Rmin = 6356752.3142;
 	const double Rmax = 6378137;
@@ -11,38 +11,49 @@ vm::Vector3df GetWGS84SurfacePoint(double longitude, double lattitude)
 	double cosA = cos(longitude);
 	double sinA = sin(longitude);
 
-	double R = sqrt(Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB));
-
-	/*return vm::Vector3df(
-		R*cosA*cosB,
-		R*sinA*cosB,
-		R*sinB
-	);*/
+	/*double R = sqrt(Rmax*Rmax*Rmin*Rmin / (Rmin*Rmin*cosB*cosB + Rmax*Rmax*sinB*sinB));
 
 	return vm::Vector3df(
 		R*sinA*cosB,
 		R*sinB,
 		-R*cosA*cosB
-	);
+	);*/
+
+	double a = 6378137.0; 		// большая полуось WGS-84
+	double e2 = 0.006694379993;	// квадрат эксцентриситета WGS-84
+
+								// радиус кривизны первого вертикала
+	double N = a / sqrt(1 - e2 * sinB * sinB);
+
+	double X = (N + H) * cosB * cosA;
+	double Y = (N + H) * cosB * sinA;
+	double Z = ((1 - e2)*N + H) * sinB;
+
+	return vm::Vector3df(Y, Z, -X);
 }
 
-vm::Vector3df GetWGS84SurfaceNormal(const vm::Vector3df& in_vSurfacePoint)
-{
-	const double Rmin = 6356752.3142;
-	const double Rmax = 6378137;
-
-	vm::Vector3df vUnnormalizedNormal = vm::Vector3df(
-		2 * in_vSurfacePoint[0] / (Rmax*Rmax),
-		2 * in_vSurfacePoint[1] / (Rmax*Rmax),
-		2 * in_vSurfacePoint[2] / (Rmin*Rmin)
-	);
-
-	return normalize(vUnnormalizedNormal);
-}
+//vm::Vector3df GetWGS84SurfaceNormal(const vm::Vector3df& in_vSurfacePoint)
+//{
+//	const double Rmin = 6356752.3142;
+//	const double Rmax = 6378137;
+//
+//	vm::Vector3df vUnnormalizedNormal = vm::Vector3df(
+//		2 * in_vSurfacePoint[0] / (Rmax*Rmax),
+//		2 * in_vSurfacePoint[1] / (Rmax*Rmax),
+//		2 * in_vSurfacePoint[2] / (Rmin*Rmin)
+//	);
+//
+//	return normalize(vUnnormalizedNormal);
+//}
 
 vm::Vector3df GetWGS84SurfaceNormal(double longitude, double lattitude)
 {
-	return GetWGS84SurfaceNormal(GetWGS84SurfacePoint(longitude, lattitude));
+	//return GetWGS84SurfaceNormal(GetWGS84SurfacePoint(longitude, lattitude));
+
+	vm::Vector3df vPos1 = GetWGS84SurfacePoint(longitude, lattitude, 100.f);
+	vm::Vector3df vPos0 = GetWGS84SurfacePoint(longitude, lattitude, 0.f);
+
+	return vm::normalize(vPos1 - vPos0);
 }
 
 double GetWGS84Height(const vm::Vector3df& vPoint)

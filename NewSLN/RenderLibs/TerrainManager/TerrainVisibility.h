@@ -62,18 +62,9 @@ class CTerrainVisibility
 {
 public:
 
-	enum EVisibleSetID
-	{
-		CURRENT_VISIBLE_OBJECTS = 0,
-		PROPOGATED_VISIBLE_OBJECTS,
-
-		NUM_VISIBLE_SETS
-	};
-
 	CTerrainVisibility(CTerrainObjectManager*, CTerrainVisibilityOwner*, float in_fWorldScale, float in_fMaximumDistance, float in_fLodDistCoeff, unsigned int in_uiMaxDepth);
 
-	void	ClearAllVisibleSets();
-	void	UpdateObjectsVisibility(EVisibleSetID visSetID, float in_fDeltaTime, const vm::Vector3df& in_vPos);
+	void	UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos);
 	
 	void	SetLastLODDistanceOnSurface(double in_dfDistM) {
 		_dfLastLODDistanceOnEarth = in_dfDistM;
@@ -84,8 +75,8 @@ public:
 	void	GetLodDistancesKM(double* in_aLodDistances, size_t in_nNLods);
 
 
-	const std::set<TerrainObjectID>&	GetVisibleObjects(EVisibleSetID visSetID) const {
-		return _setVisibleObjects[visSetID];
+	const std::set<TerrainObjectID>&	GetVisibleObjects() const {
+		return _setVisibleObjects;
 	}
 
 	unsigned int GetLastMaxDepth() const {
@@ -97,8 +88,8 @@ private:
 	double			GetDistance(TerrainObjectID ID, const vm::Vector3df& in_vPos, double& out_Diameter);
 	unsigned int	GetLodDepth(double dist) const;
 
-	void			UpdateVisibleBlocks(EVisibleSetID visSetID, const vm::Vector3df& in_vPos, unsigned int uiMaxDepth);
-	void			AddVisibleBlock(EVisibleSetID visSetID, TerrainObjectID ID);
+	void			UpdateVisibleBlocks(const vm::Vector3df& in_vPos, unsigned int uiMaxDepth);
+	void			AddVisibleBlock(TerrainObjectID ID);
 	void			CalculateLodDistanceCoeff(double height);
 
 	enum class EUpdateVisibilityResult
@@ -127,7 +118,7 @@ private:
 	unsigned int							_uiLastMaxDepth = 0;
 	vm::Vector3df							_vLastPos = vm::Vector3df(0, 0, 0);
 
-	std::set<TerrainObjectID>				_setVisibleObjects [NUM_VISIBLE_SETS];
+	std::set<TerrainObjectID>				_setVisibleObjects;
 
 	std::vector<TerrainObjectID>			_vecRootObjects;
 };

@@ -47,22 +47,21 @@ void CTerrainVisibility::CalculateLodDistanceCoeff(double height)
 	}
 }
 
-void CTerrainVisibility::ClearAllVisibleSets()
+void CTerrainVisibility::UpdateObjectsVisibility(float in_fDeltaTime, const vm::Vector3df& in_vPos)
 {
-	for (int i = 0; i < NUM_VISIBLE_SETS; i++)
-	{
-		_setVisibleObjects[i].clear();
-	}
-}
-
-void CTerrainVisibility::UpdateObjectsVisibility(EVisibleSetID visSetID, float in_fDeltaTime, const vm::Vector3df& in_vPos)
-{
-	_setVisibleObjects[visSetID].clear();
+	_setVisibleObjects.clear();
 
 	vm::Vector3df vPos = vm::Vector3df(in_vPos[0] / _fWorldScale, in_vPos[1] / _fWorldScale, in_vPos[2] / _fWorldScale);
 
 	if (_vecRootObjects.empty())
 	{
+		return;
+	}
+
+	const double Rmin = 6356752.3142;
+	if (vm::length(vPos) < Rmin*0.5)
+	{
+		LogMessage("CTerrainVisibility: position is below minimal radius of Earth (distance from Earth center: %d)", vm::length(vPos));
 		return;
 	}
 
@@ -73,7 +72,7 @@ void CTerrainVisibility::UpdateObjectsVisibility(EVisibleSetID visSetID, float i
 
 	unsigned int uiMaxDepth = GetLodDepth(height);
 
-	UpdateVisibleBlocks(visSetID, vPos, uiMaxDepth);
+	UpdateVisibleBlocks(vPos, uiMaxDepth);
 
 	_uiLastMaxDepth = uiMaxDepth;
 	_vLastPos = in_vPos;
@@ -156,28 +155,28 @@ unsigned int CTerrainVisibility::GetLodDepth(double dist) const
 	return uiDepth ;
 }
 
-void CTerrainVisibility::UpdateVisibleBlocks(EVisibleSetID visSetID, const vm::Vector3df & in_vPos, unsigned int uiMaxDepth)
+void CTerrainVisibility::UpdateVisibleBlocks(const vm::Vector3df & in_vPos, unsigned int uiMaxDepth)
 {
 	if (uiMaxDepth == 0)
 	{
 		for (TerrainObjectID rootID : _vecRootObjects)
-			AddVisibleBlock(visSetID, rootID);
+			AddVisibleBlock(rootID);
 	}
 	else
 	{
 		for (TerrainObjectID rootID : _vecRootObjects)
 		{
-			UpdateVisibilityRecursive(rootID, in_vPos, [=](TerrainObjectID ID) {AddVisibleBlock(visSetID, ID); }, nullptr);
+			UpdateVisibilityRecursive(rootID, in_vPos, [this](TerrainObjectID ID) {AddVisibleBlock(ID); }, nullptr);
 		}
 	}
 }
 
-void CTerrainVisibility::AddVisibleBlock(EVisibleSetID visSetID, TerrainObjectID ID)
+void CTerrainVisibility::AddVisibleBlock(TerrainObjectID ID)
 {
 	if (!_objectManager->IsObjectValid(ID))
 		return;
 
-	_setVisibleObjects[visSetID].insert(ID);
+	_setVisibleObjects.insert(ID);
 }
 
 CTerrainVisibility::EUpdateVisibilityResult CTerrainVisibility::UpdateVisibilityRecursive(TerrainObjectID ID, const vm::Vector3df & in_vPos,

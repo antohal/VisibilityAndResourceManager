@@ -40,18 +40,32 @@ struct STerrainBlockParams
 	STerrainBlockIndex	aTreePosition[MAX_TERRAIN_TREE_DEPTH];
 };
 
+#pragma pack(push, 4)
+
 // Структуры, считываемые из файла, описывающие лоды Земли
-struct DataBaseInfo
+struct DataBaseVersionInfo
 {
 	unsigned char Major;
 	unsigned char Minor;
-	unsigned char Reserved;
-	unsigned char LodCount; // кол-во лодов
-	int DeltaY;				// кол-во доп пикселей по X дл¤ выравнивани¤ текстуры
-	int DeltaX;				//  кол-во доп пикселей по Y дл¤ выравнивани¤ текстуры
 };
 
-struct LodInfoStruct
+
+struct DataBaseInfo : public DataBaseVersionInfo
+{
+	unsigned char Reserved;
+	unsigned char LodCount; // кол-во лодов
+	int DeltaY;				// кол-во доп пикселей по X для выравнивани¤ текстуры
+	int DeltaX;				//  кол-во доп пикселей по Y для выравнивани¤ текстуры
+};
+
+struct DataBaseInfo_Ver_1_3 : public DataBaseInfo
+{
+	// в случае, если версия меньше 1.3, то эти значения вычисляются по DeltaY, DeltaX
+	double MaxLon = 0;
+	double MinLat = 0;
+};
+
+struct LodInfoStruct_Ver_1_1
 {
 	short Width;			// ширины тексутры
 	short Height;			// высота тексутры
@@ -73,3 +87,32 @@ struct LodInfoStruct
 	bool			AltIsGauss = 0;					// 1 байта
 	bool			HasBorder = 0;					// 1 байта
 };
+
+struct LodInfoStruct_Ver_1_2
+{
+	short Width;			// ширины тексутры
+	short Height;			// высота тексутры
+	short CountY;			// кол-во текстур по X
+	short CountX;			// кол-во текстур по Y
+
+							// ver 1.1
+
+	unsigned int	TextureFormat = 0;				// 4 байта
+
+	unsigned int	TextureScaleAlgorithm = 0;		// 4 байта
+	bool			TextureIsGauss = false;				// 1 байта
+
+	short			AltWidth = 0;
+	short			AltHeight = 0;
+
+	unsigned int	AltFormat = 0;					// 4 байта
+	unsigned int	AltScaleAlgorithm = 0;			// 4 байта
+	bool			AltIsGauss = 0;					// 1 байта
+	bool			HasBorder = 0;					// 1 байта
+
+	// ver 1.2
+	unsigned char	Border = 0;
+	unsigned char	AltBorder = 0;
+};
+
+#pragma pack(pop)

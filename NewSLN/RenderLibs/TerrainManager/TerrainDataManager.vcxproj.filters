@@ -83,5 +83,8 @@
     <ClInclude Include="AsyncTask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\TerrainDataManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -32,8 +32,16 @@ public:
 		return _databaseInfo;
 	}
 
-	const std::vector<LodInfoStruct>&	GetLodInfos() const {
+	const std::vector<LodInfoStruct_Ver_1_2>&	GetLodInfos() const {
 		return _vecLodInfos;
+	}
+
+	static unsigned int				DepthDifference(unsigned int d1, unsigned int d2)
+	{
+		if (d1 > d2)
+			return d1 - d2;
+
+		return d2 - d1;
 	}
 
 	void							GetTerrainObjectChildren(TerrainObjectID ID, std::vector<TerrainObjectID>& out_vecChildren);
@@ -65,8 +73,8 @@ private:
 	void							DecomposeTerrainObjectID(TerrainObjectID ID, unsigned char& out_nLOD, unsigned short& out_X, unsigned short& out_Y) const;
 	bool							IsObjectHasSubhierarchy(TerrainObjectID ID);
 
-	DataBaseInfo					_databaseInfo;
-	std::vector<LodInfoStruct>		_vecLodInfos;
+	DataBaseInfo_Ver_1_3			_databaseInfo;
+	std::vector<LodInfoStruct_Ver_1_2>		_vecLodInfos;
 
 
 	std::map<TerrainObjectID, bool>	_mapHasSubhierarchy;

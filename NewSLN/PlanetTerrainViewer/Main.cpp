@@ -89,7 +89,7 @@ public:
 		
 		_pTerrainManager->SetViewProjection(&vPos, &vDir, &vUp, _pContext->GetSystem()->GetProjectionMatrix());
 
-		_pTerrainManager->SetPropogatedCameraPos(&vPropogatedPos);
+//		_pTerrainManager->SetPropogatedCameraPos(&vPropogatedPos);
 
 		_pTerrainManager->Update(in_fFrameTime);
 		_pTerrainManager->UpdateTriangulations();
@@ -170,7 +170,7 @@ void GenerateDatabaseInfo(const char* fileName)
 
 
 	DataBaseInfo dbInfo;
-	LodInfoStruct aLods[N_LODS_TO_GENERATE];
+	LodInfoStruct_Ver_1_1 aLods[N_LODS_TO_GENERATE];
 
 	dbInfo.LodCount = N_LODS_TO_GENERATE;
 	dbInfo.DeltaX = 22400;
@@ -203,7 +203,7 @@ void GenerateDatabaseInfo(const char* fileName)
 	FILE* fp = fopen(fileName, "wb");
 
 	fwrite(&dbInfo, sizeof(DataBaseInfo), 1, fp);
-	fwrite(&aLods[0], sizeof(LodInfoStruct) * N_LODS_TO_GENERATE, 1, fp);
+	fwrite(&aLods[0], sizeof(LodInfoStruct_Ver_1_1) * N_LODS_TO_GENERATE, 1, fp);
 
 	fclose(fp);
 }
@@ -262,10 +262,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 
 
-	GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
-	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	//GenerateDatabaseInfo("E:\\GitWork\\Earth_3D_008\\DataBaseInfo");
+	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"E:\\GitWork\\Earth_3D_008\\DataBaseInfo", N_LODS_TO_GENERATE, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
-	//pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface6\\Data_bicubic\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
+	pTerrainManager->InitFromDatabaseInfo(pDevice, pDeviceContext, L"Z:\\Users\\Temp\\GenSurface\\GenSurface_Release_3\\DataBaseInfo", 12, g_fWorldScale, g_fWorldScale * 100000000.f * 100.f, false);
 
 
 	SGlobalTerrainShaderParams globalShaderParams;

@@ -37,8 +37,8 @@ CTerrainObjectManager::CTerrainObjectManager()
 		_vecLODResolution[i] = 512;
 	}
 
-	_fLattitudeRange = M_PI;
-	_fLongitudeRange = 2 * M_PI;
+	_fLattitudeRange = (float)M_PI;
+	_fLongitudeRange = 2 * ((float)M_PI);
 }
 
 CTerrainObjectManager::~CTerrainObjectManager()
@@ -94,23 +94,65 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 
 	if (fp)
 	{
-		if (fread_s(&_databaseInfo, sizeof(DataBaseInfo), sizeof(DataBaseInfo), 1, fp) != 1)
+		DataBaseVersionInfo versionInfo;
+		if (fread_s(&versionInfo, sizeof(DataBaseVersionInfo), sizeof(DataBaseVersionInfo), 1, fp) != 1)
 		{
+			LogMessage("Error reading version from DataBaseInfo");
 			bSuccessifulRead = false;
+		}
+
+		rewind(fp);
+
+		if (versionInfo.Major == 1 && versionInfo.Minor < 3)
+		{
+			if (fread_s(&_databaseInfo, sizeof(DataBaseInfo), sizeof(DataBaseInfo), 1, fp) != 1)
+			{
+				LogMessage("Error reading DataBaseInfo");
+				bSuccessifulRead = false;
+			}
+		}
+		else
+		{
+			if (fread_s(&_databaseInfo, sizeof(DataBaseInfo_Ver_1_3), sizeof(DataBaseInfo_Ver_1_3), 1, fp) != 1)
+			{
+				LogMessage("Error reading DataBaseInfo_Ver_1_3");
+				bSuccessifulRead = false;
+			}
 		}
 
 		if (bSuccessifulRead)
 		{
 			_vecLodInfos.resize(_databaseInfo.LodCount);
 
-			if (_databaseInfo.Major == 1 && _databaseInfo.Minor == 1)
+			if (_databaseInfo.Major == 1 && _databaseInfo.Minor >= 2)
 			{
-				size_t nReadLods = fread_s(&_vecLodInfos[0], sizeof(LodInfoStruct) * _databaseInfo.LodCount, sizeof(LodInfoStruct), _databaseInfo.LodCount, fp);
+				size_t nReadLods = fread_s(&_vecLodInfos[0], sizeof(LodInfoStruct_Ver_1_2) * _databaseInfo.LodCount, sizeof(LodInfoStruct_Ver_1_2), _databaseInfo.LodCount, fp);
 
 				if (nReadLods != _databaseInfo.LodCount)
 				{
 					LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszDatabaseFile, nReadLods, _databaseInfo.LodCount);
 					bSuccessifulRead = false;
+				}
+			}
+			if (_databaseInfo.Major == 1 && _databaseInfo.Minor == 1)
+			{
+				std::vector<LodInfoStruct_Ver_1_1> vecReadLods;
+				vecReadLods.resize(_databaseInfo.LodCount);
+
+				size_t nReadLods = fread_s(&vecReadLods[0], sizeof(LodInfoStruct_Ver_1_1) * _databaseInfo.LodCount, sizeof(LodInfoStruct_Ver_1_1), _databaseInfo.LodCount, fp);
+
+				if (nReadLods != _databaseInfo.LodCount)
+				{
+					LogMessage("Error reading lod elements from file %ls, aborting. Readed only %d, while expected %d", in_pcwszDatabaseFile, nReadLods, _databaseInfo.LodCount);
+					bSuccessifulRead = false;
+				}
+
+				for (size_t iLod = 0; iLod < nReadLods; iLod++)
+				{
+					memcpy(&_vecLodInfos[iLod], &vecReadLods[iLod], sizeof(LodInfoStruct_Ver_1_1));
+
+					_vecLodInfos[iLod].Border = _vecLodInfos[iLod].HasBorder ? 1 : 0;
+					_vecLodInfos[iLod].AltBorder = _vecLodInfos[iLod].HasBorder ? 1 : 0;
 				}
 			}
 			else if (_databaseInfo.Major == 1 && _databaseInfo.Minor == 0)
@@ -189,6 +231,12 @@ bool CTerrainObjectManager::LoadDatabaseFile(const wchar_t* in_pcwszDatabaseFile
 	_fLattitudeRange = static_cast<float>(M_PI) *fLattitudeScaleCoeff;
 	_fLongitudeRange = 2 * static_cast<float>(M_PI) *fLattitudeScaleCoeff;
 
+	if (_databaseInfo.Major == 1 && _databaseInfo.Minor >= 3)
+	{
+		_fLongitudeRange = static_cast<float>(M_PI) + _databaseInfo.MaxLon * static_cast<float>(M_PI) / 180.f;
+		_fLattitudeRange = 0.5f * static_cast<float>(M_PI) - _databaseInfo.MinLat * static_cast<float>(M_PI) / 180.f;
+	}
+
 	for (int iLodLevel = 0; iLodLevel < _databaseInfo.LodCount; iLodLevel++)
 	{
 		double deltaX = _fLattitudeRange / _vecTotalXCountPerLOD[iLodLevel];
@@ -261,7 +309,7 @@ bool CTerrainObjectManager::IsObjectHasSubhierarchy(TerrainObjectID ID)
 		wsSubdirectoryName += L"\\" + wsXX + L"_" + wsYY;
 	}
 
-	bool bHasSubhierarchy = PathFileExistsW(wsSubdirectoryName.c_str());
+	bool bHasSubhierarchy = PathFileExistsW(wsSubdirectoryName.c_str()) == TRUE;
 
 	_mapHasSubhierarchy[ID] = bHasSubhierarchy;
 
@@ -358,7 +406,7 @@ void CTerrainObjectManager::GetTerrainObjectChildren(TerrainObjectID ID, std::ve
 	if (lod >= _databaseInfo.LodCount - 1)
 		return;
 
-	const LodInfoStruct& nextLodInfo = _vecLodInfos[lod + 1];
+	const LodInfoStruct_Ver_1_2& nextLodInfo = _vecLodInfos[lod + 1];
 
 	unsigned short startX = nextLodInfo.CountX * X;
 	unsigned short startY = nextLodInfo.CountY * Y;
@@ -621,7 +669,7 @@ std::vector<TerrainObjectID> CTerrainObjectManager::GetRootObjects() const
 		return resultVector;
 	}
 
-	const LodInfoStruct& zeroLod = _vecLodInfos[0];
+	const LodInfoStruct_Ver_1_2& zeroLod = _vecLodInfos[0];
 
 	for (short iX = 0; iX < zeroLod.CountX; iX++)
 	{

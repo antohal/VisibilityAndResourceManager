@@ -365,7 +365,8 @@ void DirectComputeHeightfieldConverter::ComputeTriangulationCoords(const SHeight
 	double middleLongitude = (in_Coords.fMinLongitude + in_Coords.fMaxLongitude)*0.5;
 
 	vm::Vector3df vMiddlePoint = GetWGS84SurfacePoint(middleLongitude, middleLattitude);
-	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+//	vm::Vector3df vNormal = GetWGS84SurfaceNormal(vMiddlePoint);
+	vm::Vector3df vNormal = GetWGS84SurfaceNormal(middleLongitude, middleLattitude);
 	vm::Vector3df vEast = vm::normalize(vm::cross(vNormal, vm::Vector3df(0, 1, 0)));
 	vm::Vector3df vNorth = vm::normalize(vm::cross(vNormal, vEast));
 
